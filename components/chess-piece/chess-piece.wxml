@@ -1,0 +1,3 @@
+<view class="piece-container">
+  <canvas type="2d" id="pieceCanvas" class="piece-canvas" style="width: {{piecePx}}px; height: {{piecePx}}px;"></canvas>
+</view>

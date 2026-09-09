@@ -1,0 +1,108 @@
+.replay-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #0f0f23;
+  overflow-y: auto;
+}
+
+.game-info {
+  padding: 16rpx 20rpx;
+  margin: 12rpx;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.game-players {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 8rpx;
+}
+
+.game-player {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #e0e0f0;
+}
+
+.game-vs {
+  font-size: 18rpx;
+  color: #666688;
+}
+
+.game-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8rpx;
+}
+
+.meta-item {
+  font-size: 18rpx;
+  color: #8888aa;
+  padding: 2rpx 8rpx;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4rpx;
+}
+
+.meta-item.eco {
+  color: #6c63ff;
+  background: rgba(108, 99, 255, 0.1);
+}
+
+.board-area {
+  display: flex;
+  justify-content: center;
+  padding: 8rpx;
+  min-height: 400rpx;
+}
+
+.progress-bar {
+  text-align: center;
+  padding: 8rpx;
+}
+
+.progress-text {
+  font-size: 22rpx;
+  color: #8888aa;
+  font-weight: 600;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 16rpx;
+  padding: 12rpx;
+}
+
+.ctrl-btn {
+  padding: 12rpx 24rpx;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10rpx;
+  font-size: 28rpx;
+  color: #c0c0e0;
+}
+
+.ctrl-btn:active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.ctrl-disabled {
+  opacity: 0.3;
+}
+
+.moves-section {
+  padding: 8rpx 16rpx;
+  flex: 1;
+}
+
+.back-btn {
+  text-align: center;
+  padding: 16rpx;
+  font-size: 22rpx;
+  color: #6c63ff;
+  font-weight: 600;
+}

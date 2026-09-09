@@ -1,0 +1,7 @@
+{
+  "component": true,
+  "usingComponents": {
+    "chess-piece": "../chess-piece/chess-piece",
+    "promotion-dialog": "../promotion-dialog/promotion-dialog"
+  }
+}

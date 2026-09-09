@@ -1,0 +1,82 @@
+<view class="analysis-page">
+  <view class="page-header glass gradient-top">
+    <text class="page-title">📊 对局分析</text>
+  </view>
+
+  <!-- 对局信息 -->
+  <view wx:if="{{game}}" class="game-summary">
+    <text class="summary-players">{{game.white}} VS {{game.black}}</text>
+    <text class="summary-result">{{game.result}}</text>
+  </view>
+
+  <!-- 分析按钮/进度 -->
+  <view wx:if="{{!analysisDone && moves.length > 0}}" class="review-action">
+    <view class="btn-primary {{isAnalyzing ? 'btn-loading' : ''}}" catchtap="startReview">
+      <text>{{isAnalyzing ? '分析中...' : '🚀 开始复盘分析'}}</text>
+    </view>
+    <view wx:if="{{isAnalyzing}}" class="progress-bar">
+      <view class="progress-fill" style="width: {{analysisProgress}}%"></view>
+    </view>
+  </view>
+
+  <!-- 分析总结 -->
+  <view wx:if="{{summary && analysisDone}}" class="summary-card glass">
+    <text class="summary-title">复盘总结</text>
+    <view class="summary-grid">
+      <view class="summary-item">
+        <text class="summary-value" style="color:#4ade80">{{summary.best}}</text>
+        <text class="summary-label">最佳走法</text>
+      </view>
+      <view class="summary-item">
+        <text class="summary-value" style="color:#22c55e">{{summary.good}}</text>
+        <text class="summary-label">好棋</text>
+      </view>
+      <view class="summary-item">
+        <text class="summary-value" style="color:#facc15">{{summary.inaccuracy}}</text>
+        <text class="summary-label">缓着</text>
+      </view>
+      <view class="summary-item">
+        <text class="summary-value" style="color:#fb923c">{{summary.mistake}}</text>
+        <text class="summary-label">失误</text>
+      </view>
+      <view class="summary-item">
+        <text class="summary-value" style="color:#f87171">{{summary.blunder}}</text>
+        <text class="summary-label">大漏</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 棋盘 -->
+  <view class="board-area">
+    <chess-board
+      interactive="{{false}}"
+      flipped="{{flipped}}"
+      fen="{{fen}}"
+      isCheck="{{isCheck}}"
+      isCheckmate="{{isCheckmate}}"
+      isStalemate="{{isStalemate}}"
+      boardColorPreset="wood">
+    </chess-board>
+  </view>
+
+  <!-- 导航 -->
+  <view class="nav-controls">
+    <view class="nav-btn {{currentMoveIndex < 0 ? 'nav-disabled' : ''}}" catchtap="goToPrevious">◀ 上一步</view>
+    <text class="nav-info">{{currentMoveIndex + 1}} / {{totalMoves}}</text>
+    <view class="nav-btn {{currentMoveIndex >= totalMoves - 1 ? 'nav-disabled' : ''}}" catchtap="goToNext">下一步 ▶</view>
+    <view class="nav-btn" catchtap="onFlip">🔄</view>
+  </view>
+
+  <!-- 走法历史（含复盘标注） -->
+  <view class="moves-section">
+    <move-history 
+      moveHistory="{{moves}}" 
+      moveReviews="{{moveReviews}}"
+      replayIndex="{{currentMoveIndex}}"
+      isReplay="{{true}}"
+      bind:gotomove="onGoToMove">
+    </move-history>
+  </view>
+
+  <view class="back-btn" catchtap="goBack">← 返回</view>
+</view>

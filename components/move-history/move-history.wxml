@@ -1,0 +1,28 @@
+<view class="move-history">
+  <view class="move-header">📝 对局棋谱</view>
+  <scroll-view class="move-list" scroll-y scroll-into-view="move-{{replayIndex}}">
+    <view wx:if="{{movePairs.length === 0}}" class="empty-moves">
+      <text>暂无走法</text>
+    </view>
+    <view wx:else>
+      <view class="move-row" wx:for="{{movePairs}}" wx:key="number">
+        <text class="move-number">{{item.number}}.</text>
+        <view class="move-cell {{item.whiteIndex === replayIndex ? 'move-current' : ''}}"
+              id="move-{{item.whiteIndex}}"
+              data-index="{{item.whiteIndex}}"
+              catchtap="onMoveTap">
+          <text>{{item.white.san}}</text>
+          <text wx:if="{{item.whiteReviewIcon}}" class="move-review">{{item.whiteReviewIcon}}</text>
+        </view>
+        <view class="move-cell {{item.blackIndex === replayIndex ? 'move-current' : ''}}"
+              id="move-{{item.blackIndex}}"
+              data-index="{{item.blackIndex}}"
+              catchtap="onMoveTap">
+          <text wx:if="{{item.black}}">{{item.black.san}}</text>
+          <text wx:else class="move-empty">—</text>
+          <text wx:if="{{item.black && item.blackReviewIcon}}" class="move-review">{{item.blackReviewIcon}}</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

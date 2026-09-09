@@ -1,0 +1,88 @@
+<view class="analysis-panel">
+  <!-- 占位提示 -->
+  <view wx:if="{{!gameStarted}}" class="placeholder">
+    <text class="placeholder-icon">♟</text>
+    <text class="placeholder-text">点击"新建对局"开始</text>
+  </view>
+
+  <view wx:else class="panel-content">
+    <!-- 评估条 -->
+    <view class="evaluation-bar-container">
+      <view class="evaluation-bar-bg">
+        <view class="evaluation-bar-fill" style="width: {{evaluationBarWidth}}%; 
+          background: linear-gradient(90deg, #f87171, #facc15, #4ade80);"></view>
+      </view>
+      <view class="evaluation-score {{evaluation > 0.3 ? 'score-green' : evaluation < -0.3 ? 'score-red' : 'score-neutral'}}">
+        <text>{{evaluationFormatted}}</text>
+        <text class="eval-label">{{evaluationText}}</text>
+      </view>
+    </view>
+
+    <!-- 开局名称 -->
+    <view wx:if="{{ecoCode}}" class="opening-name" catchtap="onShowOpening">
+      <text class="eco-code">{{ecoCode}}</text>
+      <text class="opening-text">{{openingNameCN || openingName}}</text>
+    </view>
+
+    <!-- AI 思考中 -->
+    <view wx:if="{{isAIThinking}}" class="thinking-indicator">
+      <view class="thinking-dot"></view>
+      <text>AI 思考中...</text>
+    </view>
+
+    <!-- 分析错误 -->
+    <view wx:if="{{analysisError}}" class="analysis-error">
+      <text>{{analysisError}}</text>
+    </view>
+
+    <!-- 候选走法列表 -->
+    <scroll-view wx:if="{{showHints && candidates.length > 0}}" class="candidates-list" scroll-y
+                  scroll-into-view="{{scrollTarget}}" scroll-with-animation>
+      <view class="candidate-item" wx:for="{{candidates}}" wx:for-item="c" wx:key="uci"
+            id="candidate-{{c.rank}}"
+            data-uci="{{c.uci}}" catchtap="onPlayContinuation">
+        <view class="candidate-rank rank-{{c.rank}}">
+          <text>#{{c.rank}}</text>
+        </view>
+        <view class="candidate-info">
+          <view class="candidate-header">
+            <text class="candidate-label">{{c.label}}</text>
+            <text class="candidate-score" style="color: {{c.scoreColor}};">
+              {{c.scoreFormatted}}
+            </text>
+          </view>
+          <!-- 优点 -->
+          <view wx:if="{{c.pros && c.pros.length > 0}}" class="candidate-detail">
+            <text wx:for="{{c.pros}}" wx:for-item="pro" wx:key="key" class="detail-pro">✓ {{pro.text}}</text>
+          </view>
+          <!-- 缺点 -->
+          <view wx:if="{{c.cons && c.cons.length > 0}}" class="candidate-detail">
+            <text wx:for="{{c.cons}}" wx:for-item="con" wx:key="key" class="detail-con">! {{con.text}}</text>
+          </view>
+          <!-- 战术标签 -->
+          <view wx:if="{{c.tactics && c.tactics.length > 0}}" class="tactics-row">
+            <text wx:for="{{c.tactics}}" wx:for-item="t" wx:key="key" class="tactic-tag">{{t.text}}</text>
+          </view>
+          <!-- 续着线 -->
+          <view wx:if="{{c.line && c.line.length > 1}}" class="line-row">
+            <text class="line-label">预计变化：</text>
+            <text wx:for="{{c.line}}" wx:for-item="mv" wx:key="key" class="line-move">{{mv.text}}</text>
+          </view>
+        </view>
+        <view class="candidate-action" catchtap="onExplorationStart" data-uci="{{c.uci}}">
+          <text class="action-btn">推演</text>
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- 提示已关闭 -->
+    <view wx:if="{{!showHints && gameStarted && !gameOver}}" class="hints-off">
+      <text>💡 点击"提示"查看候选走法</text>
+    </view>
+
+    <!-- 提示开关 -->
+    <view wx:if="{{gameStarted && !gameOver}}" class="hints-toggle-btn" catchtap="onToggleHints">
+      <text>{{settings.showHints ? '💡 提示中' : '💡 提示'}}</text>
+    </view>
+  </view>
+</view>

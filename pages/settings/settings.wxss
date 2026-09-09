@@ -1,0 +1,155 @@
+.settings-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #0f0f23;
+  overflow: hidden;
+}
+
+.page-header {
+  padding: 20rpx 24rpx;
+  border-top: 2px solid transparent;
+  border-image: linear-gradient(90deg, #6c63ff, #4834d4, #6c63ff) 1;
+}
+
+.page-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #e0e0f0;
+}
+
+.settings-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16rpx;
+}
+
+.setting-section {
+  margin-bottom: 24rpx;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12rpx;
+  padding: 16rpx;
+}
+
+.section-title {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #e0e0f0;
+  margin-bottom: 12rpx;
+  display: block;
+}
+
+.theme-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.theme-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+  padding: 12rpx;
+  border-radius: 10rpx;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  min-width: 100rpx;
+}
+
+.theme-item:active {
+  background: rgba(108, 99, 255, 0.1);
+}
+
+.theme-active {
+  border-color: #6c63ff;
+  background: rgba(108, 99, 255, 0.1);
+}
+
+.theme-preview {
+  display: flex;
+  gap: 2rpx;
+  width: 60rpx;
+  height: 60rpx;
+  overflow: hidden;
+  border-radius: 6rpx;
+}
+
+.theme-square {
+  width: 50%;
+  height: 100%;
+}
+
+.theme-label {
+  font-size: 18rpx;
+  color: #a0a0c0;
+}
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12rpx 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.setting-row:last-child {
+  border-bottom: none;
+}
+
+.setting-label {
+  font-size: 22rpx;
+  color: #c0c0e0;
+}
+
+.arrow {
+  font-size: 20rpx;
+  color: #8888aa;
+}
+
+.slider-marks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14rpx;
+  color: #555577;
+  margin-top: -8rpx;
+}
+
+.password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  margin-top: 12rpx;
+  padding-top: 12rpx;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.form-input {
+  height: 72rpx;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8rpx;
+  padding: 0 16rpx;
+  font-size: 22rpx;
+  color: #e0e0f0;
+}
+
+.error-msg {
+  font-size: 18rpx;
+  color: #f87171;
+  text-align: center;
+}
+
+.submit-btn {
+  text-align: center;
+  padding: 14rpx;
+  background: linear-gradient(135deg, #6c63ff, #4834d4);
+  border-radius: 8rpx;
+  color: #fff;
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+.btn-loading {
+  opacity: 0.7;
+}

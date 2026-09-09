@@ -1,0 +1,8 @@
+<view wx:if="{{visible}}" class="captured-pieces {{side === 'top' ? 'captured-top' : 'captured-bottom'}}">
+  <block wx:for="{{pieces}}" wx:key="type">
+    <view class="captured-group">
+      <chess-piece piece="{{item.type}}" size="32"></chess-piece>
+      <text wx:if="{{item.count > 1}}" class="captured-count">×{{item.count}}</text>
+    </view>
+  </block>
+</view>

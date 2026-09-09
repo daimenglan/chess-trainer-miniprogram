@@ -1,0 +1,36 @@
+<view wx:if="{{show}}" class="modal-overlay" catchtap="onCancel">
+  <view class="bad-move-dialog glass-strong fade-in" catchtap="stopPropagation">
+    <view class="dialog-header">
+      <text class="warning-icon">⚠️</text>
+      <text class="dialog-title">走法不佳</text>
+    </view>
+    
+    <view class="move-info">
+      <text class="move-desc">{{moveDesc}}</text>
+    </view>
+
+    <view class="score-comparison">
+      <view class="score-item yours">
+        <text class="score-label">你的走法</text>
+        <text class="score-value">{{userScoreText}}</text>
+      </view>
+      <view class="score-vs">VS</view>
+      <view class="score-item best">
+        <text class="score-label">最佳走法</text>
+        <text class="score-value">{{bestScoreText}}</text>
+      </view>
+    </view>
+
+    <view class="loss-info {{isCritical ? 'loss-critical' : isSignificant ? 'loss-significant' : 'loss-moderate'}}">
+      <text class="loss-text">损失约 {{lossText}} 兵</text>
+    </view>
+
+    <view class="warning-text">{{warningText}}</view>
+
+    <view class="dialog-actions">
+      <view class="btn-option" catchtap="onExplore">🔍 推演一下</view>
+      <view class="btn-option btn-confirm" catchtap="onConfirm">确定</view>
+      <view class="btn-option btn-cancel" catchtap="onCancel">取消</view>
+    </view>
+  </view>
+</view>

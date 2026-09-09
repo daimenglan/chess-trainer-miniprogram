@@ -1,0 +1,58 @@
+<view class="replay-page">
+  <!-- 对局信息 -->
+  <view wx:if="{{record}}" class="game-info glass">
+    <view class="game-players">
+      <text class="game-player">{{record.white}}</text>
+      <text class="game-vs">VS</text>
+      <text class="game-player">{{record.black}}</text>
+    </view>
+    <view class="game-meta">
+      <text wx:if="{{record.event}}" class="meta-item">{{record.event}}</text>
+      <text wx:if="{{record.ecoCode}}" class="meta-item eco">{{record.ecoCode}}</text>
+      <text class="meta-item">{{record.result}}</text>
+      <text wx:if="{{record.date}}" class="meta-item">{{record.date}}</text>
+    </view>
+  </view>
+
+  <!-- 棋盘 -->
+  <view class="board-area">
+    <chess-board
+      interactive="{{false}}"
+      flipped="{{flipped}}"
+      fen="{{fen}}"
+      lastMoveFrom="{{lastMoveFrom}}"
+      lastMoveTo="{{lastMoveTo}}"
+      isCheck="{{isCheck}}"
+      isCheckmate="{{isCheckmate}}"
+      isStalemate="{{isStalemate}}"
+      boardColorPreset="wood">
+    </chess-board>
+  </view>
+
+  <!-- 进度 -->
+  <view class="progress-bar">
+    <text class="progress-text">{{currentMoveIndex + 1}} / {{totalMoves}}</text>
+  </view>
+
+  <!-- 控制按钮 -->
+  <view class="controls">
+    <view class="ctrl-btn {{currentMoveIndex < 0 ? 'ctrl-disabled' : ''}}" catchtap="goToStart">⏮</view>
+    <view class="ctrl-btn {{currentMoveIndex < 0 ? 'ctrl-disabled' : ''}}" catchtap="goBack">◀</view>
+    <view class="ctrl-btn {{currentMoveIndex >= totalMoves - 1 ? 'ctrl-disabled' : ''}}" catchtap="goForward">▶</view>
+    <view class="ctrl-btn {{currentMoveIndex >= totalMoves - 1 ? 'ctrl-disabled' : ''}}" catchtap="goToEnd">⏭</view>
+    <view class="ctrl-btn" catchtap="onFlip">🔄</view>
+  </view>
+
+  <!-- 走法历史 -->
+  <view class="moves-section">
+    <move-history 
+      moveHistory="{{moves}}" 
+      replayIndex="{{currentMoveIndex}}"
+      isReplay="{{true}}"
+      bind:gotomove="onGoToMove">
+    </move-history>
+  </view>
+
+  <!-- 返回按钮 -->
+  <view class="back-btn" catchtap="goBackToRecords">← 返回棋谱库</view>
+</view>

@@ -1,0 +1,152 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bad-move-dialog {
+  padding: 32rpx;
+  width: 500rpx;
+  text-align: center;
+  background: rgba(26, 26, 46, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  margin-bottom: 20rpx;
+}
+
+.warning-icon {
+  font-size: 40rpx;
+}
+
+.dialog-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #facc15;
+}
+
+.move-info {
+  margin-bottom: 20rpx;
+}
+
+.move-desc {
+  font-size: 24rpx;
+  color: #e0e0f0;
+  font-weight: 600;
+}
+
+.score-comparison {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.score-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+  padding: 12rpx 24rpx;
+  border-radius: 10rpx;
+}
+
+.score-item.yours {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.score-item.best {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.score-label {
+  font-size: 18rpx;
+  color: #8888aa;
+}
+
+.score-value {
+  font-size: 28rpx;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+}
+
+.score-item.yours .score-value { color: #f87171; }
+.score-item.best .score-value { color: #4ade80; }
+
+.score-vs {
+  font-size: 20rpx;
+  color: #666688;
+  font-weight: 600;
+}
+
+.loss-info {
+  padding: 8rpx;
+  border-radius: 8rpx;
+  margin-bottom: 12rpx;
+}
+
+.loss-critical { background: rgba(239, 68, 68, 0.15); }
+.loss-significant { background: rgba(249, 115, 22, 0.15); }
+.loss-moderate { background: rgba(234, 179, 8, 0.15); }
+
+.loss-text {
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+.loss-critical .loss-text { color: #f87171; }
+.loss-significant .loss-text { color: #fb923c; }
+.loss-moderate .loss-text { color: #facc15; }
+
+.warning-text {
+  font-size: 20rpx;
+  color: #8888aa;
+  margin-bottom: 24rpx;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 12rpx;
+  justify-content: center;
+}
+
+.btn-option {
+  padding: 12rpx 24rpx;
+  border-radius: 10rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.06);
+  color: #c0c0e0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.btn-option:active {
+  opacity: 0.7;
+  transform: scale(0.95);
+}
+
+.btn-confirm {
+  background: linear-gradient(135deg, #6c63ff, #4834d4);
+  color: #fff;
+  border: none;
+}
+
+.btn-cancel {
+  color: #8888aa;
+}

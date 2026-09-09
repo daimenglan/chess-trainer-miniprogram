@@ -1,0 +1,94 @@
+<view class="settings-page">
+  <view class="page-header glass gradient-top">
+    <text class="page-title">⚙️ 设置</text>
+  </view>
+
+  <scroll-view class="settings-content" scroll-y>
+    <!-- 棋盘主题 -->
+    <view class="setting-section">
+      <text class="section-title">棋盘主题</text>
+      <view class="theme-grid">
+        <view class="theme-item {{settings.boardColorPreset === item.key ? 'theme-active' : ''}}"
+              wx:for="{{themes}}" wx:key="key" data-key="{{item.key}}" catchtap="onThemeSelect">
+          <view class="theme-preview">
+            <view class="theme-square" style="background: {{item.colors.light}}"></view>
+            <view class="theme-square" style="background: {{item.colors.dark}}"></view>
+          </view>
+          <text class="theme-label">{{item.label}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 显示选项 -->
+    <view class="setting-section">
+      <text class="section-title">显示选项</text>
+      <view class="setting-row">
+        <text class="setting-label">走法提示</text>
+        <switch checked="{{settings.showHints}}" data-key="showHints" 
+                bindchange="onToggle" color="#6c63ff" />
+      </view>
+      <view class="setting-row">
+        <text class="setting-label">3D 棋子效果</text>
+        <switch checked="{{settings.pieceStyle3d}}" data-key="pieceStyle3d" 
+                bindchange="onToggle" color="#6c63ff" />
+      </view>
+      <view class="setting-row">
+        <text class="setting-label">音效</text>
+        <switch checked="{{settings.soundEnabled}}" data-key="soundEnabled" 
+                bindchange="onToggle" color="#6c63ff" />
+      </view>
+      <view class="setting-row">
+        <text class="setting-label">初始翻转棋盘</text>
+        <switch checked="{{settings.boardFlipped}}" data-key="boardFlipped" 
+                bindchange="onToggle" color="#6c63ff" />
+      </view>
+    </view>
+
+    <!-- 分析设置 -->
+    <view class="setting-section">
+      <text class="section-title">分析设置</text>
+      <view class="setting-row">
+        <text class="setting-label">分析深度：{{settings.analysisDepth}}</text>
+        <slider min="5" max="20" step="1" value="{{settings.analysisDepth}}" 
+                bindchange="onDepthChange" activeColor="#6c63ff" 
+                backgroundColor="rgba(255,255,255,0.1)" block-size="16" style="width: 240rpx" />
+      </view>
+      <view class="setting-row">
+        <text class="setting-label">多PV：{{settings.analysisMultiPv}}</text>
+        <slider min="1" max="5" step="1" value="{{settings.analysisMultiPv}}" 
+                bindchange="onMultiPvChange" activeColor="#6c63ff" 
+                backgroundColor="rgba(255,255,255,0.1)" block-size="16" style="width: 240rpx" />
+      </view>
+    </view>
+
+    <!-- AI难度 -->
+    <view class="setting-section">
+      <text class="section-title">AI难度：{{settings.aiDifficulty}}</text>
+      <slider min="1" max="10" step="1" value="{{settings.aiDifficulty}}" 
+              bindchange="onSliderChange" data-key="aiDifficulty"
+              activeColor="#6c63ff" backgroundColor="rgba(255,255,255,0.1)" block-size="16" />
+      <view class="slider-marks">
+        <text>入门</text>
+        <text>大师</text>
+      </view>
+    </view>
+
+    <!-- 修改密码 -->
+    <view class="setting-section">
+      <view class="setting-row" catchtap="onTogglePassword">
+        <text class="setting-label">🔑 修改密码</text>
+        <text class="arrow">{{showPasswordForm ? '▼' : '▶'}}</text>
+      </view>
+
+      <view wx:if="{{showPasswordForm}}" class="password-form">
+        <input class="form-input" type="password" placeholder="当前密码" value="{{oldPassword}}" bindinput="onOldPwdInput" />
+        <input class="form-input" type="password" placeholder="新密码（至少6位）" value="{{newPassword}}" bindinput="onNewPwdInput" />
+        <input class="form-input" type="password" placeholder="确认新密码" value="{{confirmNewPassword}}" bindinput="onConfirmPwdInput" />
+        <view wx:if="{{passwordError}}" class="error-msg">{{passwordError}}</view>
+        <view class="submit-btn {{passwordLoading ? 'btn-loading' : ''}}" catchtap="onSubmitPassword">
+          <text>{{passwordLoading ? '修改中...' : '确认修改'}}</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

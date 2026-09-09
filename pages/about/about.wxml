@@ -1,0 +1,25 @@
+<view class="about-page">
+  <view class="about-header">
+    <text class="app-icon">♟</text>
+    <text class="app-name">mychess AI</text>
+    <text class="app-version">v{{version}}</text>
+    <text class="app-desc">AI 国际象棋陪练系统</text>
+  </view>
+
+  <view class="features-section">
+    <text class="section-title">功能介绍</text>
+    <view class="feature-card" wx:for="{{features}}" wx:key="title">
+      <text class="feature-icon">{{item.icon}}</text>
+      <view class="feature-info">
+        <text class="feature-title">{{item.title}}</text>
+        <text class="feature-desc">{{item.desc}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="about-footer">
+    <text class="footer-text">Powered by Stockfish + DeepSeek</text>
+    <text class="footer-text">基于 chess.js</text>
+    <text class="footer-copy">© 2026 mychess</text>
+  </view>
+</view>

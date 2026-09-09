@@ -1,0 +1,11 @@
+<view wx:if="{{timeControlMode !== 'none' && gameStarted}}" class="timer-display">
+  <view class="timer-box {{activeSide === 'white' ? 'timer-active' : ''}} {{whiteLow ? 'timer-low' : ''}}">
+    <text class="timer-label">白方</text>
+    <text class="timer-time">{{formattedWhite}}</text>
+  </view>
+  <text class="timer-vs">VS</text>
+  <view class="timer-box {{activeSide === 'black' ? 'timer-active' : ''}} {{blackLow ? 'timer-low' : ''}}">
+    <text class="timer-label">黑方</text>
+    <text class="timer-time">{{formattedBlack}}</text>
+  </view>
+</view>

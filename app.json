@@ -1,0 +1,50 @@
+{
+  "pages": [
+    "pages/choice/choice",
+    "pages/index/index",
+    "pages/login/login",
+    "pages/online/online",
+    "pages/records/records",
+    "pages/record-detail/record-detail",
+    "pages/analysis/analysis",
+    "pages/profile/profile",
+    "pages/settings/settings",
+    "pages/about/about"
+  ],
+  "window": {
+    "navigationBarTitleText": "mychess AI",
+    "navigationBarBackgroundColor": "#1a1a2e",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#0f0f23",
+    "backgroundTextStyle": "light"
+  },
+  "tabBar": {
+    "color": "#8888aa",
+    "selectedColor": "#6c63ff",
+    "backgroundColor": "#1a1a2e",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "对弈",
+        "iconPath": "images/tab-game.png",
+        "selectedIconPath": "images/tab-game-active.png"
+      },
+      {
+        "pagePath": "pages/records/records",
+        "text": "棋谱",
+        "iconPath": "images/tab-records.png",
+        "selectedIconPath": "images/tab-records-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "images/tab-profile.png",
+        "selectedIconPath": "images/tab-profile-active.png"
+      }
+    ]
+  },
+  "requiredBackgroundModes": [],
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

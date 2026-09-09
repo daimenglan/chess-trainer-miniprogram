@@ -1,0 +1,61 @@
+<view class="board-wrapper">
+  <view class="board-frame">
+    <!-- 上方文件标签 (a-h) -->
+    <view class="file-labels-top">
+      <text wx:for="{{fileLabels}}" wx:key="*this" class="file-label" data-file="{{item}}">{{item}}</text>
+    </view>
+
+    <!-- 棋盘主体 -->
+    <view class="board-grid">
+      <!-- 全盘棋子 + 最后一步箭头：type="2d" 同层渲染 Canvas。
+           当弹窗/菜单打开时用 wx:if 彻底移除 canvas 元素，避免原生渲染层仍然遮挡弹窗。
+           隐藏后通过 canvasHidden=false 触发的 observer 自动重绘。 -->
+      <canvas wx:if="{{!canvasHidden}}" type="2d" id="boardPieces" class="board-pieces-canvas"
+              style="width: {{canvasW}}px; height: {{canvasH}}px;"
+              catchtap="onCanvasTap"></canvas>
+
+      <block wx:for="{{squares}}" wx:for-item="row" wx:for-index="rowIdx" wx:key="rowIdx">
+        <block wx:for="{{row}}" wx:for-item="sq" wx:key="square">
+          <view class="square {{sq.isLight ? 'square-light' : 'square-dark'}}"
+                style="background-color: {{sq.isLight ? colors.light : colors.dark}};"
+                data-square="{{sq.square}}"
+                catchtap="onSquareTap">
+
+            <!-- 最后一步高亮 -->
+            <view wx:if="{{sq.isLastMove}}" class="last-move-highlight"></view>
+
+            <!-- 选中高亮 -->
+            <view wx:if="{{sq.isSelected}}" class="selected-highlight"></view>
+
+            <!-- 合法走法目标点 -->
+            <view wx:if="{{sq.showLegalDot}}" class="legal-dot"></view>
+            <view wx:if="{{sq.showCaptureRing}}" class="capture-ring"></view>
+
+            <!-- 候选走法编号 -->
+            <view wx:if="{{sq.showCandidateBadge}}"
+                  class="candidate-badge rank-{{candidateMap[sq.square].rank}}"
+                  data-rank="{{candidateMap[sq.square].rank}}"
+                  catchtap="onCandidateBadgeTap">
+              <text>{{candidateMap[sq.square].rank}}</text>
+            </view>
+          </view>
+        </block>
+      </block>
+    </view>
+
+    <!-- 左侧行标签 (1-8) -->
+    <view class="rank-labels-left">
+      <text wx:for="{{rankLabels}}" wx:key="*this" class="rank-label" data-rank="{{item}}">{{item}}</text>
+    </view>
+
+    <!-- 右侧行标签 (1-8) -->
+    <view class="rank-labels-right">
+      <text wx:for="{{rankLabels}}" wx:key="*this" class="rank-label-right" data-rank="{{item}}">{{item}}</text>
+    </view>
+
+    <!-- 下方文件标签 (a-h) -->
+    <view class="file-labels-bottom">
+      <text wx:for="{{fileLabels}}" wx:key="*this" class="file-label" data-file="{{item}}">{{item}}</text>
+    </view>
+  </view>
+</view>

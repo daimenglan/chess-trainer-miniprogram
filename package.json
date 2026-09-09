@@ -1,0 +1,22 @@
+{
+  "name": "mychess-miniprogram",
+  "version": "1.0.0",
+  "description": "mychess AI 国际象棋陪练系统 - 微信小程序",
+  "scripts": {
+    "test": "node test/e2e-simulation.js",
+    "check-bindings": "node test/check-bindings.js",
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "keywords": [
+    "chess",
+    "ai",
+    "wechat",
+    "miniprogram"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/wechat-miniprogram": "^3.4.10",
+    "typescript": "^7.0.2"
+  }
+}

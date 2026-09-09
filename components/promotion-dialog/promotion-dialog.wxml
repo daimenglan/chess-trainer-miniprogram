@@ -1,0 +1,12 @@
+<view wx:if="{{show}}" class="modal-overlay" catchtap="onCancel">
+  <view class="promotion-dialog glass-strong fade-in" catchtap="stopPropagation">
+    <view class="dialog-title">兵升变</view>
+    <view class="piece-options">
+      <view class="piece-option" wx:for="{{pieces}}" wx:key="type" data-type="{{item.type}}" catchtap="onSelect">
+        <chess-piece piece="{{color === 'w' ? item.whiteCode : item.blackCode}}" size="80"></chess-piece>
+        <text class="piece-label">{{item.label}}</text>
+      </view>
+    </view>
+    <view class="cancel-btn" catchtap="onCancel">取消</view>
+  </view>
+</view>

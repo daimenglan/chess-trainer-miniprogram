@@ -1,0 +1,58 @@
+<view class="coach-chat">
+  <!-- 悬浮按钮 -->
+  <view wx:if="{{!show && gameStarted}}" class="coach-float-btn" catchtap="onToggle">
+    <text class="coach-icon">🤖</text>
+    <text wx:if="{{unreadCount > 0}}" class="unread-dot">{{unreadCount}}</text>
+  </view>
+
+  <!-- 聊天面板 -->
+  <view wx:if="{{show && gameStarted}}" class="coach-panel">
+    <!-- 遮罩 -->
+    <view class="coach-backdrop" catchtap="onToggle"></view>
+
+    <view class="coach-card glass-strong">
+      <!-- 头部 -->
+      <view class="coach-header">
+        <view class="coach-title">
+          <text>🤖 AI 教练</text>
+        </view>
+        <view class="coach-actions">
+          <view wx:if="{{isStreaming}}" class="stop-btn" catchtap="onStop">■ 停止</view>
+          <view class="clear-btn" catchtap="onClear">清空</view>
+          <view class="close-btn" catchtap="onToggle">✕</view>
+        </view>
+      </view>
+
+      <!-- 消息区域 -->
+      <scroll-view class="coach-messages" scroll-y scroll-into-view="msg-bottom" id="msg-scroll">
+        <view wx:if="{{messages.length === 0}}" class="welcome-msg">
+          <text class="welcome-title">👋 你好！我是AI教练</text>
+          <text class="welcome-text">你可以问我关于当前局面的任何问题，比如：</text>
+          <view class="suggestion-chips">
+            <view class="suggestion-chip" wx:for="{{suggestions}}" wx:key="*this"
+                  data-text="{{item}}" catchtap="onSuggestionTap">
+              <text>{{item}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view wx:for="{{messages}}" wx:key="*this" class="msg-row msg-{{item.role}}">
+          <view class="msg-bubble">
+            <text class="msg-content">{{item.content}}</text>
+            <view wx:if="{{item.streaming}}" class="streaming-cursor">|</view>
+          </view>
+        </view>
+        <view id="msg-bottom"></view>
+      </scroll-view>
+
+      <!-- 输入栏 -->
+      <view class="coach-input-bar">
+        <input class="coach-input" placeholder="向AI教练提问..." value="{{inputValue}}" 
+               bindinput="onInput" bindconfirm="onSend" confirm-type="send" />
+        <view class="send-btn {{inputValue.trim() ? 'send-active' : ''}}" catchtap="onSend">
+          <text>发送</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,31 @@
+<view class="choice-page">
+  <view class="choice-header">
+    <text class="choice-title">♟ mychess AI</text>
+    <text class="choice-subtitle">国际象棋陪练系统</text>
+  </view>
+
+  <view class="choice-cards">
+    <!-- 在线对弈 -->
+    <view class="choice-card" catchtap="onOnlineMatch">
+      <view class="choice-icon">🌐</view>
+      <view class="choice-info">
+        <text class="choice-name">在线对弈</text>
+        <text class="choice-desc">与真人玩家实时对弈，系统自动匹配对手，随机分配黑白方</text>
+      </view>
+    </view>
+
+    <!-- AI 教练 -->
+    <view class="choice-card" catchtap="onAICoach">
+      <view class="choice-icon">🤖</view>
+      <view class="choice-info">
+        <text class="choice-name">AI 教练</text>
+        <text class="choice-desc">与人工智能引擎对弈，1-10 级难度调节，实时局面分析和走法提示</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="choice-footer">
+    <text class="choice-user">{{username}}，欢迎回来</text>
+    <text class="choice-logout" catchtap="onLogout">退出登录</text>
+  </view>
+</view>

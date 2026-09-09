@@ -1,0 +1,140 @@
+.analysis-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #0f0f23;
+  overflow-y: auto;
+}
+
+.page-header {
+  padding: 20rpx 24rpx;
+  border-top: 2px solid transparent;
+  border-image: linear-gradient(90deg, #6c63ff, #4834d4, #6c63ff) 1;
+}
+
+.page-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #e0e0f0;
+}
+
+.game-summary {
+  text-align: center;
+  padding: 12rpx;
+}
+
+.summary-players {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #e0e0f0;
+  display: block;
+}
+
+.summary-result {
+  font-size: 20rpx;
+  color: #8888aa;
+}
+
+.review-action {
+  padding: 12rpx 24rpx;
+  text-align: center;
+}
+
+.progress-bar {
+  height: 8rpx;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4rpx;
+  margin-top: 8rpx;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6c63ff, #a78bfa);
+  border-radius: 4rpx;
+  transition: width 0.3s;
+}
+
+.summary-card {
+  margin: 8rpx 16rpx;
+  padding: 16rpx;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.summary-title {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #e0e0f0;
+  margin-bottom: 12rpx;
+  display: block;
+}
+
+.summary-grid {
+  display: flex;
+  justify-content: center;
+  gap: 12rpx;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.summary-value {
+  font-size: 32rpx;
+  font-weight: 800;
+}
+
+.summary-label {
+  font-size: 16rpx;
+  color: #8888aa;
+}
+
+.board-area {
+  display: flex;
+  justify-content: center;
+  padding: 8rpx;
+  min-height: 350rpx;
+}
+
+.nav-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12rpx;
+  padding: 12rpx;
+}
+
+.nav-btn {
+  padding: 10rpx 20rpx;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8rpx;
+  font-size: 22rpx;
+  color: #c0c0e0;
+}
+
+.nav-btn:active { background: rgba(255, 255, 255, 0.12); }
+.nav-disabled { opacity: 0.3; }
+
+.nav-info {
+  font-size: 20rpx;
+  color: #8888aa;
+  font-weight: 600;
+}
+
+.moves-section {
+  flex: 1;
+  padding: 8rpx 16rpx;
+}
+
+.back-btn {
+  text-align: center;
+  padding: 16rpx;
+  font-size: 22rpx;
+  color: #6c63ff;
+  font-weight: 600;
+}

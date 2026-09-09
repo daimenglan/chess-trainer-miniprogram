@@ -1,0 +1,87 @@
+<view class="profile-page">
+  <!-- 未登录 -->
+  <view wx:if="{{!isLoggedIn}}" class="login-prompt">
+    <view class="prompt-icon">👤</view>
+    <text class="prompt-title">登录后查看更多</text>
+    <text class="prompt-desc">保存对局、查看棋手档案、分析棋力</text>
+    <view class="btn-primary" catchtap="goToLogin">登录 / 注册</view>
+  </view>
+
+  <!-- 已登录 -->
+  <view wx:else class="profile-content">
+    <scroll-view scroll-y>
+      <!-- 用户信息卡片 -->
+      <view class="user-card glass">
+        <view class="avatar">{{avatarInitial}}</view>
+        <view class="user-info">
+          <text class="user-name">{{user.username || '棋手'}}</text>
+          <text class="user-bio">{{profile.bio || '暂无简介'}}</text>
+          <text wx:if="{{profile.createdAtFormatted}}" class="user-join">加入时间：{{profile.createdAtFormatted}}</text>
+        </view>
+        <view class="user-actions">
+          <view class="action-btn" catchtap="onEditProfile">✏️</view>
+          <view class="action-btn" catchtap="onLogout">🚪</view>
+        </view>
+      </view>
+
+      <!-- 统计卡片 -->
+      <view class="stats-card">
+        <view class="stat-item">
+          <text class="stat-value">{{profile.totalGames || 0}}</text>
+          <text class="stat-label">总局数</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-value" style="color:#4ade80">{{profile.wins || 0}}</text>
+          <text class="stat-label">胜</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-value" style="color:#f87171">{{profile.losses || 0}}</text>
+          <text class="stat-label">负</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-value" style="color:#facc15">{{profile.draws || 0}}</text>
+          <text class="stat-label">和</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-value">{{profile.winRate || 0}}%</text>
+          <text class="stat-label">胜率</text>
+        </view>
+      </view>
+
+      <!-- 棋手档案分析 -->
+      <view class="analysis-section">
+        <view class="section-header">
+          <text class="section-title">📊 棋手档案分析</text>
+          <view class="analyze-btn {{loadingAnalysis ? 'btn-loading' : ''}}" catchtap="onAnalyze">
+            <text>{{loadingAnalysis ? '分析中...' : '开始分析'}}</text>
+          </view>
+        </view>
+
+        <!-- Tab切换 -->
+        <view wx:if="{{profileAnalysis}}" class="analysis-tabs">
+          <view class="tab-item {{activeTab === item.key ? 'tab-active' : ''}}" 
+                wx:for="{{analysisTabs}}" wx:key="key" data-tab="{{item.key}}" catchtap="onTabSwitch">
+            <text>{{item.label}}</text>
+          </view>
+        </view>
+
+        <!-- 分析内容 -->
+        <view class="analysis-content">
+          <view wx:if="{{!profileAnalysis && !loadingAnalysis}}" class="analysis-placeholder">
+            <text>点击"开始分析"生成你的棋手档案</text>
+          </view>
+          <view wx:if="{{loadingAnalysis}}" class="analysis-loading">分析中...</view>
+          <view wx:if="{{profileAnalysis && !loadingAnalysis}}" class="analysis-text">
+            <text>{{profileAnalysis[activeTab] || '暂无数据'}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 快捷操作 -->
+      <view class="quick-actions">
+        <view class="quick-btn" catchtap="goToSettings">⚙️ 设置</view>
+        <view class="quick-btn" catchtap="onChangePassword">🔑 修改密码</view>
+      </view>
+    </scroll-view>
+  </view>
+</view>

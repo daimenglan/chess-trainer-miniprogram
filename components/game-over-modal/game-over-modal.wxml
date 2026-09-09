@@ -1,0 +1,12 @@
+<view wx:if="{{show}}" class="modal-overlay">
+  <view class="game-over-modal glass-strong fade-in">
+    <view class="emoji">{{emoji}}</view>
+    <view class="title">{{title}}</view>
+    <view class="subtitle">{{subtitle}}</view>
+    <view class="result-text">{{resultText}}</view>
+    <view class="actions">
+      <view class="action-btn" catchtap="onUndo">↩ 悔棋复盘</view>
+      <view class="action-btn action-primary" catchtap="onNewGame">再来一局</view>
+    </view>
+  </view>
+</view>

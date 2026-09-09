@@ -1,0 +1,90 @@
+"use strict";
+/**
+ * 国际象棋走法描述工具
+ * 转换 UCI 走法为中文描述
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PIECE_NAMES = void 0;
+exports.describeMove = describeMove;
+exports.uciToSanLine = uciToSanLine;
+exports.getPieceAt = getPieceAt;
+const chessjs_1 = require("./chessjs");
+const PIECE_NAMES = {
+    p: '兵', n: '马', b: '象', r: '车', q: '后', k: '王',
+};
+exports.PIECE_NAMES = PIECE_NAMES;
+/**
+ * 在 FEN 局面下执行 UCI 走法，返回中文描述
+ */
+function describeMove(fen, uci) {
+    let san = `${uci.slice(0, 2)}-${uci.slice(2, 4)}`;
+    let pieceName = '';
+    let piece = '';
+    try {
+        const chess = new chessjs_1.Chess(fen);
+        const from = uci.slice(0, 2);
+        const p = chess.get(from);
+        if (p) {
+            piece = p.type;
+            pieceName = PIECE_NAMES[p.type] || '';
+        }
+        const m = chess.move({
+            from: uci.slice(0, 2),
+            to: uci.slice(2, 4),
+            promotion: (uci.length > 4 ? uci.slice(4) : 'q'),
+        });
+        if (m)
+            san = m.san;
+    }
+    catch (e) {
+        // 非法走法时保留 from-to 形式
+    }
+    return { pieceName, san, piece };
+}
+/**
+ * 将 UCI 走法序列转换为 SAN 序列
+ */
+function uciToSanLine(fen, uciMoves, limit = 6) {
+    const sans = [];
+    try {
+        const chess = new chessjs_1.Chess(fen);
+        for (const uci of uciMoves.slice(0, limit)) {
+            if (!uci || uci.length < 4)
+                break;
+            const m = chess.move({
+                from: uci.slice(0, 2),
+                to: uci.slice(2, 4),
+                promotion: (uci.length > 4 ? uci.slice(4) : 'q'),
+            });
+            if (!m)
+                break;
+            sans.push(m.san);
+            if (chess.isGameOver())
+                break;
+        }
+    }
+    catch (e) {
+        // 序列中断
+    }
+    return sans;
+}
+/**
+ * 获取棋盘上某格子的棋子描述
+ */
+function getPieceAt(fen, square) {
+    try {
+        const chess = new chessjs_1.Chess(fen);
+        const p = chess.get(square);
+        if (!p)
+            return null;
+        return {
+            type: p.type,
+            color: p.color,
+            name: PIECE_NAMES[p.type] || '',
+            symbol: p.color === 'w' ? p.type.toUpperCase() : p.type.toLowerCase(),
+        };
+    }
+    catch {
+        return null;
+    }
+}

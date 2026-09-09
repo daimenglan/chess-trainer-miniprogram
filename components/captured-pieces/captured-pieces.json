@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "chess-piece": "../chess-piece/chess-piece"
+  }
+}

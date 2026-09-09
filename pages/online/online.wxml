@@ -1,0 +1,110 @@
+<view class="online-page">
+  <!-- ===== 空闲状态：匹配按钮 ===== -->
+  <block wx:if="{{status === 'idle' || status === 'matching'}}">
+    <view class="match-container">
+      <view class="match-title">在线对弈</view>
+      <view class="match-desc">系统自动匹配对手，随机分配黑白方</view>
+      <view class="match-card" catchtap="onJoinMatch">
+        <view class="match-icon" wx:if="{{status === 'idle'}}">🎯</view>
+        <view class="match-icon spinning" wx:if="{{status === 'matching'}}">🔄</view>
+        <text class="match-label">{{status === 'idle' ? '匹配对手' : '匹配中...'}}</text>
+      </view>
+      <text wx:if="{{status === 'matching'}}" class="match-timer">
+        已等待 {{waitingSeconds}} 秒
+      </text>
+      <view wx:if="{{status === 'matching'}}" class="match-cancel" catchtap="onCancelMatch">
+        ✕ 取消匹配
+      </view>
+    </view>
+  </block>
+
+  <!-- ===== 对局中 ===== -->
+  <block wx:if="{{status === 'playing'}}">
+    <!-- 对手信息 -->
+    <view class="opponent-bar">
+      <view class="player-info">
+        <text class="player-color-signal {{opponentColor === 'w' ? 'color-white' : 'color-black'}}"></text>
+        <text class="player-name">{{opponentName}}</text>
+        <text class="player-time {{opponentTime <= 30 ? 'time-low' : ''}}">
+          {{formatTime(opponentTime)}}
+        </text>
+      </view>
+      <text class="vs-label">VS</text>
+    </view>
+
+    <!-- 棋盘 -->
+    <view class="online-board-area">
+      <chess-board id="onlineBoard"
+        fen="{{fen}}"
+        isCheck="{{isCheck}}"
+        interactive="{{isMyTurn && !gameOver}}"
+        flipped="{{flipped}}"
+        selectedSquare="{{selectedSquare}}"
+        legalMoves="{{legalMoves}}"
+        boardColorPreset="blueWhite"
+        bind:squaretap="onSquareTap">
+      </chess-board>
+    </view>
+
+    <!-- 己方信息 -->
+    <view class="my-info">
+      <view class="player-info">
+        <text class="player-color-signal {{myColor === 'w' ? 'color-white' : 'color-black'}}"></text>
+        <text class="player-name">{{myName}}</text>
+        <text class="player-time {{myTime <= 30 ? 'time-low' : ''}}">
+          {{formatTime(myTime)}}
+        </text>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-bar">
+      <view class="action-btn {{isMyTurn ? '' : 'action-disabled'}}" catchtap="onFlipBoard">
+        🔄 翻转
+      </view>
+      <view class="action-btn {{canOfferDraw ? '' : 'action-disabled'}}" catchtap="onDrawOffer">
+        🤝 和棋
+      </view>
+      <view class="action-btn {{canTakeback ? '' : 'action-disabled'}}" catchtap="onTakebackRequest">
+        ↩ 悔棋
+      </view>
+      <view class="action-btn action-danger" catchtap="onResign">
+        🏳️ 认输
+      </view>
+    </view>
+
+    <!-- 状态提示 -->
+    <view wx:if="{{statusMessage}}" class="status-toast {{statusToastType}}">
+      <text>{{statusMessage}}</text>
+    </view>
+
+    <!-- 和棋/悔棋确认弹窗 -->
+    <view wx:if="{{showConfirm}}" class="confirm-overlay" catchtap="onConfirmCancel">
+      <view class="confirm-dialog" catchtap="stopPropagation">
+        <text class="confirm-title">{{confirmTitle}}</text>
+        <text class="confirm-desc">{{confirmDesc}}</text>
+        <view class="confirm-actions">
+          <view class="confirm-btn" catchtap="onConfirmYes">同意</view>
+          <view class="confirm-btn confirm-btn-no" catchtap="onConfirmCancel">拒绝</view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- ===== 对局结束弹窗 ===== -->
+  <view wx:if="{{showGameOver}}" class="overlay">
+    <view class="gameover-dialog">
+      <text class="gameover-icon">{{gameOverIcon}}</text>
+      <text class="gameover-title">{{gameOverTitle}}</text>
+      <text class="gameover-desc">{{gameOverDesc}}</text>
+      <view class="gameover-actions">
+        <view class="btn-primary" catchtap="onRematch">🔁 再来一局</view>
+        <view class="btn-secondary" catchtap="onBackToLobby">🏠 回到大厅</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 升变弹窗 -->
+  <promotion-dialog show="{{showPromotion}}" color="{{myColor}}"
+                    bind:select="onPromotionSelect" bind:cancel="onPromotionCancel"></promotion-dialog>
+</view>
