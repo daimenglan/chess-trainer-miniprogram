@@ -18,6 +18,109 @@
   color: var(--text-primary);
 }
 
+/* 头部操作按钮 */
+.header-actions {
+  display: flex;
+  gap: 8rpx;
+  margin-top: 12rpx;
+}
+
+.header-btn {
+  padding: 6rpx 14rpx;
+  background: var(--bg-card-hover);
+  border-radius: 8px;
+  font-size: 18rpx;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+/* 外部搜索面板 */
+.external-search-panel {
+  padding: 12rpx 16rpx;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.search-row {
+  display: flex;
+  gap: 8rpx;
+  align-items: center;
+}
+
+.source-picker {
+  padding: 8rpx 12rpx;
+  background: var(--bg-card-hover);
+  border-radius: 8px;
+  font-size: 18rpx;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.external-results {
+  margin-top: 12rpx;
+  max-height: 300rpx;
+  overflow-y: auto;
+}
+
+.empty-hint {
+  font-size: 18rpx;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 20rpx 0;
+}
+
+.ext-result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12rpx;
+  background: var(--bg-card-hover);
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.ext-result-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ext-players {
+  font-size: 20rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: block;
+}
+
+.ext-meta {
+  font-size: 16rpx;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2rpx;
+}
+
+.ext-result-action {
+  padding: 8rpx 16rpx;
+  background: var(--success-bg);
+  color: var(--success);
+  border-radius: 8px;
+  font-size: 18rpx;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* URL导入面板 */
+.url-import-panel {
+  padding: 12rpx 16rpx;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.url-input-row {
+  display: flex;
+  gap: 8rpx;
+  align-items: center;
+}
+
 .tab-bar {
   display: flex;
   background: var(--bg-card);

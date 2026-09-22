@@ -1,9 +1,10 @@
-<view class="settings-page {{__theme__ ? 'theme-' + __theme__ : ''}} {{__theme__ ? 'theme-' + __theme__ : ''}}">
+<view class="settings-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
   <view class="page-header glass gradient-top">
     <text class="page-title">⚙️ 设置</text>
   </view>
 
   <scroll-view class="settings-content" scroll-y>
+
     <!-- 系统主题 -->
     <view class="setting-section">
       <text class="section-title">系统主题</text>
@@ -39,22 +40,22 @@
       <text class="section-title">显示选项</text>
       <view class="setting-row">
         <text class="setting-label">走法提示</text>
-        <switch checked="{{settings.showHints}}" data-key="showHints" 
+        <switch checked="{{settings.showHints}}" data-key="showHints"
                 bindchange="onToggle" color="#6c63ff" />
       </view>
       <view class="setting-row">
         <text class="setting-label">3D 棋子效果</text>
-        <switch checked="{{settings.pieceStyle3d}}" data-key="pieceStyle3d" 
+        <switch checked="{{settings.pieceStyle3d}}" data-key="pieceStyle3d"
                 bindchange="onToggle" color="#6c63ff" />
       </view>
       <view class="setting-row">
         <text class="setting-label">音效</text>
-        <switch checked="{{settings.soundEnabled}}" data-key="soundEnabled" 
+        <switch checked="{{settings.soundEnabled}}" data-key="soundEnabled"
                 bindchange="onToggle" color="#6c63ff" />
       </view>
       <view class="setting-row">
         <text class="setting-label">初始翻转棋盘</text>
-        <switch checked="{{settings.boardFlipped}}" data-key="boardFlipped" 
+        <switch checked="{{settings.boardFlipped}}" data-key="boardFlipped"
                 bindchange="onToggle" color="#6c63ff" />
       </view>
     </view>
@@ -64,14 +65,14 @@
       <text class="section-title">分析设置</text>
       <view class="setting-row">
         <text class="setting-label">分析深度：{{settings.analysisDepth}}</text>
-        <slider min="5" max="20" step="1" value="{{settings.analysisDepth}}" 
-                bindchange="onDepthChange" activeColor="#6c63ff" 
+        <slider min="5" max="20" step="1" value="{{settings.analysisDepth}}"
+                bindchange="onDepthChange" activeColor="#6c63ff"
                 backgroundColor="rgba(255,255,255,0.1)" block-size="16" style="width: 240rpx" />
       </view>
       <view class="setting-row">
         <text class="setting-label">多PV：{{settings.analysisMultiPv}}</text>
-        <slider min="1" max="5" step="1" value="{{settings.analysisMultiPv}}" 
-                bindchange="onMultiPvChange" activeColor="#6c63ff" 
+        <slider min="1" max="5" step="1" value="{{settings.analysisMultiPv}}"
+                bindchange="onMultiPvChange" activeColor="#6c63ff"
                 backgroundColor="rgba(255,255,255,0.1)" block-size="16" style="width: 240rpx" />
       </view>
     </view>
@@ -79,12 +80,83 @@
     <!-- AI难度 -->
     <view class="setting-section">
       <text class="section-title">AI难度：{{settings.aiDifficulty}}</text>
-      <slider min="1" max="10" step="1" value="{{settings.aiDifficulty}}" 
+      <slider min="1" max="10" step="1" value="{{settings.aiDifficulty}}"
               bindchange="onSliderChange" data-key="aiDifficulty"
               activeColor="#6c63ff" backgroundColor="rgba(255,255,255,0.1)" block-size="16" />
       <view class="slider-marks">
         <text>入门</text>
         <text>大师</text>
+      </view>
+    </view>
+
+    <!-- 通知设置 -->
+    <view class="setting-section">
+      <view class="setting-row" catchtap="onToggleNotificationSettings">
+        <text class="setting-label">🔔 通知设置</text>
+        <text class="arrow">{{showNotificationSettings ? '▼' : '▶'}}</text>
+      </view>
+      <view wx:if="{{showNotificationSettings}}" class="sub-settings">
+        <view class="setting-row">
+          <text class="setting-label">声音提醒</text>
+          <switch checked="{{settings.soundEnabled}}" data-key="soundEnabled"
+                  bindchange="onNotificationToggle" color="#6c63ff" />
+        </view>
+        <view class="setting-row">
+          <text class="setting-label">振动反馈</text>
+          <switch checked="{{settings.vibrationEnabled || false}}" data-key="vibrationEnabled"
+                  bindchange="onNotificationToggle" color="#6c63ff" />
+        </view>
+        <view class="setting-row">
+          <text class="setting-label">对局提醒</text>
+          <switch checked="{{settings.gameNotification || false}}" data-key="gameNotification"
+                  bindchange="onNotificationToggle" color="#6c63ff" />
+        </view>
+      </view>
+    </view>
+
+    <!-- 隐私设置 -->
+    <view class="setting-section">
+      <view class="setting-row" catchtap="onTogglePrivacySettings">
+        <text class="setting-label">🔒 隐私设置</text>
+        <text class="arrow">{{showPrivacySettings ? '▼' : '▶'}}</text>
+      </view>
+      <view wx:if="{{showPrivacySettings}}" class="sub-settings">
+        <view class="setting-row">
+          <text class="setting-label">数据分析共享</text>
+          <switch checked="{{settings.analyticsEnabled || false}}" data-key="analyticsEnabled"
+                  bindchange="onPrivacyToggle" color="#6c63ff" />
+        </view>
+        <view class="setting-row">
+          <text class="setting-label">允许好友查看</text>
+          <switch checked="{{settings.profileVisible || false}}" data-key="profileVisible"
+                  bindchange="onPrivacyToggle" color="#6c63ff" />
+        </view>
+      </view>
+    </view>
+
+    <!-- 数据管理 -->
+    <view class="setting-section">
+      <view class="setting-row" catchtap="onToggleDataSettings">
+        <text class="setting-label">💾 数据管理</text>
+        <text class="arrow">{{showDataSettings ? '▼' : '▶'}}</text>
+      </view>
+      <view wx:if="{{showDataSettings}}" class="sub-settings">
+        <view class="setting-row">
+          <text class="setting-label">缓存占用</text>
+          <text class="setting-value">{{cacheSize}}</text>
+        </view>
+        <view class="setting-row" catchtap="onClearCache">
+          <text class="setting-label">清除缓存</text>
+          <text class="arrow">›</text>
+        </view>
+        <view class="setting-row" catchtap="onExportData">
+          <text class="setting-label">导出数据</text>
+          <text class="arrow">›</text>
+        </view>
+        <view class="setting-row" catchtap="onResetSettings">
+          <text class="setting-label">恢复默认设置</text>
+          <text class="arrow">›</text>
+        </view>
       </view>
     </view>
 
@@ -105,6 +177,44 @@
         </view>
       </view>
     </view>
+
+    <!-- 关于 -->
+    <view class="setting-section">
+      <view class="setting-row" catchtap="onToggleAbout">
+        <text class="setting-label">ℹ️ 关于</text>
+        <text class="arrow">{{showAbout ? '▼' : '▶'}}</text>
+      </view>
+      <view wx:if="{{showAbout}}" class="sub-settings">
+        <view class="setting-row">
+          <text class="setting-label">版本号</text>
+          <text class="setting-value">{{appVersion}}</text>
+        </view>
+        <view class="setting-row" catchtap="onCheckUpdate">
+          <text class="setting-label">检查更新</text>
+          <text class="arrow">›</text>
+        </view>
+        <view class="setting-row" catchtap="onAboutPage">
+          <text class="setting-label">关于页面</text>
+          <text class="arrow">›</text>
+        </view>
+        <view class="setting-row" catchtap="onFeedback">
+          <text class="setting-label">意见与建议</text>
+          <text class="arrow">›</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 重置确认弹窗 -->
+    <view wx:if="{{showResetConfirm}}" class="modal-overlay" catchtap="onCancelReset">
+      <view class="modal-card glass-strong" catchtap="stopPropagation">
+        <text class="modal-title">确认恢复默认</text>
+        <text class="modal-desc">所有设置将恢复为默认值，此操作不可撤销</text>
+        <view class="modal-actions">
+          <view class="modal-btn" catchtap="onCancelReset">取消</view>
+          <view class="modal-btn modal-btn-primary" catchtap="onConfirmReset">确认</view>
+        </view>
+      </view>
+    </view>
+
   </scroll-view>
-  
 </view>

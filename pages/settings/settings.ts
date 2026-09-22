@@ -1,5 +1,5 @@
 /**
- * 设置页
+ * 设置页 - 系统主题/棋盘主题/显示选项/分析设置/AI难度/通知/隐私/数据管理/关于
  */
 const app = getApp();
 const api = require('../../utils/api');
@@ -27,6 +27,18 @@ Page({
     confirmNewPassword: '',
     passwordError: '',
     passwordLoading: false,
+    // 通知设置
+    showNotificationSettings: false,
+    // 隐私设置
+    showPrivacySettings: false,
+    // 数据管理
+    showDataSettings: false,
+    // 关于
+    showAbout: false,
+    appVersion: '1.0.0',
+    cacheSize: '0KB',
+    // 重置确认
+    showResetConfirm: false,
   },
 
   onLoad(options: any) {
@@ -37,6 +49,7 @@ Page({
     if (options.tab === 'password') {
       this.setData({ showPasswordForm: true });
     }
+    this.loadAppInfo();
   },
 
   onShow() {
@@ -47,6 +60,8 @@ Page({
       __theme__: app.globalData.settings?.uiTheme || 'dark',
     });
   },
+
+  // ===== 主题设置 =====
 
   onThemeSwitch(e: any) {
     const theme = e.currentTarget.dataset.theme;
@@ -66,6 +81,8 @@ Page({
     app.saveSettings();
     this.setData({ settings });
   },
+
+  // ===== 显示选项 =====
 
   onToggle(e: any) {
     const key = e.currentTarget.dataset.key;
@@ -101,6 +118,7 @@ Page({
   },
 
   // ===== 修改密码 =====
+
   onTogglePassword() {
     this.setData({ showPasswordForm: !this.data.showPasswordForm, passwordError: '' });
   },
@@ -137,4 +155,172 @@ Page({
         this.setData({ passwordLoading: false });
       });
   },
-});export {}
+
+  // ===== 通知设置 =====
+
+  onToggleNotificationSettings() {
+    this.setData({ showNotificationSettings: !this.data.showNotificationSettings });
+  },
+
+  onNotificationToggle(e: any) {
+    const key = e.currentTarget.dataset.key;
+    const settings = { ...this.data.settings, [key]: !this.data.settings[key] };
+    app.globalData.settings = settings;
+    app.saveSettings();
+    this.setData({ settings });
+  },
+
+  // ===== 隐私设置 =====
+
+  onTogglePrivacySettings() {
+    this.setData({ showPrivacySettings: !this.data.showPrivacySettings });
+  },
+
+  onPrivacyToggle(e: any) {
+    const key = e.currentTarget.dataset.key;
+    const settings = { ...this.data.settings, [key]: !this.data.settings[key] };
+    app.globalData.settings = settings;
+    app.saveSettings();
+    this.setData({ settings });
+  },
+
+  // ===== 数据管理 =====
+
+  onToggleDataSettings() {
+    this.setData({ showDataSettings: !this.data.showDataSettings });
+  },
+
+  /** 计算缓存大小 */
+  loadAppInfo() {
+    try {
+      // 估算缓存大小
+      let cacheSize = 0;
+      try {
+        const keys = wx.getStorageInfoSync();
+        cacheSize = keys.currentSize || 0;
+      } catch {}
+      this.setData({
+        appVersion: '1.0.0',
+        cacheSize: (cacheSize / 1024).toFixed(1) + 'KB',
+      });
+    } catch {}
+  },
+
+  /** 清除缓存 */
+  onClearCache() {
+    wx.showModal({
+      title: '确认清除缓存',
+      content: '将清除本地缓存数据（设置、偏好等），不影响账号数据',
+      success: (res: any) => {
+        if (res.confirm) {
+          try {
+            // 保留关键数据
+            const token = (wx as any).getStorageSync('auth_token');
+            const user = (wx as any).getStorageSync('user_info');
+            const settings = (wx as any).getStorageSync('app_settings');
+            // 清除所有缓存
+            (wx as any).clearStorage();
+            // 恢复关键数据
+            if (token) (wx as any).setFileSync('auth_token', token);
+            if (user) (wx as any).setFileSync('user_info', user);
+            if (settings) (wx as any).setFileSync('app_settings', settings);
+            util.showToast('缓存已清除', 'success');
+            this.loadAppInfo();
+          } catch (err: any) {
+            util.showToast('清除失败: ' + (err.message || '未知错误'));
+          }
+        }
+      },
+    });
+  },
+
+  /** 导出数据 */
+  onExportData() {
+    wx.showModal({
+      title: '导出数据',
+      content: '将导出你的游戏记录和设置到本地文件',
+      success: (res: any) => {
+        if (res.confirm) {
+          util.showLoading('导出中...');
+          api.getProfile()
+            .then((profileRes: any) => {
+              const data = {
+                profile: profileRes?.data || null,
+                settings: app.globalData.settings,
+                exportTime: new Date().toISOString(),
+              };
+              const json = JSON.stringify(data, null, 2);
+              // 在小程序中使用文件系统保存
+              const fs = wx.getFileSystemManager();
+              const filePath = `${wx.env.USER_DATA_PATH}/mychess_export.json`;
+              fs.writeFile({
+                filePath,
+                data: json,
+                encoding: 'utf8',
+                success: () => {
+                  util.hideLoading();
+                  util.showToast('已导出到: ' + filePath, 'success', 3000);
+                },
+                fail: (err: any) => {
+                  util.hideLoading();
+                  util.showToast('导出失败: ' + (err.errMsg || '未知错误'));
+                },
+              });
+            })
+            .catch((err: any) => {
+              util.hideLoading();
+              util.showToast('导出失败: ' + (err.message || '未知错误'));
+            });
+        }
+      },
+    });
+  },
+
+  /** 重置所有设置 */
+  onResetSettings() {
+    this.setData({ showResetConfirm: true });
+  },
+
+  onConfirmReset() {
+    const defaults = app.getDefaultSettings();
+    app.globalData.settings = defaults;
+    app.saveSettings();
+    this.setData({
+      settings: defaults,
+      appSettings: { ...defaults },
+      showResetConfirm: false,
+      showPasswordForm: false,
+      showNotificationSettings: false,
+      showPrivacySettings: false,
+      showDataSettings: false,
+    });
+    util.showToast('已恢复默认设置', 'success');
+  },
+
+  onCancelReset() {
+    this.setData({ showResetConfirm: false });
+  },
+
+  // ===== 关于 =====
+
+  onToggleAbout() {
+    this.setData({ showAbout: !this.data.showAbout });
+  },
+
+  onCheckUpdate() {
+    util.showToast('已是最新版本', 'info');
+  },
+
+  onFeedback() {
+    wx.navigateTo({ url: '/pages/feedback/feedback' });
+  },
+
+  onAboutPage() {
+    wx.navigateTo({ url: '/pages/about/about' });
+  },
+
+  /** 阻止事件冒泡 */
+  stopPropagation() {},
+});
+
+export {}

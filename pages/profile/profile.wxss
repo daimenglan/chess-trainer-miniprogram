@@ -534,6 +534,105 @@
   flex-shrink: 0;
 }
 
+.section-link {
+  font-size: 18rpx;
+  color: var(--accent);
+}
+
+/* ===== 最近对局 ===== */
+.recent-games-card {
+  margin: 0 16rpx 16rpx;
+  background: var(--bg-card);
+  border-radius: 12rpx;
+  padding: 16rpx;
+}
+
+.games-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  max-height: 400rpx;
+}
+
+.game-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 12rpx;
+  background: var(--bg-card-hover);
+  border-radius: 10rpx;
+}
+
+.game-row-players {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  flex: 1;
+  min-width: 0;
+}
+
+.game-row .player-name {
+  font-size: 18rpx;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vs-text {
+  font-size: 14rpx;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.game-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  flex-shrink: 0;
+}
+
+.result-badge {
+  font-size: 14rpx;
+  padding: 2rpx 8rpx;
+  border-radius: 6rpx;
+  font-weight: 600;
+}
+.badge-win { background: rgba(16,185,129,0.15); color: #10b981; }
+.badge-loss { background: rgba(239,68,68,0.15); color: #ef4444; }
+.badge-draw { background: rgba(245,158,11,0.15); color: #f59e0b; }
+
+.game-diff {
+  font-size: 14rpx;
+  color: var(--text-dim);
+}
+
+.game-date {
+  font-size: 14rpx;
+  color: var(--text-dim);
+}
+
+.game-row-actions {
+  flex-shrink: 0;
+}
+
+.action-btn-sm {
+  font-size: 16rpx;
+  padding: 6rpx 12rpx;
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-radius: 8rpx;
+  border: 1px solid var(--accent-border);
+}
+
+/* ===== 成就墙 ===== */
+.achievements-card {
+  margin: 0 16rpx 16rpx;
+  background: var(--bg-card);
+  border-radius: 12rpx;
+  padding: 16rpx;
+}
+
 /* ===== AI定级入口 ===== */
 .assessment-entry {
   display: flex;

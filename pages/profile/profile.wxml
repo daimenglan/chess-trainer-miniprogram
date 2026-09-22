@@ -88,6 +88,47 @@
         </view>
       </view>
 
+      <!-- ===== 最近对局 ===== -->
+      <view class="recent-games-card" wx:if="{{recentGames.length > 0 || loadingGames}}">
+        <view class="section-header">
+          <text class="section-title">🎮 最近对局</text>
+          <view class="section-link" catchtap="onShowAllGames">查看全部 →</view>
+        </view>
+        <view wx:if="{{loadingGames}}" class="analysis-loading">加载中...</view>
+        <view wx:else class="games-list">
+          <view class="game-row" wx:for="{{recentGames}}" wx:key="gameId" wx:for-index="idx">
+            <view class="game-row-players">
+              <text class="player-name">{{item.whiteName}}</text>
+              <text class="vs-text">VS</text>
+              <text class="player-name">{{item.blackName}}</text>
+            </view>
+            <view class="game-row-meta">
+              <text class="result-badge {{item.resultLabel === '白胜' ? 'badge-win' : item.resultLabel === '黑胜' ? 'badge-loss' : 'badge-draw'}}">{{item.resultLabel}}</text>
+              <text wx:if="{{item.difficulty}}" class="game-diff">难度{{item.difficulty}}</text>
+              <text wx:if="{{item.dateFormatted}}" class="game-date">{{item.dateFormatted}}</text>
+            </view>
+            <view class="game-row-actions">
+              <view class="action-btn-sm" catchtap="onAnalyzeGame" data-idx="{{idx}}">📊 分析</view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- ===== 成就墙 ===== -->
+      <view class="achievements-card" wx:if="{{achievements.length > 0}}">
+        <view class="section-header">
+          <text class="section-title">🏆 成就墙（{{unlockedCount}}/{{achievements.length}} 已解锁）</text>
+        </view>
+        <view class="achievement-grid">
+          <view class="ach-item {{a.unlocked ? '' : 'ach-locked'}}" wx:for="{{achievements}}" wx:for-item="a" wx:key="code">
+            <view class="ach-icon-wrap {{a.unlocked ? 'ach-icon-glow' : ''}}">
+              <text>{{a.unlocked ? a.icon : '🔒'}}</text>
+            </view>
+            <text class="ach-name">{{a.name}}</text>
+          </view>
+        </view>
+      </view>
+
       <!-- 基础统计（无分析时显示简化版） -->
       <view wx:if="{{!profileAnalysis}}" class="stats-card">
         <view class="stat-item">

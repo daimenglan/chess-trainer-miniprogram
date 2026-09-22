@@ -1,6 +1,7 @@
 /**
  * 棋谱记录页
  * 两个Tab：棋谱库（公共）、我的对局
+ * 支持：搜索、ECO筛选、PGN导入、外部搜索、URL导入、棋谱分析
  */
 const app = getApp();
 const api = require('../../utils/api');
@@ -40,6 +41,18 @@ Page({
     importResult: null as any,
     errorsText: '',
     importing: false,
+    // 外部搜索
+    showExternalSearch: false,
+    externalQuery: '',
+    externalSource: 'lichess',
+    externalResults: [] as any[],
+    searchingExternal: false,
+    // URL导入
+    showUrlImport: false,
+    importUrl: '',
+    importingUrl: false,
+    // 分析
+    analyzingRecord: false,
   },
 
   onLoad() {
@@ -136,6 +149,23 @@ Page({
     }
   },
 
+  onAnalyzeRecord(e: any) {
+    const idx = e.currentTarget.dataset.idx;
+    const record = this.data.records[idx];
+    if (!record) return;
+    this.setData({ analyzingRecord: true });
+    api.analyzeChessGame(record.recordId || record.id)
+      .then((res: any) => {
+        const analysis = res?.data || res;
+        if (analysis) {
+          app.globalData._analysisGame = { ...record, analysis };
+          wx.navigateTo({ url: '/pages/analysis/analysis' });
+        }
+      })
+      .catch((err: any) => util.showToast('分析失败: ' + (err.message || '未知错误')))
+      .finally(() => this.setData({ analyzingRecord: false }));
+  },
+
   onDeleteRecord(e: any) {
     const idx = e.currentTarget.dataset.idx;
     const record = this.data.records[idx];
@@ -147,7 +177,7 @@ Page({
         if (res.confirm) {
           api.deleteRecord(record.recordId)
             .then(() => {
-              util.showToast('(success)', 'success');
+              util.showToast('已删除', 'success');
               this.loadRecords();
             })
             .catch(() => util.showToast('删除失败'));
@@ -205,6 +235,98 @@ Page({
   // 阻止事件冒泡（导入弹窗内层卡片 catchtap 配套的空处理器）
   stopPropagation() {},
 
+  // ===== 外部搜索 =====
+
+  onToggleExternalSearch() {
+    this.setData({
+      showExternalSearch: !this.data.showExternalSearch,
+      externalQuery: '',
+      externalResults: [],
+    });
+  },
+
+  onExternalQueryInput(e: any) {
+    this.setData({ externalQuery: e.detail.value });
+  },
+
+  onSourceChange(e: any) {
+    this.setData({ externalSource: e.currentTarget.dataset.source });
+  },
+
+  onExternalSearch() {
+    const query = this.data.externalQuery.trim();
+    if (!query) {
+      util.showToast('请输入搜索关键词');
+      return;
+    }
+    this.setData({ searchingExternal: true });
+    api.searchChessGamesExternal(query, this.data.externalSource, 10)
+      .then((res: any) => {
+        const results = res?.data?.results || res?.data || [];
+        this.setData({ externalResults: results });
+        if (results.length === 0) {
+          util.showToast('未找到相关棋谱', 'none');
+        }
+      })
+      .catch((err: any) => util.showToast('搜索失败: ' + (err.message || '未知错误')))
+      .finally(() => this.setData({ searchingExternal: false }));
+  },
+
+  /** 从外部搜索结果导入棋谱 */
+  onImportExternal(e: any) {
+    const idx = e.currentTarget.dataset.idx;
+    const result = this.data.externalResults[idx];
+    if (!result) return;
+    const pgn = result.pgn || result.fen;
+    if (!pgn) {
+      util.showToast('该结果没有可导入的棋谱数据');
+      return;
+    }
+    this.setData({ importing: true });
+    api.importChessRecords(pgn)
+      .then((res: any) => {
+        if (res?.data) {
+          util.showToast(`导入成功 ${res.data.count} 局`, 'success');
+          this.loadRecords();
+          this.setData({ externalResults: [] });
+        }
+      })
+      .catch((err: any) => util.showToast('导入失败: ' + (err.message || '未知错误')))
+      .finally(() => this.setData({ importing: false }));
+  },
+
+  // ===== URL导入 =====
+
+  onToggleUrlImport() {
+    this.setData({
+      showUrlImport: !this.data.showUrlImport,
+      importUrl: '',
+    });
+  },
+
+  onUrlInput(e: any) {
+    this.setData({ importUrl: e.detail.value });
+  },
+
+  onImportFromUrl() {
+    const url = this.data.importUrl.trim();
+    if (!url) {
+      util.showToast('请输入棋谱 URL');
+      return;
+    }
+    this.setData({ importingUrl: true });
+    api.importChessRecordsFromUrl(url)
+      .then((res: any) => {
+        if (res?.data) {
+          util.showToast(`导入成功 ${res.data.count} 局`, 'success');
+          this.loadRecords();
+          this.setData({ showUrlImport: false, importUrl: '' });
+        }
+      })
+      .catch((err: any) => util.showToast('导入失败: ' + (err.message || '未知错误')))
+      .finally(() => this.setData({ importingUrl: false }));
+  },
+
   // ===== 导入PGN =====
   onShowImport() {
     this.setData({ showImportModal: true, importPgnText: '', importResult: null });
@@ -239,4 +361,6 @@ Page({
         this.setData({ importing: false });
       });
   },
-});export {}
+});
+
+export {}

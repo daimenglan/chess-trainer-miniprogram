@@ -1,5 +1,5 @@
 /**
- * 个人中心页 - 棋手档案 + 训练推荐
+ * 个人中心页 - 棋手档案 + 训练推荐 + 游戏历史 + 成就墙
  */
 const app = getApp();
 const api = require('../../utils/api');
@@ -53,6 +53,15 @@ Page({
     trainingPlanError: '',
     loadingTraining: false,
 
+    // 游戏历史
+    recentGames: [] as any[],
+    loadingGames: false,
+    gamesTotal: 0,
+
+    // 成就墙
+    achievements: [] as any[],
+    unlockedCount: 0,
+
     // 管理员入口
     isAdmin: false,
   },
@@ -84,6 +93,8 @@ Page({
       });
       this.loadProfile();
       this.loadSavedAnalysis();
+      this.loadRecentGames();
+      this.loadAchievements();
     } else {
       this.setData({ user: null, isLoggedIn: false, profile: null, avatarInitial: '?', isAdmin: false });
     }
@@ -132,6 +143,80 @@ Page({
       .catch(() => {});
   },
 
+  /** 加载最近对局记录 */
+  loadRecentGames() {
+    this.setData({ loadingGames: true });
+    api.loadGames({ page: 1, limit: 10 })
+      .then((res: any) => {
+        const games = res?.data?.games || res?.data || [];
+        const formatted = (Array.isArray(games) ? games : []).map((g: any) => ({
+          ...g,
+          dateFormatted: g.date ? util.formatDate(g.date) : '',
+          whiteName: this.isPlayer(g.white) ? '你' : (g.white === 'AI' || g.white === 'ai' ? 'AI' : (g.white || '白方')),
+          blackName: this.isPlayer(g.black) ? '你' : (g.black === 'AI' || g.black === 'ai' ? 'AI' : (g.black || '黑方')),
+          resultLabel: this.getResultLabel(g.result),
+        }));
+        this.setData({
+          recentGames: formatted,
+          gamesTotal: res?.data?.total || formatted.length,
+          loadingGames: false,
+        });
+      })
+      .catch(() => {
+        this.setData({ loadingGames: false });
+      });
+  },
+
+  /** 加载成就数据 */
+  loadAchievements() {
+    api.getTrainingStats()
+      .then((res: any) => {
+        const stats = res?.data || res || null;
+        if (stats && stats.achievements) {
+          const unlocked = stats.achievements.filter((a: any) => a.unlocked);
+          this.setData({
+            achievements: stats.achievements,
+            unlockedCount: unlocked.length,
+          });
+        }
+      })
+      .catch(() => {});
+  },
+
+  /** 获取对局结果标签 */
+  getResultLabel(result: string): string {
+    if (result === '1-0') return '白胜';
+    if (result === '0-1') return '黑胜';
+    if (result === '1/2-1/2') return '和棋';
+    return result || '*';
+  },
+
+  /** 判断是否为玩家 */
+  isPlayer(type: string): boolean {
+    return type === 'player' || type === 'human' || type === '我';
+  },
+
+  /** 点击对局进行分析 */
+  onAnalyzeGame(e: any) {
+    const idx = e.currentTarget.dataset.idx;
+    const game = this.data.recentGames[idx];
+    if (game) {
+      app.globalData._analysisGame = game;
+      wx.navigateTo({ url: '/pages/analysis/analysis' });
+    }
+  },
+
+  /** 查看全部游戏历史 */
+  onShowAllGames() {
+    wx.navigateTo({ url: '/pages/records/records?tab=mygames' });
+  },
+
+  /** 跳转到对局 */
+  onGoGame() {
+    app.globalData.pendingStartAI = true;
+    wx.switchTab({ url: '/pages/index/index' });
+  },
+
   onAnalyze() {
     if (!this.data.isLoggedIn) {
       this.goToLogin();
@@ -154,6 +239,8 @@ Page({
           }
           // 分析完成后自动拉取训练推荐
           this.loadTrainingData();
+          // 重新加载成就
+          this.loadAchievements();
         }
       })
       .catch(() => util.showToast('分析失败'))
@@ -251,7 +338,7 @@ Page({
           app.setToken(null);
           app.globalData.user = null;
           (wx as any).removeStorageSync('user_info');
-          this.setData({ user: null, isLoggedIn: false, profile: null, profileAnalysis: null, trainingPlan: null, trainingStats: null });
+          this.setData({ user: null, isLoggedIn: false, profile: null, profileAnalysis: null, trainingPlan: null, trainingStats: null, recentGames: [], achievements: [] });
           wx.showToast({ title: '已退出', icon: 'success' });
         }
       },
@@ -303,13 +390,9 @@ Page({
     wx.navigateTo({ url: `/pages/puzzles/puzzles?${params.join('&')}` });
   },
 
-  onGoGame() {
-    app.globalData.pendingStartAI = true;
-    wx.switchTab({ url: '/pages/index/index' });
-  },
-
   onGoAssessment() {
     wx.navigateTo({ url: '/pages/assessment/assessment' });
   },
 });
+
 export {}
