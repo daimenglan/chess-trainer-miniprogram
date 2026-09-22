@@ -1,0 +1,28 @@
+<view class="admin-page theme-{{__theme__}}">
+  <scroll-view scroll-y class="page-body">
+    <view class="page-header"><text class="page-title">分销管理</text></view>
+    <view wx:if="{{loading}}" class="loading-tip">加载中...</view>
+    <view class="entry-row">
+      <view class="entry-card" catchtap="goDistributors">
+        <view class="entry-icon">👥</view>
+        <view class="entry-info"><view class="entry-title">分销商管理</view><view class="entry-desc">审核与等级设置</view></view>
+        <view class="entry-arrow">›</view>
+      </view>
+      <view class="entry-card" catchtap="goRecords">
+        <view class="entry-icon">💰</view>
+        <view class="entry-info"><view class="entry-title">佣金记录</view><view class="entry-desc">分销收益明细</view></view>
+        <view class="entry-arrow">›</view>
+      </view>
+      <view class="entry-card" catchtap="goRules">
+        <view class="entry-icon">⚙️</view>
+        <view class="entry-info"><view class="entry-title">佣金规则</view><view class="entry-desc">分润比例配置</view></view>
+        <view class="entry-arrow">›</view>
+      </view>
+    </view>
+    <view class="section-title">全局开关</view>
+    <view class="switch-row">
+      <text class="switch-label">分销系统启用</text>
+      <switch checked="{{settings.enabled}}" color="#6c63ff" bindchange="onEnabledChange" />
+    </view>
+  </scroll-view>
+</view>

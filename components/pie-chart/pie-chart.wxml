@@ -1,0 +1,15 @@
+<view class="pie-chart-wrap">
+  <view class="pie-body">
+    <view class="pie-canvas-box">
+      <canvas wx:if="{{hasData}}" id="pie" type="2d" class="pie-canvas"></canvas>
+      <view wx:else class="pie-empty">暂无数据</view>
+    </view>
+    <view class="pie-legend">
+      <view class="legend-row" wx:for="{{legend}}" wx:key="index">
+        <view class="legend-dot" style="background: {{item.color}};"></view>
+        <text class="legend-label">{{item.label}}</text>
+        <text class="legend-value">{{item.value}}</text>
+      </view>
+    </view>
+  </view>
+</view>

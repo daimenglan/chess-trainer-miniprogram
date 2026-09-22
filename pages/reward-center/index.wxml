@@ -1,0 +1,26 @@
+<view class="page" __theme__="{{__theme__}}">
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="onBack">
+      <text class="nav-back-icon">←</text>
+      <text class="nav-back-text">返回</text>
+    </view>
+    <text class="nav-title">奖励中心</text>
+  </view>
+
+  <scroll-view class="scroll-content" scroll-y="true">
+    <view class="reward-list">
+      <view class="reward-card" wx:for="{{rewards}}" wx:key="id">
+        <text class="reward-icon">🎁</text>
+        <view class="reward-info">
+          <text class="reward-name">{{item.configName || '兑换'}}</text>
+          <text class="reward-desc">数量: {{item.amount || 0}} 次</text>
+          <text class="reward-date">{{item.createdAt}}</text>
+        </view>
+      </view>
+      <view class="empty-tip" wx:if="{{rewards.length === 0 && !loading}}">
+        <text>暂无奖励记录</text>
+      </view>
+      <view class="loading-tip" wx:if="{{loading}}"><text>加载中...</text></view>
+    </view>
+  </scroll-view>
+</view>

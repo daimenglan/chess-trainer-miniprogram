@@ -1,0 +1,427 @@
+<view class="assessment-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
+  <view class="page-scroll">
+
+    <!-- 错误提示 -->
+    <view wx:if="{{error}}" class="error-banner">
+      <text class="error-text">⚠️ {{error}}</text>
+      <text class="error-close" catchtap="onDismissError">✕</text>
+    </view>
+
+    <!-- ============ 1. 介绍页 ============ -->
+    <view wx:if="{{stage == 'intro'}}" class="stage-intro">
+      <view class="hero-card">
+        <view class="hero-icon">🧭</view>
+        <view class="hero-content">
+          <text class="hero-title">三步找到你的棋力坐标</text>
+          <text class="hero-desc">回答几个简单问题 → 做 8-15 道自适应题 → 与 AI 下完一局复盘分析。三步完成后获得一份综合定级报告。报告会永久保存，随时可以回来继续完成。</text>
+        </view>
+      </view>
+
+      <view class="step-grid">
+        <view class="step-card">
+          <text class="step-icon">📝</text>
+          <text class="step-title">1. 问卷测评</text>
+          <text class="step-desc">根据回答评估你的基础水平，确定出题难度起点</text>
+        </view>
+        <view class="step-card">
+          <text class="step-icon">🧩</text>
+          <text class="step-title">2. 做题测评</text>
+          <text class="step-desc">完成自适应难度的战术题，系统智能评估你的战术水平</text>
+        </view>
+        <view class="step-card">
+          <text class="step-icon">🎮</text>
+          <text class="step-title">3. 对弈测评</text>
+          <text class="step-desc">与 AI 下完一局，引擎复盘分析走子质量，生成定级报告</text>
+        </view>
+      </view>
+
+      <view class="intro-actions">
+        <view class="btn-primary {{loadingQuestions ? 'btn-disabled' : ''}}" catchtap="onStartQuestionnaire">{{loadingQuestions ? '⏳ 正在加载问卷…' : '🚀 开始定级测评'}}</view>
+        <view wx:if="{{history.length > 0}}" class="btn-secondary" catchtap="onViewLatestReport">📄 查看上次报告</view>
+      </view>
+
+      <!-- 历史报告列表 -->
+      <view wx:if="{{history.length > 0}}" class="history-section">
+        <text class="section-label">📚 历史定级报告（{{history.length}} 份）</text>
+        <view class="history-item" wx:for="{{history}}" wx:key="assessmentId" catchtap="onViewHistory" data-id="{{item.assessmentId}}">
+          <text class="history-icon">{{item.mode == 'game' ? '🎮' : '🧩'}}</text>
+          <view class="history-info">
+            <text class="history-headline">{{item.headline}}</text>
+            <text class="history-meta">{{item.gradeLabel}} · {{item.completedAtShort}} · 置信度 {{item.confidencePct}}%</text>
+          </view>
+          <text class="history-elo">{{item.estimatedElo}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- ============ 步骤进度条（问卷/做题/对弈阶段显示，可折叠） ============ -->
+    <view wx:if="{{stage == 'questionnaire' || stage == 'puzzle' || stage == 'game'}}" class="step-bar-wrap">
+      <view wx:if="{{stepBarCollapsed}}" class="step-bar-collapsed" catchtap="onToggleStepBar">
+        <text class="step-bar-collapsed-icon">
+          {{stage == 'questionnaire' ? '📝' : stage == 'puzzle' ? '🧩' : '🎮'}}
+        </text>
+        <text class="step-bar-collapsed-text">
+          {{stage == 'questionnaire' ? '问卷测评' : stage == 'puzzle' ? '做题测评' : '对弈测评'}}
+        </text>
+        <text class="step-bar-collapsed-arrow">展开 ▸</text>
+      </view>
+
+      <view wx:else class="step-bar-expanded" catchtap="onToggleStepBar">
+        <view class="step-bar-items">
+          <view class="step-bar-item {{stepDone[0] ? 'step-done' : stepActive[0] ? 'step-active' : ''}}">
+            <view class="step-dot">{{stepDone[0] ? '✓' : '📝'}}</view>
+            <text class="step-label">问卷</text>
+          </view>
+          <view class="step-connector {{stepDone[1] ? 'step-connector-done' : ''}}"></view>
+          <view class="step-bar-item {{stepDone[1] ? 'step-done' : stepActive[1] ? 'step-active' : ''}}">
+            <view class="step-dot">{{stepDone[1] ? '✓' : '🧩'}}</view>
+            <text class="step-label">做题</text>
+          </view>
+          <view class="step-connector {{stepDone[2] ? 'step-connector-done' : ''}}"></view>
+          <view class="step-bar-item {{stepDone[2] ? 'step-done' : stepActive[2] ? 'step-active' : ''}}">
+            <view class="step-dot">{{stepDone[2] ? '✓' : '🎮'}}</view>
+            <text class="step-label">对弈</text>
+          </view>
+          <view class="step-connector {{stepDone[3] ? 'step-connector-done' : ''}}"></view>
+          <view class="step-bar-item {{stepDone[3] ? 'step-done' : stepActive[3] ? 'step-active' : ''}}">
+            <view class="step-dot">{{stepDone[3] ? '✓' : '📊'}}</view>
+            <text class="step-label">报告</text>
+          </view>
+        </view>
+        <text class="step-bar-collapse-hint">点击收起 ▾</text>
+      </view>
+    </view>
+
+    <!-- ============ 2. 问卷 ============ -->
+    <view wx:if="{{stage == 'questionnaire'}}" class="stage-questionnaire">
+
+      <view wx:if="{{questions.length == 0}}" class="empty-state">
+        <text class="empty-icon">📭</text>
+        <text class="empty-title">定级问卷未能加载</text>
+        <text class="empty-desc">{{error || '没有获取到问卷题目，通常是网络或登录状态问题。'}}</text>
+        <view class="btn-primary" catchtap="onReloadQuestionnaire">🔄 重新加载问卷</view>
+        <view class="btn-secondary" catchtap="onBackIntro">← 返回上一步</view>
+      </view>
+
+      <block wx:else>
+        <view class="progress-row">
+          <view class="progress-bar-bg">
+            <view class="progress-bar-fill" style="width: {{answeredPct}}%"></view>
+          </view>
+          <text class="progress-text">{{displayIndex}} / {{questions.length}}</text>
+        </view>
+
+        <view wx:if="{{currentQuestion}}" class="question-card">
+          <text class="question-text">{{currentQuestion.question}}</text>
+          <text wx:if="{{currentQuestion.hint}}" class="question-hint">{{currentQuestion.hint}}</text>
+          <view class="option-list">
+            <view class="option-item {{item.selected ? 'option-selected' : ''}}"
+                  wx:for="{{optionList}}" wx:key="value"
+                  catchtap="onPickOption" data-qid="{{currentQuestion.id}}" data-value="{{item.value}}">
+              <text class="option-radio">{{item.selected ? '🔘' : '⚪'}}</text>
+              <text class="option-label">{{item.label}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="question-nav">
+          <view class="btn-nav {{questionIndex == 0 ? 'btn-disabled' : ''}}" catchtap="onPrevQuestion">← 上一题</view>
+          <view wx:if="{{isLastQuestion}}"
+                class="btn-nav btn-primary-small {{busy ? 'btn-disabled' : ''}}"
+                catchtap="onSubmitQuestionnaire">
+            {{busy ? '⏳ 准备题目…' : '✅ 提交问卷，开始做题 →'}}
+          </view>
+          <view wx:else class="btn-nav btn-primary-small" catchtap="onNextQuestion">下一题 →</view>
+        </view>
+        <text wx:if="{{answeredCount < questions.length && isLastQuestion && !busy}}" class="hint-warn">还有 {{unansweredCount}} 题没作答，答完即可继续</text>
+      </block>
+    </view>
+
+    <!-- ============ 3. 选择方式（仅再测时展示） ============ -->
+    <view wx:if="{{stage == 'mode'}}" class="stage-mode">
+      <view class="mode-notice mode-notice-green">
+        <text>🔄 请选择再测方式</text>
+      </view>
+
+      <view class="mode-grid">
+        <view class="mode-card mode-card-game" catchtap="onStartGameMode">
+          <text class="mode-icon">🎮</text>
+          <text class="mode-title">实战对弈定级</text>
+          <text class="mode-desc">与推荐难度的 AI 完整下一局。下完后引擎会逐步复盘你的每一步，根据走子质量和对手强度综合评定等级分。</text>
+          <view class="mode-features">
+            <text class="mode-feature">✓ 最能反映真实棋力</text>
+            <text class="mode-feature">✓ 附带棋风分析</text>
+            <text class="mode-feature mode-time">约 10 分钟</text>
+          </view>
+        </view>
+        <view class="mode-card mode-card-puzzle" catchtap="onStartPuzzleMode">
+          <text class="mode-icon">🧩</text>
+          <text class="mode-title">习题作答定级</text>
+          <text class="mode-desc">完成 8 道围绕你水平选取的战术题，难度从易到难。每答一题系统都会更新对你水平的估计，最终给出等级分。</text>
+          <view class="mode-features">
+            <text class="mode-feature">✓ 快速，约 3-5 分钟</text>
+            <text class="mode-feature">✓ 无需完整对局</text>
+            <text class="mode-feature mode-time">适合时间紧张时使用</text>
+          </view>
+        </view>
+      </view>
+      <view wx:if="{{busy}}" class="loading-text">正在准备定级内容…</view>
+      <view class="btn-secondary" catchtap="onBackIntro">← 返回上一步</view>
+    </view>
+
+    <!-- ============ 4a. 对弈定级 ============ -->
+    <view wx:if="{{stage == 'game'}}" class="stage-game">
+
+      <view wx:if="{{!session}}" class="empty-state">
+        <text class="empty-icon">🎮</text>
+        <text class="empty-title">定级会话未建立</text>
+        <text class="empty-desc">{{error || '未能创建对弈定级会话，请重试。'}}</text>
+        <view class="btn-primary" catchtap="onBackIntro">← 返回重新开始</view>
+      </view>
+
+      <block wx:else>
+        <view class="game-card">
+          <view class="game-card-header">
+            <text class="game-card-icon">🎮</text>
+            <view>
+              <text class="game-card-title">{{session.mode == 'full' ? '第三步：与 AI 下完一局' : '第一步：与 AI 下完一局'}}</text>
+              <text class="game-card-desc">
+                推荐难度 <text class="highlight">{{session.suggestedDifficulty}} 级</text>
+                （AI 等级分约 {{session.suggestedDifficulty >= 1 && session.suggestedDifficulty <= 10 ? [0,1200,1500,1700,1900,2000,2200,2400,2600,2800,3000][session.suggestedDifficulty] || 1500 : 1500}}）
+                <text wx:if="{{session.puzzleElo}}"> · 做题测评 {{session.puzzleElo}} 分</text>
+                <text wx:else> · 问卷初评 {{session.questionnaireElo}} 分</text>
+              </text>
+            </view>
+          </view>
+          <view class="game-tip">
+            <text class="game-tip-text">💡 请认真下这一局：走子质量直接决定定级精度。不需要赢，但要走你认为最好的棋。建议下到分出胜负（至少 20 步）。</text>
+          </view>
+          <view class="game-actions">
+            <view class="btn-primary" catchtap="onStartGame">♟️ 开始对弈（难度 {{session.suggestedDifficulty}}）</view>
+            <view class="btn-secondary" catchtap="onScanGames">✅ 我已下完，去分析</view>
+          </view>
+        </view>
+
+        <!-- 对局选择 -->
+        <view wx:if="{{recentGames && recentGames.length > 0 && !reviewing}}" class="game-select">
+          <view class="select-header">
+            <text class="select-title">第二步：选择要分析的对局</text>
+            <text class="select-toggle" catchtap="onToggleAll">{{selectedGameIds.length == recentGames.length ? '取消全选' : '全选'}}</text>
+          </view>
+          <text class="select-hint">勾选你要分析的对局，选多局综合评估更准确（已选 {{selectedGameIds.length}} 局）</text>
+          <text wx:if="{{selectedGameIds.length == 1}}" class="select-warn">💡 建议至少选 2 局，多局综合定级结论更可靠</text>
+          <view class="game-list">
+            <view class="game-item {{item.checked ? 'game-item-checked' : ''}}"
+                  wx:for="{{gamesWithCheck}}" wx:key="gameId"
+                  catchtap="onToggleGame" data-id="{{item.gameId}}">
+              <view class="checkbox {{item.checked ? 'checkbox-checked' : ''}}">
+                <text wx:if="{{item.checked}}">✓</text>
+              </view>
+              <text class="game-result-icon">{{item.icon}}</text>
+              <view class="game-info">
+                <text class="game-name">{{item.white}} vs {{item.black}}</text>
+                <text class="game-meta">{{item.result}} · 难度 {{item.difficulty || '-'}} · 执{{item.playerSide == 'white' ? '白' : '黑'}} · {{item.dateText}}</text>
+              </view>
+            </view>
+          </view>
+          <view class="select-actions">
+            <view class="btn-primary" catchtap="onAnalyzeMultiGames">📊 分析选中的 {{selectedGameIds.length}} 局{{selectedGameIds.length >= 2 ? '（综合评估）' : ''}}</view>
+          </view>
+        </view>
+
+        <!-- 复盘进度 -->
+        <view wx:if="{{reviewing}}" class="review-progress">
+          <view class="spinner"></view>
+          <text class="review-text">
+            <text wx:if="{{multiGameTotal > 0}}">引擎正在复盘第 {{multiGameCurrent}}/{{multiGameTotal}} 局…</text>
+            <text wx:else>引擎正在复盘你的每一步…</text>
+          </text>
+          <text class="review-count">{{reviewProgress}} / {{reviewTotal || '?'}} 步 · 请稍候</text>
+          <view class="progress-bar-bg">
+            <view class="progress-bar-fill" style="width: {{reviewPct}}%"></view>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <!-- ============ 4b. 习题定级（自适应 + 交互棋盘） ============ -->
+    <view wx:if="{{stage == 'puzzle'}}" class="stage-puzzle">
+
+      <view wx:if="{{puzzleLoading}}" class="puzzle-loading">
+        <view class="spinner"></view>
+        <text>加载题目中…</text>
+      </view>
+
+      <view wx:elif="{{!currentPuzzle || !attempt}}" class="empty-state">
+        <text class="empty-icon">🧩</text>
+        <text class="empty-title">定级题目未能加载</text>
+        <text class="empty-desc">{{error || '没有获取到战术题，通常是网络问题。'}}</text>
+        <view class="btn-primary" catchtap="onRetryPuzzle">🔄 重新加载题目</view>
+        <view class="btn-secondary" catchtap="onBackIntro">← 返回重新开始</view>
+      </view>
+
+      <block wx:else>
+        <view class="puzzle-header">
+          <text class="puzzle-count">🧩 {{session.mode == 'full' ? '第二步：' : ''}}第 {{puzzleIndex + 1}} / 15 题</text>
+          <text wx:if="{{puzzleThemeText}}" class="puzzle-meta">{{puzzleDifficultyText}}</text>
+        </view>
+        <view class="progress-bar-bg">
+          <view class="progress-bar-fill orange" style="width: {{puzzlePct}}%"></view>
+        </view>
+        <text wx:if="{{currentPuzzle.currentTargetElo}}" class="puzzle-target">当前自适应目标难度 {{currentPuzzle.currentTargetElo}} 分</text>
+
+        <!-- 交互棋盘 -->
+        <view class="puzzle-board-area">
+          <chess-board id="puzzleBoard"
+            fen="{{attempt.fen}}"
+            interactive="{{!attempt.completed && !busy}}"
+            flipped="{{attempt.orientation == 'black'}}"
+            selectedSquare="{{selectedSquare}}"
+            legalMoves="{{legalMoves}}"
+            lastMoveFrom="{{lastMoveFrom}}"
+            lastMoveTo="{{lastMoveTo}}"
+            boardColorPreset="blueWhite"
+            bind:squaretap="onPuzzleSquareTap">
+          </chess-board>
+        </view>
+
+        <!-- 反馈 -->
+        <view wx:if="{{feedback}}" class="feedback {{feedback.tone == 'ok' ? 'feedback-ok' : 'feedback-bad'}} {{feedback.tone == 'bad' ? 'shake' : ''}}">
+          <text>{{feedback.text}}</text>
+        </view>
+
+        <!-- 提示 -->
+        <view wx:if="{{!attempt.completed}}" class="puzzle-controls">
+          <text class="hint-text">剩余 {{attempt.attemptsLeft}} 次机会</text>
+          <view class="btn-nav {{hintUsed ? 'btn-disabled' : ''}}" catchtap="onRequestHint">{{hintUsed ? '💡 已查看提示' : '💡 用提示（会略微影响成绩）'}}</view>
+        </view>
+        <text wx:if="{{hintSan}}" class="hint-show">💡 提示：可以试试 <text class="highlight">{{hintSan}}</text></text>
+
+        <!-- 下一题 / 完成 -->
+        <view wx:if="{{attempt.completed}}" class="puzzle-next">
+          <view class="btn-primary" catchtap="onNextPuzzle">{{puzzleNextLabel}}</view>
+        </view>
+      </block>
+
+      <!-- 生成报告进度 -->
+      <view wx:if="{{generatingProgress != null}}" class="generating-overlay">
+        <view class="generating-card">
+          <text class="generating-title">🎯 正在生成定级报告</text>
+          <text class="generating-msg">{{generatingMsg}}</text>
+          <view class="progress-bar-bg">
+            <view class="progress-bar-fill orange" style="width: {{generatingProgress}}%"></view>
+          </view>
+          <text class="generating-pct">{{generatingProgress}}%</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- ============ 5. 报告 ============ -->
+    <view wx:if="{{stage == 'report'}}" class="stage-report">
+
+      <view wx:if="{{!report}}" class="empty-state">
+        <text class="empty-icon">📊</text>
+        <text class="empty-title">定级报告未能生成</text>
+        <text class="empty-desc">{{error || '报告数据为空，请重新测评。'}}</text>
+        <view class="btn-primary" catchtap="onBackIntro">← 返回重新开始</view>
+      </view>
+
+      <block wx:else>
+        <!-- 结论卡 -->
+        <view class="report-hero">
+          <text class="report-label">📊 定级报告 · {{report.mode == 'game' ? '实战对弈定级' : report.mode == 'puzzle' ? '习题作答定级' : '综合定级'}} · {{report.completedAtShort}}</text>
+          <view class="report-elo-row">
+            <view>
+              <text class="report-elo-label">评估等级分</text>
+              <view class="report-elo-value">
+                <text class="report-elo-num">{{report.estimatedElo}}</text>
+                <text class="report-elo-range">（{{report.eloRange[0]}} - {{report.eloRange[1]}}）</text>
+              </view>
+            </view>
+            <view class="report-grade">
+              <text class="report-grade-label">对应等级</text>
+              <text class="report-grade-badge">🏅 {{report.gradeLabel}}</text>
+            </view>
+          </view>
+          <text class="report-headline">{{report.headline}}</text>
+          <view class="report-confidence">
+            <view class="confidence-row">
+              <text>结论置信度：{{confidenceLabel}}（{{confidencePct}}%）</text>
+              <text>{{confidenceTip}}</text>
+            </view>
+            <view class="progress-bar-bg">
+              <view class="progress-bar-fill white" style="width: {{confidencePct}}%"></view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 测评数据 -->
+        <view class="report-section">
+          <text class="report-section-title">📈 测评数据</text>
+          <view class="metrics-grid">
+            <view class="metric-item" wx:for="{{report.metrics}}" wx:key="label">
+              <text class="metric-label">{{item.label}}</text>
+              <text class="metric-value">{{item.value}}</text>
+              <text wx:if="{{item.hint}}" class="metric-hint">{{item.hint}}</text>
+            </view>
+          </view>
+          <text wx:if="{{report.style}}" class="report-style">♟️ 棋风偏向 <text class="highlight">{{report.style}}</text></text>
+        </view>
+
+        <!-- 优劣势 -->
+        <view class="report-sw-grid">
+          <view class="report-strengths">
+            <text class="sw-title green">🏅 你的优势</text>
+            <view class="sw-list">
+              <text class="sw-item" wx:for="{{report.strengths}}" wx:key="*this">✓ {{item}}</text>
+              <text wx:if="{{report.strengths.length == 0}}" class="sw-empty">暂无数据</text>
+            </view>
+          </view>
+          <view class="report-weaknesses">
+            <text class="sw-title amber">🎯 需要改进</text>
+            <view class="sw-list">
+              <text class="sw-item" wx:for="{{report.weaknesses}}" wx:key="*this">→ {{item}}</text>
+              <text wx:if="{{report.weaknesses.length == 0}}" class="sw-empty">没有明显短板</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 训练建议 -->
+        <view class="report-section blue-border">
+          <text class="report-section-title">📚 训练建议</text>
+          <text class="suggestion-item" wx:for="{{report.suggestions}}" wx:key="*this">💡 {{item}}</text>
+        </view>
+
+        <!-- 教练点评 -->
+        <view class="report-coach">
+          <text class="coach-title">🧙 Rex 教练点评</text>
+          <text class="coach-text">{{report.coaching}}</text>
+        </view>
+
+        <!-- 下一步 -->
+        <view class="report-section">
+          <text class="report-section-title">🚀 接下来做什么</text>
+          <view class="next-steps">
+            <text class="next-step" wx:for="{{report.nextSteps}}" wx:for-index="i" wx:key="*this">{{i + 1}}. {{item}}</text>
+          </view>
+          <view class="report-actions">
+            <view class="btn-primary" catchtap="onGoTraining">📋 查看我的训练计划</view>
+            <view class="btn-secondary" catchtap="onRetake">🔄 再测一次</view>
+            <view wx:if="{{history.length > 0}}" class="btn-secondary" catchtap="onBackHistory">📚 历史报告</view>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <!-- ============ 对局太短模态弹窗 ============ -->
+    <view wx:if="{{tooShortModal}}" class="modal-overlay">
+      <view class="modal-card">
+        <text class="modal-icon">📊</text>
+        <text class="modal-title">对局太短，无法定级</text>
+        <text class="modal-desc">定级分析需要至少 20 回合的对局数据，才能准确评估你的棋力水平。请重新开始一局完整的对弈。</text>
+        <view class="btn-primary" catchtap="onDismissTooShort">我知道了</view>
+      </view>
+    </view>
+
+  </view>
+</view>

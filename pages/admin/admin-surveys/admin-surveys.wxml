@@ -1,0 +1,23 @@
+<view class="admin-page theme-{{__theme__}}">
+  <scroll-view scroll-y class="page-body">
+    <view class="page-header">
+      <text class="page-title">问卷调查管理</text>
+      <view class="add-btn" catchtap="onCreate"><text class="add-btn-text">+ 新建</text></view>
+    </view>
+    <view wx:if="{{loading}}" class="loading-tip">加载中...</view>
+    <view wx:for="{{surveys}}" class="item-card">
+      <view class="item-row">
+        <text class="item-name">{{item.title}}</text>
+        <view class="toggle-btn {{item.status === 'active' ? 'on' : 'off'}}" catchtap="onToggleSurvey" data-index="{{index}}">
+          <view class="toggle-knob"></view>
+        </view>
+      </view>
+      <text class="item-desc">{{item.description || '无描述'}} · {{item.responses || 0}}份回答</text>
+      <view class="item-actions">
+        <view class="action-btn" catchtap="onEdit" data-index="{{index}}"><text>编辑</text></view>
+        <view class="action-btn danger" catchtap="onDelete" data-index="{{index}}"><text>删除</text></view>
+      </view>
+    </view>
+    <view wx:if="{{surveys.length === 0 && !loading}}" class="empty-tip">暂无问卷</view>
+  </scroll-view>
+</view>

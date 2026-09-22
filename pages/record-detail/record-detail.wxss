@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: #0f0f23;
+  background: var(--bg-primary);
   overflow-y: auto;
 }
 
@@ -10,7 +10,7 @@
   padding: 16rpx 20rpx;
   margin: 12rpx;
   text-align: center;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-card);
 }
 
 .game-players {
@@ -24,12 +24,12 @@
 .game-player {
   font-size: 28rpx;
   font-weight: 700;
-  color: #e0e0f0;
+  color: var(--text-primary);
 }
 
 .game-vs {
   font-size: 18rpx;
-  color: #666688;
+  color: var(--text-dim);
 }
 
 .game-meta {
@@ -41,15 +41,15 @@
 
 .meta-item {
   font-size: 18rpx;
-  color: #8888aa;
+  color: var(--text-muted);
   padding: 2rpx 8rpx;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-card);
   border-radius: 4rpx;
 }
 
 .meta-item.eco {
-  color: #6c63ff;
-  background: rgba(108, 99, 255, 0.1);
+  color: var(--accent);
+  background: var(--accent-bg-light);
 }
 
 .board-area {
@@ -59,6 +59,10 @@
   min-height: 400rpx;
 }
 
+.board-area chess-board {
+  width: 100%;
+}
+
 .progress-bar {
   text-align: center;
   padding: 8rpx;
@@ -66,7 +70,7 @@
 
 .progress-text {
   font-size: 22rpx;
-  color: #8888aa;
+  color: var(--text-muted);
   font-weight: 600;
 }
 
@@ -79,11 +83,11 @@
 
 .ctrl-btn {
   padding: 12rpx 24rpx;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-color);
   border-radius: 10rpx;
   font-size: 28rpx;
-  color: #c0c0e0;
+  color: var(--text-secondary);
 }
 
 .ctrl-btn:active {
@@ -103,6 +107,130 @@
   text-align: center;
   padding: 16rpx;
   font-size: 22rpx;
-  color: #6c63ff;
+  color: var(--accent);
   font-weight: 600;
+}
+
+.analysis-entry {
+  text-align: center;
+  padding: 12rpx 16rpx 24rpx;
+  font-size: 22rpx;
+  color: var(--purple);
+  font-weight: 600;
+  background: rgba(139, 92, 246, 0.06);
+  margin: 0 16rpx 16rpx;
+  border-radius: 10rpx;
+  border: 1px solid var(--purple-border);
+}
+
+/* 操作按钮行 */
+.action-row {
+  display: flex;
+  gap: 12rpx;
+  padding: 0 16rpx 16rpx;
+}
+
+.action-btn {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+  border-radius: 12rpx;
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.action-btn:active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* 视频生成弹窗 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.glass-strong {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20rpx;
+  padding: 40rpx 32rpx;
+  margin: 40rpx;
+  max-width: 80vw;
+  text-align: center;
+}
+
+.modal-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: 16rpx;
+}
+
+.modal-desc {
+  font-size: 22rpx;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 24rpx;
+  line-height: 1.6;
+}
+
+.video-generating {
+  padding: 20rpx 0;
+}
+
+.video-generating text {
+  font-size: 22rpx;
+  color: var(--text-secondary);
+}
+
+.video-actions {
+  display: flex;
+  gap: 16rpx;
+  justify-content: center;
+}
+
+.btn-primary {
+  padding: 16rpx 40rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #6c63ff, #8b5cf6);
+  border-radius: 12rpx;
+  text-align: center;
+}
+
+.btn-secondary {
+  padding: 16rpx 40rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-color);
+  border-radius: 12rpx;
+  text-align: center;
+}
+
+.home-btn {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  padding: 12rpx;
+  font-size: 22rpx;
+  color: var(--accent);
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-color);
 }

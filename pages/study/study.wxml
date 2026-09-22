@@ -1,0 +1,50 @@
+<view class="study-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
+  <scroll-view scroll-y class="page-scroll">
+    <text class="page-title">📚 棋谱学习</text>
+
+    <!-- 加载中 -->
+    <view wx:if="{{loading}}" class="list-loading">加载中...</view>
+
+    <!-- 搜索栏 -->
+    <view class="search-bar">
+      <input class="search-input" placeholder="搜索棋手/赛事..." value="{{searchQuery}}" bindinput="onSearchInput" />
+      <input class="search-input search-eco" placeholder="ECO" value="{{ecoFilter}}" bindinput="onEcoInput" />
+      <view class="search-btn" catchtap="onSearch">搜索</view>
+    </view>
+
+    <!-- 列表 -->
+    <view wx:if="{{!loading && records.length === 0}}" class="list-empty">
+      <text class="empty-icon">📭</text>
+      <text>暂无棋谱</text>
+    </view>
+
+    <view wx:if="{{records.length > 0}}" class="record-card" wx:for="{{records}}" wx:key="recordId" wx:for-index="studyIdx">
+      <view class="record-info">
+        <view class="record-players">
+          <text class="player-name">{{item.white}}</text>
+          <text class="vs-text">VS</text>
+          <text class="player-name">{{item.black}}</text>
+        </view>
+        <view class="record-meta">
+          <text class="record-result">{{item.result}}</text>
+          <text wx:if="{{item.ecoCode}}" class="record-eco">{{item.ecoCode}}</text>
+          <text class="record-date">{{item.dateFormatted || ''}}</text>
+        </view>
+<text wx:if="{{item.event}}" class="record-event">{{item.event}}</text>
+	      </view>
+<view class="record-actions">
+	        <view class="action-btn" catchtap="onReplay" data-idx="{{studyIdx}}">▶ 学习</view>
+	        <view class="action-btn" catchtap="onStudyAnalysis" data-idx="{{studyIdx}}">📊 分析</view>
+	      </view>
+    </view>
+
+    <!-- 分页 -->
+    <view wx:if="{{records.length > 0}}" class="pagination">
+      <view class="page-btn {{page <= 1 ? 'page-disabled' : ''}}" catchtap="onPrevPage">上一页</view>
+      <text class="page-info">{{page}} / {{totalPages}}</text>
+      <view class="page-btn {{page >= totalPages ? 'page-disabled' : ''}}" catchtap="onNextPage">下一页</view>
+</view>
+
+	  </scroll-view>
+  
+</view>

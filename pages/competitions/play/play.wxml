@@ -1,0 +1,29 @@
+<view class="page" __theme__="{{__theme__}}">
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="onBack">
+      <text class="nav-back-icon">←</text>
+      <text class="nav-back-text">返回</text>
+    </view>
+    <text class="nav-title">竞赛对弈</text>
+  </view>
+
+  <view class="play-container">
+    <view class="match-info" wx:if="{{match}}">
+      <text class="match-title">对弈 #{{match.id}}</text>
+      <text class="match-status">{{match.status === 'ongoing' ? '进行中' : match.status === 'finished' ? '已结束' : match.status}}</text>
+    </view>
+
+    <view class="board-placeholder">
+      <text class="placeholder-text"> Chess Board Component </text>
+      <text class="placeholder-sub">竞赛对弈棋盘（复用 chess-board 组件）</text>
+    </view>
+
+    <view class="match-actions">
+      <view class="action-btn" bindtap="onBack"><text>返回</text></view>
+    </view>
+
+    <view class="loading-tip" wx:if="{{loading}}">
+      <text>加载中...</text>
+    </view>
+  </view>
+</view>

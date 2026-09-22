@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Generate tab bar icons for mychess AI mini program.
 
-Creates 3 icon pairs (active + inactive):
+Creates 4 icon pairs (active + inactive):
+  - 首页 (Home)    : house
   - 对弈 (Play)    : chess knight
   - 棋谱 (Records)  : open book with chess notation
   - 我的 (Profile)  : user avatar
@@ -49,6 +50,29 @@ def draw_pawn(draw, cx, cy, fill, hi):
     draw.rounded_rectangle(
         [cx - bw // 2, cy + 18, cx + bw // 2, cy + 27],
         radius=4, fill=fill, outline=hi, width=1
+    )
+
+
+def draw_home(draw, cx, cy, fill, hi):
+    """Draw a house: roof triangle over a body with a door."""
+    # Roof
+    roof_w, roof_h = 64, 30
+    roof_top = cy - 40
+    draw.polygon(
+        [(cx, roof_top),
+         (cx + roof_w // 2, roof_top + roof_h),
+         (cx - roof_w // 2, roof_top + roof_h)],
+        fill=fill, outline=hi
+    )
+    # Body
+    bw, bh = 48, 42
+    bx0, by0 = cx - bw // 2, roof_top + roof_h
+    draw.rectangle([bx0, by0, bx0 + bw, by0 + bh], fill=fill, outline=hi)
+    # Door
+    dw, dh = 16, 24
+    draw.rectangle(
+        [cx - dw // 2, by0 + bh - dh, cx + dw // 2, by0 + bh],
+        fill=hi
     )
 
 
@@ -138,6 +162,7 @@ def make_icon(name, draw_fn, active=True):
 
 def main():
     icons = [
+        ("home",    draw_home),
         ("game",    draw_pawn),
         ("records", draw_book),
         ("profile", draw_profile),

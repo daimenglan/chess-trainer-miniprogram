@@ -1,0 +1,10 @@
+<view class="line-chart-wrap">
+  <canvas wx:if="{{hasData}}" id="chart" type="2d" class="chart-canvas"></canvas>
+  <view wx:else class="chart-empty">暂无数据</view>
+  <view wx:if="{{hasData && series.length > 1}}" class="chart-legend">
+    <view class="legend-item" wx:for="{{series}}" wx:key="index">
+      <view class="legend-dot" style="background: {{item.color}};"></view>
+      <text class="legend-name">{{item.name}}</text>
+    </view>
+  </view>
+</view>

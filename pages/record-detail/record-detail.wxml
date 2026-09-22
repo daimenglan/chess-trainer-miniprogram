@@ -1,4 +1,4 @@
-<view class="replay-page">
+<view class="replay-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
   <!-- 对局信息 -->
   <view wx:if="{{record}}" class="game-info glass">
     <view class="game-players">
@@ -45,12 +45,17 @@
 
   <!-- 走法历史 -->
   <view class="moves-section">
-    <move-history 
-      moveHistory="{{moves}}" 
+    <move-history
+      moveHistory="{{moves}}"
       replayIndex="{{currentMoveIndex}}"
       isReplay="{{true}}"
       bind:gotomove="onGoToMove">
     </move-history>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="action-row">
+    <view class="action-btn" catchtap="onAnalysis">📊 完整分析复盘</view>
   </view>
 
   <!-- 返回按钮 -->

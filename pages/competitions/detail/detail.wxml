@@ -1,0 +1,55 @@
+<view class="page" __theme__="{{__theme__}}">
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="onBack">
+      <text class="nav-back-icon">←</text>
+      <text class="nav-back-text">返回</text>
+    </view>
+    <text class="nav-title">竞赛详情</text>
+  </view>
+
+  <scroll-view class="scroll-content" scroll-y="true">
+    <view class="detail-content" wx:if="{{competition}}">
+      <view class="detail-header">
+        <text class="detail-title">{{competition.title}}</text>
+        <text class="detail-status" status="{{competition.status}}">{{competition.status === 'registration' ? '报名中' : competition.status === 'ongoing' ? '进行中' : competition.status === 'finished' ? '已结束' : competition.status}}</text>
+      </view>
+
+      <view class="detail-section">
+        <text class="section-label">竞赛描述</text>
+        <text class="section-text">{{competition.description}}</text>
+      </view>
+
+      <view class="detail-section">
+        <text class="section-label">基本信息</text>
+        <view class="info-grid">
+          <view class="info-row">
+            <text class="info-key">开始时间</text>
+            <text class="info-value">{{competition.startDate}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-key">参赛人数</text>
+            <text class="info-value">{{competition.participantCount || 0}}人</text>
+          </view>
+          <view class="info-row">
+            <text class="info-key">奖金/奖品</text>
+            <text class="info-value">{{competition.prize || '待公布'}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-key">赛制</text>
+            <text class="info-value">{{competition.format || '待公布'}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="detail-section" wx:if="{{competition.status === 'registration'}}">
+        <view class="join-btn" bindtap="onJoin">
+          <text class="join-btn-text">报名参赛</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="loading-tip" wx:if="{{loading}}">
+      <text>加载中...</text>
+    </view>
+  </scroll-view>
+</view>

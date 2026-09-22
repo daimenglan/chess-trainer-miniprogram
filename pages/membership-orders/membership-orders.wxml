@@ -1,0 +1,41 @@
+<view class="orders-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
+  <scroll-view scroll-y class="page-scroll">
+    <text class="page-title">📄 我的订单</text>
+
+    <view wx:if="{{loading}}" class="loading-state">加载中...</view>
+
+    <view wx:if="{{!loading && orders.length === 0}}" class="empty-state">
+      <text class="empty-icon">📭</text>
+      <text class="empty-text">暂无订单</text>
+    </view>
+
+    <view wx:if="{{orders.length > 0}}" class="order-card" wx:for="{{orders}}" wx:key="id">
+      <view class="order-header">
+        <view class="order-header-left">
+          <text class="order-level">{{item.levelName || '会员'}}</text>
+          <text wx:if="{{item.durationDays}}" class="order-duration">{{item.durationDays}}天</text>
+          <text wx:if="{{item.paymentChannel === 'redemption'}}" class="order-channel">兑换</text>
+        </view>
+        <text class="order-status {{'status-' + (item.status || '')}}">{{item.statusLabel || item.status}}</text>
+      </view>
+      <view class="order-body">
+        <view class="order-amount-row">
+          <text class="order-amount">¥{{item.amount}}</text>
+        </view>
+        <view class="order-meta">
+          <text wx:if="{{item.orderIdShort}}" class="order-id">#{{item.orderIdShort}}</text>
+          <text class="order-date">{{item.createdAtFormatted || item.createdAt}}</text>
+        </view>
+      </view>
+      <view wx:if="{{item.status === 'pending'}}" class="order-actions">
+        <view class="action-btn-pay" catchtap="onPay" data-order="{{item}}">去支付</view>
+        <view class="action-btn-cancel" catchtap="onCancel" data-orderid="{{item.id}}">取消订单</view>
+      </view>
+    </view>
+
+    <view wx:if="hasMore" class="load-more">
+      <view class="btn-secondary" catchtap="onLoadMore">加载更多</view>
+    </view>
+  </scroll-view>
+
+</view>

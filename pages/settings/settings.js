@@ -18,6 +18,7 @@ const BOARD_THEMES = [
 Page({
     data: {
         settings: app.globalData.settings || app.getDefaultSettings(),
+        appSettings: app.globalData.settings || app.getDefaultSettings(),
         themes: BOARD_THEMES,
         // 修改密码
         showPasswordForm: false,
@@ -30,9 +31,28 @@ Page({
     onLoad(options) {
         this.setData({
             settings: app.globalData.settings || app.getDefaultSettings(),
+            appSettings: { ...app.globalData.settings },
         });
         if (options.tab === 'password') {
             this.setData({ showPasswordForm: true });
+        }
+    },
+    onShow() {
+        // 同步最新的主题设置
+        this.setData({
+            settings: app.globalData.settings || app.getDefaultSettings(),
+            appSettings: { ...app.globalData.settings },
+            __theme__: app.globalData.settings?.uiTheme || 'dark',
+        });
+    },
+    onThemeSwitch(e) {
+        const theme = e.currentTarget.dataset.theme;
+        if (theme === 'dark' || theme === 'light') {
+            app.setTheme(theme);
+            this.setData({
+                appSettings: { ...app.globalData.settings },
+                __theme__: theme,
+            });
         }
     },
     onThemeSelect(e) {

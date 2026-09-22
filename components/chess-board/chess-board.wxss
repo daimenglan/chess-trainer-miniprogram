@@ -12,13 +12,14 @@
   position: absolute;
   top: 0;
   left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
-  height: 100%;
   display: flex;
   flex-direction: column;
   padding: 6rpx;
   border-radius: 4rpx;
-  background: #4a6fa5;
+  background: var(--board-frame, #4a6fa5);
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.3);
   box-sizing: border-box;
   overflow: hidden;
@@ -36,7 +37,7 @@
 .file-label {
   flex: 1;
   text-align: center;
-  font-size: 16rpx;
+  font-size: 20rpx;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.85);
 }
@@ -63,7 +64,7 @@
 }
 
 .rank-label {
-  font-size: 16rpx;
+  font-size: 20rpx;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.85);
   text-align: right;
@@ -84,7 +85,7 @@
 }
 
 .rank-label-right {
-  font-size: 16rpx;
+  font-size: 20rpx;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.85);
   text-align: left;
@@ -148,8 +149,8 @@
 /* 合法走法目标点（绿色小圆点） */
 .legal-dot {
   position: absolute;
-  width: 26%;
-  height: 26%;
+  width: 30%;
+  height: 30%;
   border-radius: 50%;
   background: rgba(34, 197, 94, 0.7);
   z-index: 3;
@@ -159,11 +160,11 @@
 /* 吃子标记（红色圆环） */
 .capture-ring {
   position: absolute;
-  width: 32%;
-  height: 32%;
+  width: 36%;
+  height: 36%;
   border-radius: 50%;
-  border: 3px solid rgba(239, 68, 68, 0.7);
-  background: rgba(239, 68, 68, 0.1);
+  border: 4rpx solid rgba(239, 68, 68, 0.7);
+  background: var(--danger-bg);
   z-index: 3;
   pointer-events: none;
 }
@@ -177,22 +178,25 @@
   border-radius: 50%;
   color: #fff;
   font-weight: bold;
-  font-size: 16rpx;
+  font-size: 22rpx;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   z-index: 7;
   pointer-events: auto;
-  width: 30rpx;
-  height: 30rpx;
+  width: 38rpx;
+  height: 38rpx;
 }
 
 .rank-1 { background: #2563eb; }
 .rank-2 { background: #ea580c; }
 .rank-3 { background: #64748b; }
 
-/* 全盘棋子 + 最后一步箭头 Canvas（尺寸由 JS 以内联 px 指定，避免老式画布百分比坐标系错位） */
+/* 全盘棋子 + 最后一步箭头 Canvas：CSS 填充网格容器，尺寸由 JS 直接设物理分辨率，避免内联尺寸绑定抖动 */
 .board-pieces-canvas {
   position: absolute;
   top: 0;
   left: 0;
   z-index: 5;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
 }

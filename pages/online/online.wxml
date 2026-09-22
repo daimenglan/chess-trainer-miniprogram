@@ -1,20 +1,86 @@
-<view class="online-page">
-  <!-- ===== 空闲状态：匹配按钮 ===== -->
-  <block wx:if="{{status === 'idle' || status === 'matching'}}">
+<view class="online-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
+  <!-- ===== 空闲/摆桌/匹配状态 ===== -->
+  <block wx:if="{{status === 'idle' || status === 'tabling' || status === 'matching'}}">
+    
+    <!-- 标题区域 -->
     <view class="match-container">
       <view class="match-title">在线对弈</view>
-      <view class="match-desc">系统自动匹配对手，随机分配黑白方</view>
-      <view class="match-card" catchtap="onJoinMatch">
-        <view class="match-icon" wx:if="{{status === 'idle'}}">🎯</view>
-        <view class="match-icon spinning" wx:if="{{status === 'matching'}}">🔄</view>
-        <text class="match-label">{{status === 'idle' ? '匹配对手' : '匹配中...'}}</text>
+      <view class="match-desc">摆下棋桌等待挑战，或主动匹配随机对手</view>
+      
+      <!-- 状态提示 -->
+      <view wx:if="{{statusMessage}}" class="status-toast {{statusToastType}}">
+        <text>{{statusMessage}}</text>
       </view>
-      <text wx:if="{{status === 'matching'}}" class="match-timer">
-        已等待 {{waitingSeconds}} 秒
-      </text>
-      <view wx:if="{{status === 'matching'}}" class="match-cancel" catchtap="onCancelMatch">
-        ✕ 取消匹配
+
+      <!-- 匹配/摆桌双按钮 -->
+      <view wx:if="{{status === 'idle'}}" class="table-actions">
+        <view class="table-action-btn card-match" catchtap="onJoinMatch">
+          <text class="table-action-icon">🎯</text>
+          <text class="table-action-label">匹配对手</text>
+          <text class="table-action-desc">系统自动匹配</text>
+        </view>
+        <view class="table-action-btn card-table" catchtap="onOpenTable">
+          <text class="table-action-icon">⚡</text>
+          <text class="table-action-label">摆下棋桌</text>
+          <text class="table-action-desc">等待他人挑战</text>
+        </view>
       </view>
+
+      <!-- 匹配中 -->
+      <block wx:if="{{status === 'matching'}}">
+        <view class="match-card">
+          <view class="match-icon spinning">🔄</view>
+          <text class="match-label">匹配中...</text>
+        </view>
+        <text class="match-timer">已等待 {{waitingSeconds}} 秒</text>
+        <view class="match-cancel" catchtap="onCancelMatch">✕ 取消匹配</view>
+      </block>
+
+      <!-- 摆桌等待中 -->
+      <block wx:if="{{status === 'tabling'}}">
+        <view class="tabling-banner">
+          <view class="tabling-icon-wrap">
+            <text class="tabling-pulse-icon">⚡</text>
+          </view>
+          <text class="tabling-title">棋桌已摆好</text>
+          <text class="tabling-subtitle">等待对手挑战...</text>
+          <text class="tabling-info">⏱ {{currentTimeLabel}}</text>
+          <view class="tabling-cancel" catchtap="onCloseTable">✕ 撤下棋桌</view>
+        </view>
+      </block>
+    </view>
+
+    <!-- ===== 棋桌大厅 ===== -->
+    <view class="table-lobby-section">
+      <view class="lobby-header">
+        <text class="lobby-title">🏆 棋桌大厅</text>
+        <text class="lobby-count">{{activeTables.length}} 张棋桌</text>
+      </view>
+
+      <scroll-view scroll-y class="lobby-scroll">
+        <view wx:if="{{activeTables.length === 0}}" class="lobby-empty">
+          <text class="lobby-empty-icon">🪑</text>
+          <text class="lobby-empty-text">暂无棋桌，快去摆下一张吧</text>
+        </view>
+
+        <view wx:for="{{activeTables}}" wx:key="tableId" class="table-card">
+          <view class="table-card-left">
+            <view class="table-host-row">
+              <text class="table-host-avatar">{{getHostInitial(item)}}</text>
+              <text class="table-host-name">{{getHostName(item)}}</text>
+            </view>
+            <view class="table-meta-row">
+              <text class="table-meta-time">⏱ {{formatTableTime(item)}}</text>
+              <text class="table-meta-wait">🕐 {{formatWaitingTime(item.createdAt)}}</text>
+            </view>
+          </view>
+          <view class="table-card-right">
+            <view class="table-join-btn" catchtap="onChallengeTable" data-tableid="{{item.tableId}}">
+              挑战
+            </view>
+          </view>
+        </view>
+      </scroll-view>
     </view>
   </block>
 
@@ -22,7 +88,7 @@
   <block wx:if="{{status === 'playing'}}">
     <!-- 对手信息 -->
     <view class="opponent-bar">
-      <view class="player-info">
+      <view class="player-info {{!isMyTurn ? 'active-turn' : ''}}">
         <text class="player-color-signal {{opponentColor === 'w' ? 'color-white' : 'color-black'}}"></text>
         <text class="player-name">{{opponentName}}</text>
         <text class="player-time {{opponentTime <= 30 ? 'time-low' : ''}}">
@@ -30,6 +96,12 @@
         </text>
       </view>
       <text class="vs-label">VS</text>
+    </view>
+
+    <!-- 观战人数 -->
+    <view class="spectator-bar" wx:if="{{spectatorCount > 0}}">
+      <text class="spectator-icon">👁</text>
+      <text class="spectator-count">{{spectatorCount}} 人观战</text>
     </view>
 
     <!-- 棋盘 -->
@@ -41,6 +113,8 @@
         flipped="{{flipped}}"
         selectedSquare="{{selectedSquare}}"
         legalMoves="{{legalMoves}}"
+        lastMoveFrom="{{lastMoveFrom}}"
+        lastMoveTo="{{lastMoveTo}}"
         boardColorPreset="blueWhite"
         bind:squaretap="onSquareTap">
       </chess-board>
@@ -48,7 +122,7 @@
 
     <!-- 己方信息 -->
     <view class="my-info">
-      <view class="player-info">
+      <view class="player-info {{isMyTurn ? 'active-turn' : ''}}">
         <text class="player-color-signal {{myColor === 'w' ? 'color-white' : 'color-black'}}"></text>
         <text class="player-name">{{myName}}</text>
         <text class="player-time {{myTime <= 30 ? 'time-low' : ''}}">
@@ -104,7 +178,32 @@
     </view>
   </view>
 
+  <!-- ===== 邀请弹窗 ===== -->
+  <view wx:if="{{showInviteDialog}}" class="confirm-overlay">
+    <view class="confirm-dialog invite-dialog" catchtap="stopPropagation">
+      <text class="invite-emoji">🤺</text>
+      <text class="confirm-title">对弈邀请</text>
+      <text class="invite-desc">
+        <text class="invite-username">{{inviteData.fromUsername || '对手'}}</text>
+        向你发起对弈挑战！
+      </text>
+      <view class="invite-detail-row">
+        <text class="invite-detail-label">⏱ 用时</text>
+        <text class="invite-detail-value">{{formatTableTime(inviteData)}}</text>
+      </view>
+      <view wx:if="{{inviteData.fromRating}}" class="invite-detail-row">
+        <text class="invite-detail-label">📊 等级分</text>
+        <text class="invite-detail-value">{{inviteData.fromRating}}</text>
+      </view>
+      <view class="confirm-actions">
+        <view class="confirm-btn" catchtap="onInviteAccept">接受</view>
+        <view class="confirm-btn confirm-btn-no" catchtap="onInviteDecline">拒绝</view>
+      </view>
+    </view>
+  </view>
+
   <!-- 升变弹窗 -->
   <promotion-dialog show="{{showPromotion}}" color="{{myColor}}"
                     bind:select="onPromotionSelect" bind:cancel="onPromotionCancel"></promotion-dialog>
+  
 </view>

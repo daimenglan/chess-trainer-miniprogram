@@ -1,0 +1,16 @@
+<view class="admin-page theme-{{__theme__}}">
+  <scroll-view scroll-y class="page-body">
+    <view class="page-header"><text class="page-title">用户详情</text></view>
+    <view wx:if="{{loading}}" class="loading-tip">加载中...</view>
+    <view class="detail-card">
+      <text class="detail-title">{{user.nickname || '用户'}}</text>
+      <text class="detail-desc">邮箱：{{user.email || '-'}} · 用户名：{{user.username || '-'}}</text>
+      <text class="detail-info">角色：{{user.role === 'admin' ? '管理员' : '普通用户'}} · 教师：{{user.isTeacher ? '是' : '否'}}</text>
+      <text class="detail-info">注册时间：{{user.createdAt || '-'}} · 最后登录：{{user.lastLoginAt || '-'}}</text>
+    </view>
+    <view class="btn-row">
+      <view class="btn" catchtap="onRoleChange"><text class="btn-text">切换角色</text></view>
+      <view class="btn" catchtap="onTeacherToggle"><text class="btn-text">{{user.isTeacher ? '撤销教师' : '授予教师'}}</text></view>
+    </view>
+  </scroll-view>
+</view>

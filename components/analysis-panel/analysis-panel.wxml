@@ -24,6 +24,66 @@
       <text class="opening-text">{{openingNameCN || openingName}}</text>
     </view>
 
+    <!-- 开局百科弹窗 -->
+    <view wx:if="{{showOpeningModal}}" class="modal-mask" catchtap="onCloseOpening">
+      <view class="opening-modal" catchtap="stopPropagation">
+        <view class="opening-modal-header">
+          <view class="opening-modal-title">
+            <text class="eco-code-lg">{{ecoCode}}</text>
+            <text class="opening-name-lg">{{openingNameCN || openingName}}</text>
+          </view>
+          <text class="modal-close" catchtap="onCloseOpening">✕</text>
+        </view>
+        <scroll-view scroll-y class="opening-modal-body">
+          <view wx:if="{{openingLoading}}" class="loading-tip">加载中...</view>
+          <view wx:elif="{{openingError}}" class="error-tip">{{openingError}}</view>
+          <block wx:elif="{{openingEntry != null}}">
+            <!-- 开局定式 -->
+            <view wx:if="{{openingEntry.moves && openingEntry.moves.length > 0}}" class="opening-section">
+              <text class="opening-section-title">📝 开局定式</text>
+              <view class="opening-moves">
+                <text wx:for="{{openingEntry.moves}}" wx:for-item="m" wx:key="*this" class="opening-move-tag">{{m}}</text>
+              </view>
+            </view>
+            <!-- 概述 -->
+            <view wx:if="{{openingEntry.description}}" class="opening-section">
+              <text class="opening-section-title">📖 概述</text>
+              <text class="opening-text-body">{{openingEntry.description}}</text>
+            </view>
+            <!-- 开局思路 -->
+            <view wx:if="{{openingEntry.idea}}" class="opening-section">
+              <text class="opening-section-title">💡 开局思路</text>
+              <text class="opening-text-body">{{openingEntry.idea}}</text>
+            </view>
+            <!-- 典型计划 -->
+            <view wx:if="{{openingEntry.typicalPlans && openingEntry.typicalPlans.length > 0}}" class="opening-section">
+              <text class="opening-section-title">🎯 典型计划</text>
+              <text wx:for="{{openingEntry.typicalPlans}}" wx:for-item="plan" wx:key="*this" class="opening-plan-item">• {{plan}}</text>
+            </view>
+            <!-- 关键变例 -->
+            <view wx:if="{{openingEntry.keyVariations && openingEntry.keyVariations.length > 0}}" class="opening-section">
+              <text class="opening-section-title">🔀 关键变例</text>
+              <view wx:for="{{openingEntry.keyVariations}}" wx:for-item="v" wx:key="name" class="opening-variation">
+                <view class="variation-header">
+                  <text class="variation-name">{{v.name}}</text>
+                  <text class="variation-moves">{{v.moves}}</text>
+                </view>
+                <text class="variation-idea">{{v.idea}}</text>
+              </view>
+            </view>
+            <!-- 著名棋手 -->
+            <view wx:if="{{openingEntry.famousPlayers && openingEntry.famousPlayers.length > 0}}" class="opening-section">
+              <text class="opening-section-title">🏆 著名棋手</text>
+              <view class="player-tags">
+                <text wx:for="{{openingEntry.famousPlayers}}" wx:for-item="p" wx:key="*this" class="player-tag">{{p}}</text>
+              </view>
+            </view>
+          </block>
+          <view wx:else class="empty-tip">暂无开局百科信息</view>
+        </scroll-view>
+      </view>
+    </view>
+
     <!-- AI 思考中 -->
     <view wx:if="{{isAIThinking}}" class="thinking-indicator">
       <view class="thinking-dot"></view>
@@ -36,7 +96,7 @@
     </view>
 
     <!-- 候选走法列表 -->
-    <scroll-view wx:if="{{showHints && candidates.length > 0}}" class="candidates-list" scroll-y
+    <scroll-view wx:if="{{showHints && candidates.length > 0}}" class="candidates-list" scroll-y enable-flex
                   scroll-into-view="{{scrollTarget}}" scroll-with-animation>
       <view class="candidate-item" wx:for="{{candidates}}" wx:for-item="c" wx:key="uci"
             id="candidate-{{c.rank}}"
@@ -72,17 +132,15 @@
         <view class="candidate-action" catchtap="onExplorationStart" data-uci="{{c.uci}}">
           <text class="action-btn">推演</text>
         </view>
+        <view class="candidate-action" catchtap="onAutoContinuation" data-uci="{{c.uci}}">
+          <text class="action-btn-auto">自动</text>
+        </view>
       </view>
     </scroll-view>
 
     <!-- 提示已关闭 -->
     <view wx:if="{{!showHints && gameStarted && !gameOver}}" class="hints-off">
-      <text>💡 点击"提示"查看候选走法</text>
-    </view>
-
-    <!-- 提示开关 -->
-    <view wx:if="{{gameStarted && !gameOver}}" class="hints-toggle-btn" catchtap="onToggleHints">
-      <text>{{settings.showHints ? '💡 提示中' : '💡 提示'}}</text>
+      <text>🤖 点击"AI教练 Rex"查看候选走法</text>
     </view>
   </view>
 </view>

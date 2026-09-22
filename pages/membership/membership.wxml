@@ -1,0 +1,237 @@
+<view class="membership-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
+  <scroll-view scroll-y class="page-scroll">
+
+    <!-- 会员系统已关闭 -->
+    <view wx:if="{{disabled}}" class="disabled-notice">
+      <text class="disabled-icon">🔒</text>
+      <text class="disabled-title">会员中心尚未开放</text>
+      <text class="disabled-text">管理员尚未启用会员系统。当前所有用户均可正常使用全部功能，不受会员等级限制。</text>
+      <text class="disabled-status">✅ 当前状态：全功能开放</text>
+    </view>
+
+    <!-- 未登录提示 -->
+    <view wx:elif="{{!isLoggedIn && !loading && !disabled}}" class="login-prompt glass">
+      <text class="login-prompt-icon">👤</text>
+      <text class="login-prompt-text">登录后即可查看会员状态，注册即享每日免费 AI 额度</text>
+      <view class="btn-primary" catchtap="goToLogin">登录 / 注册</view>
+    </view>
+
+    <!-- 加载中 -->
+    <view wx:if="{{loading && !disabled}}" class="loading-state">
+      <text>加载中...</text>
+    </view>
+
+    <!-- 当前会员状态 -->
+    <view wx:if="{{status && !disabled && !loading}}" class="status-card glass">
+      <view class="status-topbar"></view>
+      <view class="status-header">
+        <text class="status-level-badge" style="background: {{status.badgeColor || '#6c63ff'}}">
+          👑 {{status.levelName || '免费用户'}}
+        </text>
+        <view class="status-info">
+          <text wx:if="{{status.isPaid && status.expireAt}}" class="status-expire">
+            有效期至 {{status.expireAtFormatted}}
+          </text>
+          <text wx:elif="{{!status.isPaid}}" class="status-free-label">免费用户 · 升级解锁全部训练功能</text>
+          <text wx:else class="status-expire">永久有效</text>
+        </view>
+      </view>
+
+      <!-- 剩余天数 -->
+      <view wx:if="{{status.isPaid && status.daysLeft !== undefined && !status.inGrace}}" class="status-days">
+        <text class="days-number {{expiringSoon ? 'days-warning' : ''}}">{{status.daysLeft}}</text>
+        <text class="days-label">天剩余</text>
+      </view>
+
+      <!-- 宽限期提示 -->
+      <view wx:if="{{status.inGrace}}" class="grace-notice">
+        <text>⚠️ 已过到期日，宽限期保留权益中（{{status.graceDays}} 天），续费可恢复</text>
+      </view>
+
+      <!-- 即将到期警告 -->
+      <view wx:if="{{expiringSoon && !status.inGrace}}" class="expiring-notice">
+        <text>⚠️ 会员将于 {{status.daysLeft}} 天后到期，续费可保持全部权益</text>
+      </view>
+
+      <!-- 延迟升级提示 -->
+      <view wx:if="{{status.pendingLevelName}}" class="pending-notice">
+        <text>📅 已预约：到期后切换为「{{status.pendingLevelName}}」</text>
+      </view>
+
+      <!-- 配额用量 -->
+      <view wx:if="{{status.quotas && status.quotas.length > 0}}" class="quotas-list">
+        <view class="quota-item" wx:for="{{status.quotas}}" wx:key="code">
+          <view class="quota-info">
+            <text class="quota-label">{{item.name || item.code}}</text>
+            <text class="quota-text {{item.exhausted ? 'quota-exhausted' : ''}}">
+              {{item.unlimited ? '不限' : item.used + '/' + item.limit + (item.unit || '')}}
+            </text>
+          </view>
+          <view wx:if="{{!item.unlimited}}" class="quota-bar">
+            <view class="quota-fill" style="width: {{item.fillPct}}%; background: {{item.fillColor}}"></view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 等级权益对比表格 -->
+    <view wx:if="{{!loading && levels.length > 0 && !disabled && isLoggedIn}}" class="levels-section">
+      <text class="section-title">📋 等级权益对比</text>
+
+      <view class="benefit-table">
+        <!-- 表头：等级名 -->
+        <view class="bt-row bt-header">
+          <view class="bt-cell bt-label-cell">权益</view>
+          <view class="bt-cell bt-level-cell" wx:for="{{levels}}" wx:key="id">
+            <view class="bt-level-badge" style="background: {{item.badgeColor || '#6c63ff'}}">
+              <text class="bt-level-name">{{item.isFree ? item.name : '👑 ' + item.name}}</text>
+              <text wx:if="{{item.prices.length > 0}}" class="bt-level-price">¥{{item.prices[0].price}} 起</text>
+            </view>
+            <text wx:if="{{currentLevelId === item.id}}" class="bt-current-tag">当前等级</text>
+          </view>
+        </view>
+
+        <!-- 每行：一条权益 -->
+        <view class="bt-row" wx:for="{{benefitTableRows}}" wx:key="def.code">
+          <view class="bt-cell bt-label-cell">
+            <text class="bt-benefit-name">{{item.def.name}}</text>
+            <text wx:if="{{item.def.type === 'quota' && item.def.periodType === 'daily'}}" class="bt-benefit-period">（每日）</text>
+          </view>
+          <view class="bt-cell bt-value-cell {{cell.ok ? 'bt-value-ok' : 'bt-value-no'}}"
+                wx:for="{{item.cells}}" wx:for-index="lvlIdx" wx:key="*this">
+            <text>{{cell.text}}</text>
+          </view>
+        </view>
+
+        <!-- 操作行 -->
+        <view class="bt-row bt-actions-row">
+          <view class="bt-cell bt-label-cell">开通</view>
+          <view class="bt-cell" wx:for="{{levels}}" wx:key="id">
+            <view wx:if="{{item.isFree}}" class="bt-free-label">注册即享</view>
+            <view wx:else class="bt-buy-btn {{item.prices.length === 0 ? 'bt-buy-disabled' : ''}}"
+                  catchtap="onOpenPurchase" data-level="{{item}}">
+              <text>{{currentLevelId === item.id ? '续费' : '开通'}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 模拟支付关闭提示 -->
+      <view wx:if="{{!simulatedPayEnabled}}" class="simulate-off-notice">
+        <text>管理员已关闭在线购买，请使用兑换码开通会员</text>
+      </view>
+    </view>
+
+    <!-- 未登录时也显示等级对比（只展示，不含操作） -->
+    <view wx:if="{{!loading && levels.length > 0 && !disabled && !isLoggedIn}}" class="levels-section">
+      <text class="section-title">📋 等级权益对比</text>
+
+      <view class="benefit-table">
+        <view class="bt-row bt-header">
+          <view class="bt-cell bt-label-cell">权益</view>
+          <view class="bt-cell bt-level-cell" wx:for="{{levels}}" wx:key="id">
+            <view class="bt-level-badge" style="background: {{item.badgeColor || '#6c63ff'}}">
+              <text class="bt-level-name">{{item.isFree ? item.name : '👑 ' + item.name}}</text>
+              <text wx:if="{{item.prices.length > 0}}" class="bt-level-price">¥{{item.prices[0].price}} 起</text>
+            </view>
+          </view>
+        </view>
+        <view class="bt-row" wx:for="{{benefitTableRows}}" wx:key="def.code">
+          <view class="bt-cell bt-label-cell">
+            <text class="bt-benefit-name">{{item.def.name}}</text>
+          </view>
+          <view class="bt-cell bt-value-cell {{cell.ok ? 'bt-value-ok' : 'bt-value-no'}}"
+                wx:for="{{item.cells}}" wx:for-index="lvlIdx" wx:key="*this">
+            <text>{{cell.text}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 兑换码 -->
+    <view wx:if="{{isLoggedIn && !disabled}}" class="redeem-section glass">
+      <text class="section-title">🎁 兑换码</text>
+      <text class="redeem-desc">输入兑换码立即开通或续费会员</text>
+      <view class="redeem-row">
+        <input class="redeem-input" placeholder="XXXX-XXXX-XXXX-XXXX" value="{{redeemCode}}" bindinput="onRedeemInput" />
+        <view class="redeem-btn {{redeeming ? 'btn-loading' : ''}}" catchtap="onRedeem">
+          <text>{{redeeming ? '兑换中...' : '兑换'}}</text>
+        </view>
+      </view>
+      <text wx:if="{{redeemResult}}" class="redeem-result {{redeemSuccess ? 'text-success' : 'text-error'}}">
+        {{redeemResult}}
+      </text>
+    </view>
+
+    <!-- 快捷链接 -->
+    <view wx:if="{{isLoggedIn && !disabled}}" class="links-row">
+      <view class="link-btn" catchtap="onViewOrders">📄 我的订单</view>
+    </view>
+
+    <!-- 购买弹窗 -->
+    <view wx:if="{{selectedLevel && !disabled}}" class="modal-overlay" catchtap="onCloseModal">
+      <view class="purchase-dialog glass-strong" catchtap="stopPropagation">
+        <text class="purchase-title">开通 👑 {{selectedLevel.name}}</text>
+
+        <!-- 价格方案 -->
+        <view class="purchase-prices">
+          <view class="purchase-price-item {{selectedPrice && selectedPrice.id === price.id ? 'purchase-price-active' : ''}}"
+                wx:for="{{selectedLevel.prices}}" wx:key="id" data-price="{{price}}" catchtap="onModalPriceSelect">
+            <view class="purchase-price-info">
+              <text class="purchase-price-duration">{{price.durationLabel || price.durationDays + '天'}}</text>
+              <text class="purchase-price-days">{{price.durationDays}} 天</text>
+            </view>
+            <view class="purchase-price-right">
+              <text class="purchase-price-amount">¥{{price.price}}</text>
+              <text wx:if="{{price.originalPrice && price.originalPrice > price.price}}" class="purchase-price-original">¥{{price.originalPrice}}</text>
+            </view>
+          </view>
+        </view>
+
+        <text wx:if="{{purchaseError}}" class="purchase-error">{{purchaseError}}</text>
+
+        <view wx:if="{{simulatedPayEnabled}}" class="purchase-simulate-notice">
+          ⚠️ 演示环境使用模拟支付：点击确认后立即生效，不产生真实扣款
+        </view>
+        <view wx:else class="purchase-simulate-notice purchase-disabled-notice">
+          ⚠️ 在线购买已关闭，请使用兑换码开通会员
+        </view>
+
+        <view class="purchase-actions">
+          <view class="btn-secondary" catchtap="onCloseModal">取消</view>
+          <view wx:if="{{simulatedPayEnabled}}" class="btn-primary {{paying ? 'btn-loading' : ''}}" catchtap="onPurchase">
+            <text>{{paying ? '处理中...' : (selectedPrice ? '确认支付 ¥' + selectedPrice.price : '请选择时长')}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 支付确认弹窗 -->
+    <view wx:if="{{showPaymentConfirm}}" class="modal-overlay">
+      <view class="payment-dialog glass-strong" catchtap="stopPropagation">
+        <text class="payment-title">确认支付</text>
+        <text class="payment-amount">¥{{paymentAmount}}</text>
+        <text class="payment-desc">模拟支付环境，点击确认完成支付</text>
+        <text wx:if="{{purchaseError}}" class="purchase-error">{{purchaseError}}</text>
+        <view class="payment-actions">
+          <view class="btn-primary {{paying ? 'btn-loading' : ''}}" catchtap="onConfirmPay">
+            <text>{{paying ? '支付中...' : '确认支付'}}</text>
+          </view>
+          <view class="btn-secondary" catchtap="onCancelPay">取消</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 成功弹窗 -->
+    <view wx:if="{{showSuccess}}" class="modal-overlay" catchtap="onHideSuccess">
+      <view class="success-dialog glass-strong" catchtap="stopPropagation">
+        <text class="success-icon">🎉</text>
+        <text class="success-title">{{isRenewalSuccess ? '续费成功！' : '开通成功！'}}</text>
+        <text class="success-desc">{{successMessage}}</text>
+        <view class="btn-primary" catchtap="onHideSuccess">知道了</view>
+      </view>
+    </view>
+
+  </scroll-view>
+
+</view>

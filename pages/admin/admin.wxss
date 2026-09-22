@@ -1,0 +1,123 @@
+/* 数据监控仪表盘 */
+.admin-page {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.page-body {
+  height: 100vh;
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+
+.entry-row {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 32rpx;
+}
+
+.entry-card {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 24rpx;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20rpx;
+}
+
+.entry-icon {
+  font-size: 40rpx;
+}
+
+.entry-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.entry-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.entry-desc {
+  font-size: 22rpx;
+  color: var(--text-muted);
+  margin-top: 4rpx;
+}
+
+.entry-arrow {
+  font-size: 40rpx;
+  color: var(--text-muted);
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  margin: 28rpx 4rpx 18rpx;
+  color: var(--text-primary);
+}
+
+.stat-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.stat-card {
+  width: calc(50% - 10rpx);
+  box-sizing: border-box;
+  padding: 28rpx 24rpx;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20rpx;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 44rpx;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.stat-value.engine-running {
+  color: var(--success);
+}
+
+.stat-value.engine-stopped,
+.stat-value.engine-unavailable {
+  color: var(--text-muted);
+  font-size: 34rpx;
+  line-height: 60rpx;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  color: var(--text-muted);
+  margin-top: 10rpx;
+}
+
+.chart-panel {
+  padding: 24rpx;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20rpx;
+}
+
+.loading-tip {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 26rpx;
+  padding: 32rpx 0 60rpx;
+}
+
+.error-tip {
+  text-align: center;
+  color: var(--danger);
+  font-size: 26rpx;
+  padding: 32rpx 0 60rpx;
+}

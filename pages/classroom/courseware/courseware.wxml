@@ -1,0 +1,26 @@
+<view class="page" __theme__="{{__theme__}}">
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="onBack">
+      <text class="nav-back-icon">←</text>
+      <text class="nav-back-text">返回</text>
+    </view>
+    <text class="nav-title">课件管理</text>
+    <view class="nav-add" bindtap="onCreate">
+      <text>＋</text>
+    </view>
+  </view>
+
+  <scroll-view class="scroll-content" scroll-y="true">
+    <view class="courseware-list">
+      <view class="courseware-card" wx:for="{{coursewares}}" wx:key="id" bindtap="onCoursewareTap" data-id="{{item.id}}">
+        <text class="cw-title">{{item.name}}</text>
+        <text class="cw-desc">{{item.description || '暂无描述'}}</text>
+        <text class="cw-meta">📅 {{item.createdAt}} · 📁 {{item.itemCount || 0}}个条目</text>
+      </view>
+      <view class="empty-tip" wx:if="{{coursewares.length === 0 && !loading}}">
+        <text>暂无课件</text>
+      </view>
+      <view class="loading-tip" wx:if="{{loading}}"><text>加载中...</text></view>
+    </view>
+  </scroll-view>
+</view>

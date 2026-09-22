@@ -1,0 +1,35 @@
+<view class="page" __theme__="{{__theme__}}">
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="onBack">
+      <text class="nav-back-icon">←</text>
+      <text class="nav-back-text">返回</text>
+    </view>
+    <text class="nav-title">做题</text>
+  </view>
+
+  <scroll-view class="scroll-content" scroll-y="true">
+    <view class="puzzle-container" wx:if="{{puzzle}}">
+      <text class="puzzle-title">{{puzzle.title || '未命名习题'}}</text>
+      <text class="puzzle-desc">{{puzzle.description || '暂无描述'}}</text>
+
+      <view class="answer-section">
+        <text class="section-label">选择答案</text>
+        <view class="answer-btn correct" bindtap="onSolve" data-correct="true">
+          <text class="answer-btn-text">✓ 正确</text>
+        </view>
+        <view class="answer-btn wrong" bindtap="onSolve" data-correct="false">
+          <text class="answer-btn-text">✗ 错误</text>
+        </view>
+      </view>
+
+      <view class="result-section" wx:if="{{result}}">
+        <text class="result-text">结果：{{result.correct ? '答对' : '答错'}}</text>
+        <text class="result-next">下次复习时间：{{result.nextReviewAt || '已安排'}}</text>
+      </view>
+    </view>
+
+    <view class="loading-tip" wx:if="{{loading}}">
+      <text>加载中...</text>
+    </view>
+  </scroll-view>
+</view>

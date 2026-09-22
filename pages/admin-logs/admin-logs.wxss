@@ -1,0 +1,132 @@
+/* 数据监控明细 */
+.logs-page {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  flex-wrap: wrap;
+  margin-bottom: 16rpx;
+}
+
+.filter-item {
+  flex-shrink: 0;
+}
+
+.filter-btn {
+  padding: 12rpx 20rpx;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14rpx;
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.filter-reset {
+  padding: 12rpx 20rpx;
+  font-size: 24rpx;
+  color: var(--accent);
+}
+
+.total-tip {
+  font-size: 22rpx;
+  color: var(--text-muted);
+  margin-bottom: 16rpx;
+}
+
+.log-item {
+  padding: 22rpx 24rpx;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.log-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10rpx;
+}
+
+.log-type {
+  font-size: 22rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 8rpx;
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.log-type.game_start,
+.log-type.game_end {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.log-type.login,
+.log-type.register {
+  background: var(--info-bg);
+  color: var(--info);
+}
+
+.log-type.heartbeat,
+.log-type.logout {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+}
+
+.theme-light .log-type.heartbeat,
+.theme-light .log-type.logout {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.log-time {
+  font-size: 22rpx;
+  color: var(--text-muted);
+}
+
+.log-body {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  flex-wrap: wrap;
+}
+
+.log-user {
+  font-size: 26rpx;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.log-page {
+  font-size: 24rpx;
+  color: var(--text-secondary);
+}
+
+.log-duration {
+  font-size: 22rpx;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.empty-tip,
+.end-tip {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 26rpx;
+  padding: 40rpx 0;
+}
+
+.loading-tip {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 26rpx;
+  padding: 24rpx 0 60rpx;
+}

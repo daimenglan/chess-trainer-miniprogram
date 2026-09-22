@@ -1,0 +1,38 @@
+<!-- 数据监控明细：用户行为日志（管理员） -->
+<view class="logs-page theme-{{__theme__}}">
+
+  <!-- 筛选栏 -->
+  <view class="filter-bar">
+    <picker class="filter-item" range="{{typeOptions}}" value="{{typeIndex}}" bindchange="onTypeChange">
+      <view class="filter-btn">类型：{{typeOptions[typeIndex]}} ▾</view>
+    </picker>
+    <picker class="filter-item" mode="date" value="{{dateFrom}}" bindchange="onDateFromChange">
+      <view class="filter-btn">起：{{dateFrom || '不限'}} ▾</view>
+    </picker>
+    <picker class="filter-item" mode="date" value="{{dateTo}}" bindchange="onDateToChange">
+      <view class="filter-btn">止：{{dateTo || '不限'}} ▾</view>
+    </picker>
+    <view class="filter-reset" catchtap="onResetFilter">重置</view>
+  </view>
+
+  <view class="total-tip">共 {{total}} 条记录</view>
+
+  <!-- 日志列表 -->
+  <view class="log-list">
+    <view class="log-item" wx:for="{{logs}}" wx:key="logId">
+      <view class="log-head">
+        <text class="log-type type-{{item.activityType}}">{{item.typeLabel}}</text>
+        <text class="log-time">{{item.timeText}}</text>
+      </view>
+      <view class="log-body">
+        <text class="log-user">{{item.username || '匿名'}}</text>
+        <text class="log-page" wx:if="{{item.pagePath}}">{{item.pagePath}}</text>
+        <text class="log-duration" wx:if="{{item.durationText}}">停留 {{item.durationText}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{logs.length === 0 && !loading}}" class="empty-tip">暂无日志</view>
+    <view wx:if="{{loading}}" class="loading-tip">加载中...</view>
+    <view wx:if="{{!loading && finished && logs.length > 0}}" class="end-tip">没有更多了</view>
+  </view>
+</view>

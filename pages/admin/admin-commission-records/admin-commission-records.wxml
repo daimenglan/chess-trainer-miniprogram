@@ -1,0 +1,17 @@
+<view class="admin-page theme-{{__theme__}}">
+  <scroll-view scroll-y class="page-body">
+    <view class="page-header"><text class="page-title">佣金记录</text></view>
+    <view wx:if="{{loading}}" class="loading-tip">加载中...</view>
+    <view wx:for="{{records}}" class="item-card">
+      <view class="item-row">
+        <text class="item-name">{{item.userNickname || '用户'}}</text>
+        <text class="item-amount">¥{{item.amount || 0}}</text>
+      </view>
+      <text class="item-desc">级别：{{item.level || '-'}} · {{item.status === 'settled' ? '已结算' : '待结算'}}</text>
+      <view class="item-actions" wx:if="{{item.status !== 'settled'}}">
+        <view class="action-btn success" catchtap="onSettle" data-index="{{index}}"><text>结算</text></view>
+      </view>
+    </view>
+    <view wx:if="{{records.length === 0 && !loading}}" class="empty-tip">暂无佣金记录</view>
+  </scroll-view>
+</view>

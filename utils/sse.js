@@ -77,7 +77,7 @@ function parseSSEEvents(text, state) {
  */
 function createSSERequest(url, data, callbacks) {
     const { onEvent, onError, onDone } = callbacks;
-    let baseUrl = 'http://192.168.3.168:3001';
+    let baseUrl = 'https://mychess.com.cn';
     try {
         const app = typeof getApp === 'function' ? getApp() : null;
         if (app && app.globalData && app.globalData.baseUrl) {

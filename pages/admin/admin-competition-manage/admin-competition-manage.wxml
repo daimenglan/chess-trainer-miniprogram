@@ -1,0 +1,22 @@
+<view class="admin-page theme-{{__theme__}}">
+  <scroll-view scroll-y class="page-body">
+    <view class="page-header">
+      <text class="page-title">竞赛详情</text>
+      <view class="add-btn" catchtap="goEdit"><text class="add-btn-text">编辑</text></view>
+    </view>
+    <view wx:if="{{loading}}" class="loading-tip">加载中...</view>
+    <view class="detail-card">
+      <text class="detail-title">{{detail.title}}</text>
+      <text class="detail-desc">{{detail.description || '无描述'}}</text>
+      <text class="detail-info">状态：{{detail.status === 'active' ? '进行中' : '已结束'}} · 参与：{{detail.participants || 0}}人</text>
+    </view>
+    <view class="section-title">积分榜</view>
+    <view wx:for="{{standings}}" class="item-card">
+      <view class="item-row">
+        <text class="item-name">#{{index + 1}} {{item.userNickname || '用户'}}</text>
+        <text class="item-amount">{{item.points || 0}}分</text>
+      </view>
+    </view>
+    <view wx:if="{{standings.length === 0 && !loading}}" class="empty-tip">暂无排名数据</view>
+  </scroll-view>
+</view>

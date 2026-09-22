@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "数据监控",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
+  "usingComponents": {
+    "line-chart": "../../components/line-chart/line-chart"
+  }
+}

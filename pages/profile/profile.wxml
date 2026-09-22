@@ -1,4 +1,4 @@
-<view class="profile-page">
+<view class="profile-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
   <!-- 未登录 -->
   <view wx:if="{{!isLoggedIn}}" class="login-prompt">
     <view class="prompt-icon">👤</view>
@@ -24,8 +24,72 @@
         </view>
       </view>
 
-      <!-- 统计卡片 -->
-      <view class="stats-card">
+      <!-- ===== 统计概览 ===== -->
+      <view wx:if="{{profileAnalysis}}" class="stats-overview-card">
+        <text class="stats-overview-title">📊 数据概览</text>
+        <view class="stats-overview-grid">
+          <view class="stat-box">
+            <text class="stat-box-icon">♟</text>
+            <text class="stat-box-value">{{profileAnalysis.stats.totalGames || 0}}</text>
+            <text class="stat-box-label">总局数</text>
+          </view>
+          <view class="stat-box">
+            <text class="stat-box-icon">🏆</text>
+            <text class="stat-box-value green">{{profileAnalysis.stats.wins || 0}}</text>
+            <text class="stat-box-label">胜局</text>
+          </view>
+          <view class="stat-box">
+            <text class="stat-box-icon">🤝</text>
+            <text class="stat-box-value yellow">{{profileAnalysis.stats.draws || 0}}</text>
+            <text class="stat-box-label">和局</text>
+          </view>
+          <view class="stat-box">
+            <text class="stat-box-icon">📈</text>
+            <text class="stat-box-value emerald">{{profileAnalysis.stats.winRate || 0}}%</text>
+            <text class="stat-box-label">胜率</text>
+          </view>
+          <view class="stat-box">
+            <text class="stat-box-icon">🎯</text>
+            <text class="stat-box-value purple">{{profileAnalysis.stats.avgDifficulty || 0}}</text>
+            <text class="stat-box-label">平均难度</text>
+          </view>
+          <view class="stat-box">
+            <text class="stat-box-icon">👣</text>
+            <text class="stat-box-value indigo">{{profileAnalysis.stats.avgMoves || 0}}</text>
+            <text class="stat-box-label">平均步数</text>
+          </view>
+          <view class="stat-box">
+            <text class="stat-box-icon">⚔️</text>
+            <text class="stat-box-value pink">{{profileAnalysis.stats.avgCaptures || 0}}</text>
+            <text class="stat-box-label">平均吃子</text>
+          </view>
+          <view class="stat-box">
+            <text class="stat-box-icon">⚡</text>
+            <text class="stat-box-value rose">{{profileAnalysis.stats.avgChecks || 0}}</text>
+            <text class="stat-box-label">平均将军</text>
+          </view>
+          <view class="stat-box">
+            <text class="stat-box-icon">👑</text>
+            <text class="stat-box-value orange">{{profileAnalysis.stats.estimatedRating || 1500}}</text>
+            <text class="stat-box-label">等级分</text>
+          </view>
+        </view>
+
+        <!-- 综合胜率进度条 -->
+        <view class="winrate-bar-wrap">
+          <view class="winrate-header">
+            <text class="winrate-label">综合胜率</text>
+            <text class="winrate-value">{{profileAnalysis.stats.winRate || 0}}%</text>
+          </view>
+          <view class="winrate-bar-bg">
+            <view class="winrate-bar-fill" style="width: {{winRatePct}}%"></view>
+          </view>
+          <text class="winrate-detail">{{profileAnalysis.stats.wins}}胜 / {{profileAnalysis.stats.draws}}和 / {{(profileAnalysis.stats.totalGames || 0) - (profileAnalysis.stats.wins || 0) - (profileAnalysis.stats.draws || 0)}}负</text>
+        </view>
+      </view>
+
+      <!-- 基础统计（无分析时显示简化版） -->
+      <view wx:if="{{!profileAnalysis}}" class="stats-card">
         <view class="stat-item">
           <text class="stat-value">{{profile.totalGames || 0}}</text>
           <text class="stat-label">总局数</text>
@@ -59,7 +123,7 @@
 
         <!-- Tab切换 -->
         <view wx:if="{{profileAnalysis}}" class="analysis-tabs">
-          <view class="tab-item {{activeTab === item.key ? 'tab-active' : ''}}" 
+          <view class="tab-item {{activeTab == item.key ? 'tab-active' : ''}}" 
                 wx:for="{{analysisTabs}}" wx:key="key" data-tab="{{item.key}}" catchtap="onTabSwitch">
             <text>{{item.label}}</text>
           </view>
@@ -71,16 +135,130 @@
             <text>点击"开始分析"生成你的棋手档案</text>
           </view>
           <view wx:if="{{loadingAnalysis}}" class="analysis-loading">分析中...</view>
-          <view wx:if="{{profileAnalysis && !loadingAnalysis}}" class="analysis-text">
-            <text>{{profileAnalysis[activeTab] || '暂无数据'}}</text>
+
+          <!-- 普通Tab内容 -->
+          <view wx:if="{{profileAnalysis && !loadingAnalysis && activeTab != 'training' && activeTab != 'strength' && activeTab != 'details'}}" class="analysis-text">
+            <text>{{getTabContent(activeTab) || '暂无数据'}}</text>
+          </view>
+
+          <!-- 优劣势Tab（分两列显示优势和待改进） -->
+          <view wx:if="{{profileAnalysis && !loadingAnalysis && activeTab == 'strength'}}" class="strength-tab">
+            <view class="strength-box">
+              <text class="strength-box-title">🏅 优势</text>
+              <text class="strength-box-text">{{profileAnalysis.strengths || '暂无数据'}}</text>
+            </view>
+            <view class="strength-box weakness-box">
+              <text class="strength-box-title">🎯 待改进</text>
+              <text class="strength-box-text">{{profileAnalysis.weaknesses || '暂无数据'}}</text>
+            </view>
+          </view>
+
+          <!-- 训练推荐Tab -->
+          <view wx:if="{{profileAnalysis && !loadingAnalysis && activeTab == 'training'}}" class="training-tab">
+            <view wx:if="{{loadingTraining}}" class="analysis-loading">加载训练推荐中...</view>
+            <view wx:if="{{trainingPlanError}}" class="analysis-placeholder">{{trainingPlanError}}</view>
+
+            <view wx:if="{{trainingPlan && !loadingTraining}}" class="training-tab-content">
+              <!-- AI定级入口 -->
+              <view class="training-assessment-entry">
+                <text class="training-entry-icon">🎯</text>
+                <view class="training-entry-info">
+                  <text class="training-entry-title">AI 定级测评</text>
+                  <text class="training-entry-desc">还不知道自己的水平？点击这里测出你的真实等级分</text>
+                </view>
+                <view class="btn-small-indigo" catchtap="onGoAssessment">去定级</view>
+              </view>
+
+              <!-- 训练统计 -->
+              <view wx:if="{{trainingStats}}" class="training-stats">
+                <view class="training-stat-item">
+                  <text class="ts-label">等级</text>
+                  <text class="ts-value">Lv.{{trainingStats.level}}</text>
+                </view>
+                <view class="training-stat-item">
+                  <text class="ts-label">连续打卡</text>
+                  <text class="ts-value">{{trainingStats.currentStreak}}天</text>
+                </view>
+                <view class="training-stat-item">
+                  <text class="ts-label">今日</text>
+                  <text class="ts-value">{{trainingStats.todayCompleted}}/{{trainingStats.todayTarget}}</text>
+                </view>
+                <view class="training-stat-item">
+                  <text class="ts-label">成就</text>
+                  <text class="ts-value">{{trainingStats.unlockedCount}}/{{trainingStats.totalCount}}</text>
+                </view>
+              </view>
+
+              <!-- 习题计划 -->
+              <text class="training-section-label">🧩 习题训练计划</text>
+              <view class="training-plan-item" wx:for="{{trainingPlan.puzzlePlan}}" wx:for-item="p" wx:key="id">
+                <view class="tpi-header">
+                  <text class="tpi-title">{{p.title}}</text>
+                  <text class="tpi-tag {{getSourceTag(p.source).cls}}">{{getSourceTag(p.source).label}}</text>
+                </view>
+                <text class="tpi-reason">{{p.reason}}</text>
+                <view class="tpi-meta">
+                  <text>难度 {{p.minDifficulty}}-{{p.maxDifficulty}} Elo</text>
+                  <text>每日 {{p.dailyCount}} 题</text>
+                </view>
+                <view class="btn-small-blue" catchtap="onJumpPuzzles" data-phase="{{p.phase}}" data-themes="{{p.themes}}" data-min="{{p.minDifficulty}}" data-max="{{p.maxDifficulty}}">开始练习 →</view>
+              </view>
+
+              <!-- 成就墙 -->
+              <view wx:if="{{trainingStats && trainingStats.achievements.length > 0}}">
+                <text class="training-section-label">🏆 成就墙（{{trainingStats.unlockedCount}}/{{trainingStats.totalCount}} 已解锁）</text>
+                <view class="achievement-grid">
+                  <view class="ach-item {{a.unlocked ? '' : 'ach-locked'}}" wx:for="{{trainingStats.achievements}}" wx:for-item="a" wx:key="code">
+                    <view class="ach-icon-wrap {{a.unlocked ? 'ach-icon-glow' : ''}}">
+                      <text>{{a.unlocked ? a.icon : '🔒'}}</text>
+                    </view>
+                    <text class="ach-name">{{a.name}}</text>
+                  </view>
+                </view>
+              </view>
+
+              <!-- 难度推荐 -->
+              <view wx:if="{{trainingPlan.gameDifficulty}}" class="training-diff">
+                <text class="training-section-label">♟️ 人机对局难度推荐</text>
+                <view class="training-diff-row">
+                  <view class="td-badge">
+                    <text class="td-badge-num">{{trainingPlan.gameDifficulty.recommended}}</text>
+                    <text class="td-badge-label">级</text>
+                  </view>
+                  <view class="td-info">
+                    <text class="td-info-title">推荐难度 {{trainingPlan.gameDifficulty.recommended}} 级</text>
+                    <text class="td-info-range">建议区间 {{trainingPlan.gameDifficulty.min}}-{{trainingPlan.gameDifficulty.max}} 级<br/>AI 约 {{trainingPlan.gameDifficulty.eloRange[0]}}-{{trainingPlan.gameDifficulty.eloRange[1]}} 分</text>
+                  </view>
+                  <view class="btn-small-green" catchtap="onGoGame">去对弈</view>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <!-- 对局详情Tab -->
+          <view wx:if="{{profileAnalysis && !loadingAnalysis && activeTab == 'details'}}" class="game-details-tab">
+            <!-- 已在原有设计中保留，用对局详情表格 -->
           </view>
         </view>
+      </view>
+
+      <!-- AI定级测评入口 -->
+      <view class="assessment-entry" catchtap="onGoAssessment">
+        <text class="assessment-entry-icon">🎯</text>
+        <view class="assessment-entry-info">
+          <text class="assessment-entry-title">AI 定级测评</text>
+          <text class="assessment-entry-desc">一局对弈或几道战术题，测出你的真实等级分</text>
+        </view>
+        <text class="assessment-entry-arrow">→</text>
       </view>
 
       <!-- 快捷操作 -->
       <view class="quick-actions">
         <view class="quick-btn" catchtap="goToSettings">⚙️ 设置</view>
         <view class="quick-btn" catchtap="onChangePassword">🔑 修改密码</view>
+        <view class="quick-btn" catchtap="goToMembership">👑 会员中心</view>
+        <view class="quick-btn" catchtap="goToTraining">📋 训练计划</view>
+        <view class="quick-btn" wx:if="{{isAdmin}}" catchtap="goToAdmin">📊 数据后台</view>
       </view>
     </scroll-view>
   </view>

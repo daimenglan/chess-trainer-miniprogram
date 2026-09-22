@@ -97,9 +97,7 @@ Component({
             this.updateLastMoves(history);
         },
         'lastMoveFrom, lastMoveTo': function (from, to) {
-            if (from || to) {
-                this.setData({ lastMoveSquares: from && to ? [from, to] : [] });
-            }
+            this.setData({ lastMoveSquares: from && to ? [from, to] : [] });
         },
         'lastMoveSquares': function () {
             this.schedulePiecesDraw();
@@ -282,6 +280,7 @@ Component({
          * 在单块 type="2d" 同层渲染 Canvas 上绘制全部棋子 + 最后一步箭头。
          * 新式 Canvas 通过 SelectorQuery 取 node，物理像素 = 逻辑 px × dpr，
          * 绘制前 scale(dpr) 即可继续用逻辑 px 坐标；无需 ctx.draw()。
+         * canvas 通过 CSS width:100%/height:100% 填充网格，避免内联尺寸绑定导致的抖动。
          */
         drawBoardPieces() {
             const query = this.createSelectorQuery();
@@ -296,20 +295,13 @@ Component({
                 const h = Math.floor(gridRect.height);
                 if (!w || !h)
                     return;
-                // 先把 canvas 尺寸同步成格子区域的显式 px，再绘制
-                if (this.data.canvasW !== w || this.data.canvasH !== h) {
-                    this.setData({ canvasW: w, canvasH: h }, () => {
-                        setTimeout(() => this.drawBoardPieces(), 50);
-                    });
-                    return;
-                }
                 this.createSelectorQuery()
                     .select('#boardPieces')
                     .fields({ node: true, size: true })
                     .exec((res) => {
                     const entry = res && res[0];
-                    if (!entry || !entry.node || Math.abs((entry.width || 0) - w) > 1) {
-                        // 节点尚未就绪或布局未应用，稍后重试
+                    if (!entry || !entry.node) {
+                        // 节点尚未就绪，稍后重试
                         setTimeout(() => this.drawBoardPieces(), 150);
                         return;
                     }
@@ -320,7 +312,7 @@ Component({
                         : wx.getSystemInfoSync();
                     const dpr = winInfo.pixelRatio || 2;
                     const ctx = canvas.getContext('2d');
-                    // 重设物理尺寸会清空画布并重置变换，随后重新 scale
+                    // 直接设置 canvas 物理尺寸（不走 setData，避免异步抖动）
                     canvas.width = Math.floor(w * dpr);
                     canvas.height = Math.floor(h * dpr);
                     ctx.scale(dpr, dpr);
@@ -466,23 +458,38 @@ Component({
         onCanvasTap(e) {
             if (!this.properties.interactive)
                 return;
-            const t = (e.changedTouches && e.changedTouches[0]) || (e.touches && e.touches[0]);
-            if (!t)
+            // 微信小程序 type="2d" canvas 的 catchtap 事件格式：
+            // canvas 相对坐标通过 e.detail {x, y} 提供（单位 px，相对于画布左上角）
+            // 或者通过 e.touches[0] 提供 page 坐标
+            let x, y;
+            const detail = e.detail;
+            if (detail && typeof detail.x === 'number') {
+                x = detail.x;
+                y = detail.y;
+            }
+            else {
+                const touches = e.touches;
+                if (!touches || !touches[0])
+                    return;
+                x = touches[0].x;
+                y = touches[0].y;
+            }
+            const gridRect = this._gridRect;
+            if (!gridRect)
                 return;
-            const query = this.createSelectorQuery();
-            query.select('.board-pieces-canvas').boundingClientRect((rect) => {
-                if (!rect || !rect.width)
-                    return;
-                const col = Math.floor(((t.clientX - rect.left) / rect.width) * 8);
-                const row = Math.floor(((t.clientY - rect.top) / rect.height) * 8);
-                if (col < 0 || col > 7 || row < 0 || row > 7)
-                    return;
-                const squares = this.data.squares || [];
-                const sq = squares[row] && squares[row][col];
-                if (sq && sq.square) {
-                    this.triggerEvent('squaretap', { square: sq.square });
-                }
-            }).exec();
+            const cw = gridRect.width;
+            const ch = gridRect.height;
+            if (!cw || !ch)
+                return;
+            const col = Math.floor((x / cw) * 8);
+            const row = Math.floor((y / ch) * 8);
+            if (col < 0 || col > 7 || row < 0 || row > 7)
+                return;
+            const squares = this.data.squares || [];
+            const sq = squares[row] && squares[row][col];
+            if (sq && sq.square) {
+                this.triggerEvent('squaretap', { square: sq.square });
+            }
         },
         getBoardSize() {
             return new Promise((resolve) => {

@@ -1,0 +1,30 @@
+<view class="admin-page theme-{{__theme__}}">
+  <scroll-view scroll-y class="page-body">
+    <view class="page-header"><text class="page-title">龙币管理</text></view>
+    <view wx:if="{{loading}}" class="loading-tip">加载中...</view>
+
+    <!-- 兑换配置 -->
+    <view class="section-title">兑换配置</view>
+    <view wx:for="{{configs}}" class="item-card">
+      <view class="item-row">
+        <text class="item-name">{{item.name}}</text>
+        <view class="toggle-btn {{item.isActive ? 'on' : 'off'}}" catchtap="onToggleConfig" data-index="{{index}}">
+          <view class="toggle-knob"></view>
+        </view>
+      </view>
+      <text class="item-desc">消耗 {{item.cost || 0}} 龙币 · 库存 {{item.stock || '无限'}}</text>
+    </view>
+
+    <!-- 兑换项 -->
+    <view class="section-title">兑换项</view>
+    <view wx:for="{{exchanges}}" class="item-card">
+      <view class="item-row">
+        <text class="item-name">{{item.name}}</text>
+        <view class="toggle-btn {{item.isActive ? 'on' : 'off'}}" catchtap="onToggleExchange" data-index="{{index}}">
+          <view class="toggle-knob"></view>
+        </view>
+      </view>
+      <text class="item-desc">{{item.description || '无描述'}}</text>
+    </view>
+  </scroll-view>
+</view>

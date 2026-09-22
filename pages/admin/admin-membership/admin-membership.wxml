@@ -1,0 +1,34 @@
+<view class="admin-page theme-{{__theme__}}">
+  <scroll-view scroll-y class="page-body">
+    <view class="page-header"><text class="page-title">会员管理</text></view>
+    <view class="entry-row">
+      <view class="entry-card" catchtap="goOrders">
+        <view class="entry-icon">📋</view>
+        <view class="entry-info"><view class="entry-title">会员订单</view><view class="entry-desc">购买记录与状态</view></view>
+        <view class="entry-arrow">›</view>
+      </view>
+      <view class="entry-card" catchtap="goCodes">
+        <view class="entry-icon">🎫</view>
+        <view class="entry-info"><view class="entry-title">兑换码</view><view class="entry-desc">生成与发放</view></view>
+        <view class="entry-arrow">›</view>
+      </view>
+    </view>
+    <view class="section-title">会员等级</view>
+    <view wx:if="{{loading}}" class="loading-tip">加载中...</view>
+    <view wx:for="{{levels}}" class="item-card">
+      <view class="item-row">
+        <text class="item-name">{{item.name}}</text>
+        <view class="toggle-btn {{item.status === 1 ? 'on' : 'off'}}" catchtap="onToggleLevel" data-index="{{index}}">
+          <view class="toggle-knob"></view>
+        </view>
+      </view>
+      <view class="item-row">
+        <text class="item-price">¥{{item.price || 0}}/月</text>
+        <text class="item-status" wx:if="{{item.status === 1}}">启用</text>
+        <text class="item-status disabled" wx:else>停用</text>
+      </view>
+      <text class="item-desc">{{item.description || '无描述'}}</text>
+    </view>
+    <view wx:if="{{levels.length === 0 && !loading}}" class="empty-tip">暂无会员等级</view>
+  </scroll-view>
+</view>

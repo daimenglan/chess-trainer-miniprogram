@@ -1,0 +1,41 @@
+<view class="page" __theme__="{{__theme__}}">
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="onBack">
+      <text class="nav-back-icon">←</text>
+      <text class="nav-back-text">返回</text>
+    </view>
+    <text class="nav-title">重置密码</text>
+  </view>
+
+  <view class="reset-container">
+    <!-- 第一步：输入邮箱 -->
+    <view class="reset-step" wx:if="{{step === 'email'}}">
+      <text class="step-title">忘记密码？</text>
+      <text class="step-desc">输入注册邮箱，我们将发送验证码</text>
+      <input class="input-field" value="{{email}}" bindinput="onEmailInput" placeholder="邮箱地址" placeholder-class="placeholder" />
+      <view class="submit-btn" bindtap="onSendCode">
+        <text class="submit-btn-text">{{loading ? '发送中...' : '发送验证码'}}</text>
+      </view>
+    </view>
+
+    <!-- 第二步：输入验证码+新密码 -->
+    <view class="reset-step" wx:if="{{step === 'reset'}}">
+      <text class="step-title">重设密码</text>
+      <text class="step-desc">请输入验证码并设置新密码</text>
+
+      <input class="input-field code-input" value="{{code}}" bindinput="onCodeInput" placeholder="6位验证码" placeholder-class="placeholder" maxlength="6" />
+
+      <input class="input-field" value="{{newPassword}}" bindinput="onNewPasswordInput" type="password" placeholder="新密码（至少6位）" placeholder-class="placeholder" />
+      <input class="input-field" value="{{confirmPassword}}" bindinput="onConfirmPasswordInput" type="password" placeholder="确认新密码" placeholder-class="placeholder" />
+
+      <view class="submit-btn" bindtap="onResetPassword">
+        <text class="submit-btn-text">{{loading ? '重设中...' : '确认重设'}}</text>
+      </view>
+
+      <view class="resend" bindtap="onSendCode" wx:if="{{countdown > 0}}"><text class="resend-text">{{countdown}}秒后可重发</text></view>
+      <view class="resend" bindtap="onSendCode" wx:else><text class="resend-link">重新发送验证码</text></view>
+    </view>
+
+    <view class="error-tip" wx:if="{{error}}"><text>{{error}}</text></view>
+  </view>
+</view>

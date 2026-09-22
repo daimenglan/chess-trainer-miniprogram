@@ -1,0 +1,20 @@
+<view class="admin-page theme-{{__theme__}}">
+  <scroll-view scroll-y class="page-body">
+    <view class="page-header">
+      <text class="page-title">佣金规则</text>
+      <view class="add-btn" catchtap="onCreate"><text class="add-btn-text">+ 新建</text></view>
+    </view>
+    <view wx:if="{{loading}}" class="loading-tip">加载中...</view>
+    <view wx:for="{{rules}}" class="item-card">
+      <view class="item-row">
+        <text class="item-name">级别：{{item.level}}</text>
+        <text class="item-amount">{{item.rate || 0}}%</text>
+      </view>
+      <text class="item-desc">{{item.condition || '无条件'}}</text>
+      <view class="item-actions">
+        <view class="action-btn danger" catchtap="onDelete" data-index="{{index}}"><text>删除</text></view>
+      </view>
+    </view>
+    <view wx:if="{{rules.length === 0 && !loading}}" class="empty-tip">暂无佣金规则</view>
+  </scroll-view>
+</view>

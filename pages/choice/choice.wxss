@@ -1,98 +1,219 @@
 .choice-page {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: #0f0f23;
-  padding: 60rpx 40rpx;
+  background: var(--bg-primary);
+}
+
+.choice-scroll {
+  height: 100vh;
+  padding: 40rpx 28rpx 120rpx;
   box-sizing: border-box;
 }
 
-.choice-header {
+/* ===== 欢迎区 ===== */
+.welcome-section {
   text-align: center;
-  margin-bottom: 80rpx;
+  margin-bottom: 32rpx;
 }
-
-.choice-title {
+.welcome-title {
   font-size: 48rpx;
-  font-weight: 700;
-  color: #e0e0ff;
+  font-weight: 800;
+  color: var(--text-primary);
   letter-spacing: 4rpx;
-}
-
-.choice-subtitle {
   display: block;
-  font-size: 24rpx;
-  color: #8888aa;
+}
+.welcome-subtitle {
+  font-size: 22rpx;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 6rpx;
+}
+.welcome-user {
+  display: block;
+  font-size: 22rpx;
+  color: var(--text-dim);
   margin-top: 12rpx;
 }
 
-.choice-cards {
-  width: 100%;
-  max-width: 600rpx;
+/* ===== 三大功能卡片 ===== */
+.feature-cards {
   display: flex;
   flex-direction: column;
-  gap: 30rpx;
+  gap: 16rpx;
+  margin-bottom: 36rpx;
+}
+
+.feature-card {
+  border-radius: 20rpx;
+  padding: 24rpx 28rpx;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  color: #fff;
+  box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.15);
+}
+
+.card-bg-decor {
+  position: absolute;
+  top: -40rpx;
+  right: -40rpx;
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+}
+
+/* AI定级卡 - 紫渐变 */
+.card-assessment {
+  background: linear-gradient(135deg, #7c3aed, #6c63ff, #a855f7);
+}
+
+/* 棋手档案卡 - 蓝渐变 */
+.card-profile {
+  background: linear-gradient(135deg, #2563eb, #3b82f6, #6366f1);
+}
+
+/* 训练计划卡 - 橙渐变 */
+.card-training {
+  background: linear-gradient(135deg, #ea580c, #f59e0b, #f97316);
+}
+
+.card-icon-wrap {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 20rpx;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.card-icon {
+  font-size: 40rpx;
+}
+
+.card-body {
+  flex: 1;
+  min-width: 0;
+}
+.card-label {
+  font-size: 20rpx;
+  font-weight: 600;
+  opacity: 0.85;
+  display: block;
+  margin-bottom: 4rpx;
+}
+.card-main {
+  font-size: 28rpx;
+  font-weight: 800;
+  display: block;
+  margin-bottom: 2rpx;
+}
+.card-sub {
+  font-size: 20rpx;
+  opacity: 0.8;
+  display: block;
+}
+
+.card-stats-row {
+  display: flex;
+  gap: 20rpx;
+}
+.card-stat {
+  text-align: center;
+}
+.card-stat-value {
+  font-size: 28rpx;
+  font-weight: 800;
+  display: block;
+}
+.card-stat-label {
+  font-size: 18rpx;
+  opacity: 0.75;
+  display: block;
+}
+
+.loading-text {
+  font-size: 22rpx;
+  opacity: 0.7;
+}
+
+/* ===== 2列功能入口 ===== */
+.choice-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16rpx;
 }
 
 .choice-card {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 30rpx;
-  padding: 40rpx 36rpx;
-  background: linear-gradient(135deg, rgba(108, 99, 255, 0.08), rgba(108, 99, 255, 0.02));
-  border: 1px solid rgba(108, 99, 255, 0.2);
-  border-radius: 24rpx;
+  gap: 12rpx;
+  padding: 28rpx 20rpx;
+  background: linear-gradient(135deg, rgba(108, 99, 255, 0.06), rgba(108, 99, 255, 0.02));
+  border: 1px solid var(--accent-border);
+  border-radius: 20rpx;
   cursor: pointer;
+  text-align: center;
   transition: transform 0.2s, border-color 0.2s;
 }
-
 .choice-card:active {
-  transform: scale(0.97);
+  transform: scale(0.95);
   border-color: rgba(108, 99, 255, 0.5);
 }
 
 .choice-icon {
-  font-size: 56rpx;
-  flex-shrink: 0;
+  font-size: 44rpx;
+  display: block;
 }
 
 .choice-info {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8rpx;
+  gap: 4rpx;
 }
 
 .choice-name {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #e0e0ff;
+  font-size: 26rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: block;
 }
 
 .choice-desc {
-  font-size: 22rpx;
-  color: #8888aa;
-  line-height: 1.5;
+  font-size: 18rpx;
+  color: var(--text-muted);
+  line-height: 1.4;
+  display: block;
 }
 
+/* ===== 底部 ===== */
 .choice-footer {
-  margin-top: 80rpx;
   text-align: center;
+  padding-top: 60rpx;
+}
+
+.choice-footer-actions {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 16rpx;
 }
 
-.choice-user {
-  font-size: 24rpx;
-  color: #6666aa;
-}
-
-.choice-logout {
+.choice-footer-btn {
   font-size: 22rpx;
-  color: #f87171;
+  color: var(--accent);
   cursor: pointer;
   padding: 8rpx 24rpx;
+}
+
+.choice-footer-btn:active {
+  opacity: 0.6;
+}
+
+.choice-footer-logout {
+  color: var(--danger);
 }

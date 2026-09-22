@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "统计分析",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
+  "usingComponents": {
+    "line-chart": "../../components/line-chart/line-chart",
+    "pie-chart": "../../components/pie-chart/pie-chart"
+  }
+}

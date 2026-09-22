@@ -1,0 +1,54 @@
+<!-- 统计分析（管理员） -->
+<view class="stats-page theme-{{__theme__}}">
+  <scroll-view scroll-y class="page-body">
+
+    <!-- 对局结果分布 -->
+    <view class="panel">
+      <view class="panel-title">对局结果分布</view>
+      <pie-chart data="{{resultPie}}" />
+    </view>
+
+    <!-- 难度分布 -->
+    <view class="panel">
+      <view class="panel-title">难度分布</view>
+      <view wx:if="{{difficultyBars.length === 0}}" class="empty-tip">暂无数据</view>
+      <view wx:for="{{difficultyBars}}" wx:key="label" class="bar-row">
+        <view class="bar-label">{{item.label}}</view>
+        <view class="bar-track">
+          <view class="bar-fill" style="width: {{item.percent}}%;"></view>
+        </view>
+        <view class="bar-value">{{item.value}}</view>
+      </view>
+    </view>
+
+    <!-- 近30日对局趋势 -->
+    <view class="panel">
+      <view class="panel-title">近30日对局趋势</view>
+      <line-chart labels="{{gameTrendLabels}}" series="{{gameTrendSeries}}" theme="{{__theme__}}" />
+    </view>
+
+    <!-- 近30日用户增长 -->
+    <view class="panel">
+      <view class="panel-title">近30日用户增长</view>
+      <line-chart labels="{{userGrowthLabels}}" series="{{userGrowthSeries}}" theme="{{__theme__}}" />
+    </view>
+
+    <!-- 今日模块使用时长 -->
+    <view class="panel">
+      <view class="panel-title">今日各功能模块平均使用时长</view>
+      <view wx:if="{{moduleBars.length === 0}}" class="empty-tip">暂无数据</view>
+      <view wx:for="{{moduleBars}}" wx:key="activityType" class="module-row">
+        <view class="module-head">
+          <text class="module-name">{{item.name}}</text>
+          <text class="module-meta">{{item.durationText}} · {{item.userCount}}人</text>
+        </view>
+        <view class="bar-track">
+          <view class="bar-fill module-fill" style="width: {{item.percent}}%;"></view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{loading}}" class="loading-tip">加载中...</view>
+    <view wx:if="{{loadError}}" class="error-tip">{{loadError}}</view>
+  </scroll-view>
+</view>

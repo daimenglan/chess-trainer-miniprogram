@@ -7,7 +7,20 @@ const api = require('../../utils/api');
 const util = require('../../utils/util');
 
 Page({
+
+  /** 同步主题 */
+  _syncTheme() {
+    try {
+      const app = getApp();
+      const theme = app?.globalData?.settings?.uiTheme || 'dark';
+      if (this.data.__theme__ !== theme) {
+        this.setData({ __theme__: theme });
+      }
+    } catch(e) { /* non-critical */ }
+  },
+
   data: {
+    __theme__: (typeof getApp === "function" ? (getApp().globalData?.settings?.uiTheme || "dark") : "dark"),
     activeTab: 'records', // 'records' | 'mygames'
     // 棋谱库
     records: [] as any[],
@@ -25,6 +38,7 @@ Page({
     showImportModal: false,
     importPgnText: '',
     importResult: null as any,
+    errorsText: '',
     importing: false,
   },
 
@@ -34,6 +48,7 @@ Page({
   },
 
   onShow() {
+    this._syncTheme();
     // 切换tab时刷新
     if (this.data.activeTab === 'records') {
       this.loadRecords();
@@ -110,16 +125,20 @@ Page({
   },
 
   onReplayRecord(e: any) {
-    const record = e.currentTarget.dataset.record;
+    const idx = e.currentTarget.dataset.idx;
+    const record = this.data.records[idx];
     if (record) {
+      const app = getApp();
+      app.globalData._analysisGame = record;
       wx.navigateTo({
-        url: `/pages/record-detail/record-detail?record=${encodeURIComponent(JSON.stringify(record))}`,
+        url: `/pages/record-detail/record-detail`,
       });
     }
   },
 
   onDeleteRecord(e: any) {
-    const record = e.currentTarget.dataset.record;
+    const idx = e.currentTarget.dataset.idx;
+    const record = this.data.records[idx];
     if (!record) return;
     wx.showModal({
       title: '确认删除',
@@ -168,10 +187,13 @@ Page({
   },
 
   onAnalyzeGame(e: any) {
-    const game = e.currentTarget.dataset.game;
+    const idx = e.currentTarget.dataset.idx;
+    const game = this.data.games[idx];
     if (game) {
+      const app = getApp();
+      app.globalData._analysisGame = game;
       wx.navigateTo({
-        url: `/pages/analysis/analysis?game=${encodeURIComponent(JSON.stringify(game))}`,
+        url: `/pages/analysis/analysis`,
       });
     }
   },
@@ -205,13 +227,13 @@ Page({
     api.importChessRecords(this.data.importPgnText)
       .then((res: any) => {
         if (res?.data) {
-          this.setData({ importResult: res.data });
+          this.setData({ importResult: res.data, errorsText: (res.data.errors && res.data.errors.length > 0) ? res.data.errors.join('\n') : '' });
           util.showToast(`导入成功 ${res.data.count} 局`, 'success');
           this.loadRecords();
         }
       })
       .catch((err: any) => {
-        this.setData({ importResult: { count: 0, errors: [err.message] } });
+        this.setData({ importResult: { count: 0, errors: [err.message] }, errorsText: err.message });
       })
       .finally(() => {
         this.setData({ importing: false });

@@ -1,0 +1,23 @@
+<view class="admin-page theme-{{__theme__}}">
+  <scroll-view scroll-y class="page-body">
+    <view class="page-header">
+      <text class="page-title">习题管理</text>
+      <view class="add-btn" catchtap="onCreate"><text class="add-btn-text">+ 新建</text></view>
+    </view>
+    <view wx:if="{{loading}}" class="loading-tip">加载中...</view>
+    <view wx:for="{{puzzles}}" class="item-card">
+      <view class="item-row">
+        <text class="item-name">{{item.title || '习题'}}</text>
+        <view class="toggle-btn {{item.isValid ? 'on' : 'off'}}" catchtap="onTogglePuzzle" data-index="{{index}}">
+          <view class="toggle-knob"></view>
+        </view>
+      </view>
+      <text class="item-desc">{{item.theme || '无主题'}} · 难度：{{item.difficulty || '?'}}</text>
+      <view class="item-actions">
+        <view class="action-btn" catchtap="onEdit" data-index="{{index}}"><text>编辑</text></view>
+        <view class="action-btn danger" catchtap="onDelete" data-index="{{index}}"><text>删除</text></view>
+      </view>
+    </view>
+    <view wx:if="{{puzzles.length === 0 && !loading}}" class="empty-tip">暂无习题</view>
+  </scroll-view>
+</view>

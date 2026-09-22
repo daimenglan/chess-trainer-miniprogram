@@ -1,0 +1,212 @@
+<view class="puzzles-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
+  <scroll-view scroll-y class="page-scroll">
+
+    <!-- 顶部统计 -->
+    <view wx:if="{{stats}}" class="stats-bar">
+      <text class="stat-cell">等级分 <text class="stat-val">{{stats.puzzleRating}}</text></text>
+      <text class="stat-cell">已做 <text class="stat-val">{{stats.totalAttempts}}</text></text>
+      <text class="stat-cell">正确率 <text class="stat-val">{{stats.solvedRatePct}}%</text></text>
+    </view>
+
+    <!-- 目标进度卡 -->
+    <view wx:if="{{trainingTarget > 0}}" class="goal-card">
+      <view class="goal-header">
+        <text class="goal-title">🎯 今日目标：{{trainingTarget}} 题</text>
+        <text class="goal-progress-text">{{puzzleDone}}/{{trainingTarget}}</text>
+      </view>
+      <view class="goal-body">
+        <view class="goal-stats">
+          <text class="goal-stat-correct">✅ 对了 {{puzzleCorrect}}</text>
+          <text class="goal-stat-wrong">❌ 错了 {{puzzleWrong}}</text>
+        </view>
+        <view class="progress-bar-bg">
+          <view class="progress-bar-fill" style="width: {{progressPct}}%"></view>
+        </view>
+        <text class="goal-hint">{{goalHint}}</text>
+      </view>
+    </view>
+
+    <!-- 激励横幅 -->
+    <view wx:if="{{motivationBanner.text}}" class="motivation-banner {{motivationBanner.color}}">
+      <text class="mb-icon">{{motivationBanner.icon}}</text>
+      <text class="mb-text">{{motivationBanner.text}}</text>
+    </view>
+
+    <!-- 消息 -->
+    <view wx:if="{{message}}" class="msg-bar {{'msg-' + msgType}}">{{message}}</view>
+
+<!-- 筛选面板 -->
+    <view wx:if="{{showFilters}}" class="filter-panel glass">
+      <view class="filter-header">
+        <text class="filter-title">🎯 题目分类筛选</text>
+        <view class="filter-header-right">
+          <text class="filter-toggle" catchtap="onToggleFilters">收起 ▲</text>
+          <view class="filter-reset" catchtap="onResetFilters">重置</view>
+        </view>
+      </view>
+
+      <!-- 维度1：阶段 -->
+      <view class="filter-group">
+        <text class="filter-label">阶段</text>
+        <view class="filter-options">
+          <view class="filter-opt {{phase === '' ? 'opt-active' : ''}}" catchtap="onPhaseSelect" data-value="">全部</view>
+          <view class="filter-opt {{phase === 'opening' ? 'opt-active' : ''}}" catchtap="onPhaseSelect" data-value="opening">📖 开局</view>
+          <view class="filter-opt {{phase === 'middlegame' ? 'opt-active' : ''}}" catchtap="onPhaseSelect" data-value="middlegame">⚔️ 中局</view>
+          <view class="filter-opt {{phase === 'endgame' ? 'opt-active' : ''}}" catchtap="onPhaseSelect" data-value="endgame">👑 残局</view>
+        </view>
+      </view>
+
+      <!-- 维度2：难度 -->
+      <view class="filter-group">
+        <text class="filter-label">难度（Elo）</text>
+        <view class="filter-options">
+          <view class="filter-opt {{difficulty === '' ? 'opt-active-diff' : ''}}" catchtap="onDifficultySelect" data-value="">全部</view>
+          <view class="filter-opt {{difficulty === '800' ? 'opt-active-diff' : ''}}" catchtap="onDifficultySelect" data-value="800">入门</view>
+          <view class="filter-opt {{difficulty === '1200' ? 'opt-active-diff' : ''}}" catchtap="onDifficultySelect" data-value="1200">初级</view>
+          <view class="filter-opt {{difficulty === '1600' ? 'opt-active-diff' : ''}}" catchtap="onDifficultySelect" data-value="1600">中级</view>
+          <view class="filter-opt {{difficulty === '2000' ? 'opt-active-diff' : ''}}" catchtap="onDifficultySelect" data-value="2000">高级</view>
+          <view class="filter-opt {{difficulty === '3000' ? 'opt-active-diff' : ''}}" catchtap="onDifficultySelect" data-value="3000">大师</view>
+        </view>
+      </view>
+
+      <!-- 维度3：主题 -->
+      <view class="filter-group">
+        <view class="filter-label-row" catchtap="onToggleThemes">
+          <text class="filter-label">主题</text>
+          <text class="filter-expand">{{showThemes ? '收起 ▲' : '展开 ▼'}}</text>
+        </view>
+        <view wx:if="{{selectedThemes.length > 0 && !showThemes}}" class="filter-options">
+          <view class="theme-tag" wx:for="{{selectedThemes}}" wx:key="*this" catchtap="onRemoveTheme" data-theme="{{item}}">
+            {{item}} ✕
+          </view>
+        </view>
+        <view wx:if="{{showThemes}}" class="themes-grid">
+          <view class="theme-category" wx:for="{{themeGroups}}" wx:for-item="group" wx:key="category">
+            <text class="theme-cat-label">{{group.category}}</text>
+            <view class="filter-options">
+              <view class="theme-opt {{t.selected ? 'theme-opt-active' : ''}}"
+                    wx:for="{{group.items}}" wx:key="name" catchtap="onToggleTheme" data-theme="{{t.name}}">
+                {{t.name}}
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 维度4：模式 -->
+      <view class="filter-group">
+        <text class="filter-label">出题模式</text>
+        <view class="filter-options">
+          <view class="filter-opt {{mode === 'new' ? 'opt-active-mode' : ''}}" catchtap="onModeSelect" data-value="new">✨ 新题</view>
+          <view class="filter-opt {{mode === 'wrong' ? 'opt-active-mode' : ''}}" catchtap="onModeSelect" data-value="wrong">🔁 错题重练</view>
+          <view class="filter-opt {{mode === 'all' ? 'opt-active-mode' : ''}}" catchtap="onModeSelect" data-value="all">📋 全部</view>
+        </view>
+      </view>
+
+      <view class="btn-primary {{loading ? 'btn-loading' : ''}}" catchtap="onStartPuzzle">
+        <text>{{loading ? '出题中...' : (attemptState ? '换一题' : '开始做题')}}</text>
+      </view>
+    </view>
+
+    <!-- 筛选面板折叠状态：做题时显示展开条 -->
+    <view wx:if="{{!showFilters && attemptState}}" class="filter-collapsed" catchtap="onToggleFilters">
+      <text class="filter-collapsed-text">▶ 展开筛选</text>
+    </view>
+
+    <!-- 做题区域 -->
+    <view wx:if="{{attemptState}}" class="puzzle-area glass">
+      <!-- 棋盘（用 chess-board 组件） -->
+      <chess-board id="puzzleBoard"
+        fen="{{puzzleFen}}"
+        interactive="{{!puzzleCompleted}}"
+        flipped="{{puzzleFlipped}}"
+        selectedSquare="{{selectedSquare}}"
+        legalMoves="{{legalMoves}}"
+        lastMoveFrom="{{lastMoveFrom}}"
+        lastMoveTo="{{lastMoveTo}}"
+        boardColorPreset="blueWhite"
+        bind:squaretap="onPuzzleSquareTap">
+      </chess-board>
+
+      <!-- 步数信息 -->
+      <view class="puzzle-info">
+        <text>第 {{stepIndex + 1}} / {{totalSteps}} 步</text>
+        <text>{{puzzleOrientation === 'black' ? '⚫ 你执黑（请走黑方）' : '⚪ 你执白（请走白方）'}}</text>
+        <text>剩余 {{attemptsLeft}} 次</text>
+      </view>
+
+      <!-- 操作按钮 -->
+      <view class="puzzle-actions">
+        <view class="action-small {{hintUsed ? 'action-disabled' : ''}}" catchtap="onHint">💡 提示</view>
+        <view class="action-small" catchtap="onGiveUp">🏳️ 放弃</view>
+        <view class="action-small {{favorited ? 'action-fav' : ''}}" catchtap="onToggleFav">
+          {{favorited ? '❤️' : '🤍'}}
+        </view>
+        <view class="action-small" catchtap="onExplain">🤖 讲解</view>
+      </view>
+    </view>
+
+    <!-- 题目信息 -->
+    <view wx:if="{{attemptState && puzzleInfo}}" class="puzzle-info-card glass">
+      <text class="info-title">题目信息</text>
+      <view class="info-grid">
+        <text>难度：<text class="info-val">{{puzzleInfo.difficulty || '?'}} Elo</text></text>
+        <text>阶段：<text class="info-val">{{phaseLabel(puzzleInfo.phase)}}</text></text>
+        <text>棋子数：<text class="info-val">{{puzzleInfo.pieceCount || '?'}}</text></text>
+      </view>
+      <view wx:if="{{puzzleInfo.themes && puzzleInfo.themes.length > 0}}" class="info-themes">
+        <text class="theme-tag" wx:for="{{puzzleInfo.themes}}" wx:key="*this">{{item}}</text>
+      </view>
+    </view>
+
+    <!-- AI 讲解 -->
+    <view wx:if="{{showExplain}}" class="explain-card glass">
+      <view class="explain-header">
+        <text class="explain-title">🤖 AI 教练讲解</text>
+        <text class="explain-close" catchtap="onCloseExplain">✕</text>
+      </view>
+      <scroll-view class="explain-body" scroll-y>
+        <text wx:if="{{explainText}}" class="explain-text">{{explainText}}</text>
+        <text wx:if="{{explaining}}" class="explain-thinking">🤔 AI 正在生成...</text>
+      </scroll-view>
+    </view>
+
+    <!-- 做题结果 -->
+    <view wx:if="{{moveResult && moveResult.completed}}" class="result-card glass {{resultClass}}">
+      <text class="result-title">{{resultTitle}}</text>
+      <text wx:if="{{moveResult.ratingChange !== undefined}}" class="result-rating">
+        等级分 <text class="{{moveResult.ratingChange >= 0 ? 'text-up' : 'text-down'}}">{{moveResult.ratingChange >= 0 ? '+' : ''}}{{moveResult.ratingChange}}</text> → {{moveResult.newRating}}
+      </text>
+      <text wx:if="{{moveResult.wrongBookAdded}}" class="result-wb">已加入错题本</text>
+      <text wx:if="{{moveResult.solutionMoves}}" class="result-solution">
+        完整解法：{{solutionText}}
+      </text>
+      <view class="btn-primary" catchtap="onNextPuzzle">下一题 →</view>
+    </view>
+
+    <!-- 空状态 -->
+    <view wx:if="{{!attemptState && !moveResult}}" class="empty-guide">
+      <text class="empty-icon">🧩</text>
+      <text class="empty-text">选择上方的分类维度，点击「开始做题」</text>
+      <text wx:if="{{!token}}" class="empty-hint">登录后可记录做题历史和等级分</text>
+    </view>
+
+    <!-- 连接诊断 -->
+    <view wx:if="{{showDiagnosis}}" class="diag-card glass">
+      <view class="diag-header">
+        <text>🔌 连接诊断</text>
+        <text catchtap="onCloseDiag" style="font-size:22rpx;color:#8888aa;">收起</text>
+      </view>
+      <view wx:if="{{diagnosing}}" class="diag-loading">⏳ 正在诊断...</view>
+      <view wx:if="{{diagResult}}" class="diag-items">
+        <view class="diag-item" wx:for="{{diagResult}}" wx:key="label">
+          <view class="diag-dot {{item.ok ? 'dot-green' : 'dot-red'}}"></view>
+          <text class="diag-label">{{item.label}}</text>
+          <text class="diag-detail {{item.ok ? 'text-green' : 'text-red'}}">{{item.detail}}</text>
+        </view>
+      </view>
+    </view>
+
+  </scroll-view>
+  
+</view>

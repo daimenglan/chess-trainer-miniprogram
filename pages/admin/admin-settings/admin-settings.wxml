@@ -1,0 +1,27 @@
+<view class="admin-page theme-{{__theme__}}">
+  <scroll-view scroll-y class="page-body">
+    <view class="page-header"><text class="page-title">系统设置</text></view>
+    <view wx:if="{{loading}}" class="loading-tip">加载中...</view>
+    <view class="settings-group">
+      <view class="settings-item">
+        <text class="settings-label">会员系统</text>
+        <switch checked="{{settings.membershipEnabled}}" color="#6c63ff" bindchange="onToggle" data-field="membershipEnabled" />
+      </view>
+      <view class="settings-item">
+        <text class="settings-label">视频生成</text>
+        <switch checked="{{settings.videoGenerationEnabled}}" color="#6c63ff" bindchange="onToggle" data-field="videoGenerationEnabled" />
+      </view>
+      <view class="settings-item">
+        <text class="settings-label">AI 分析报告</text>
+        <switch checked="{{settings.aiAnalysisReportEnabled}}" color="#6c63ff" bindchange="onToggle" data-field="aiAnalysisReportEnabled" />
+      </view>
+      <view class="settings-item">
+        <text class="settings-label">分销系统</text>
+        <switch checked="{{settings.distributionEnabled}}" color="#6c63ff" bindchange="onToggle" data-field="distributionEnabled" />
+      </view>
+    </view>
+    <view class="btn-row">
+      <view class="btn primary" catchtap="onSave"><text class="btn-text">保存设置</text></view>
+    </view>
+  </scroll-view>
+</view>

@@ -1,4 +1,4 @@
-<view class="records-page">
+<view class="records-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
   <!-- 头部 -->
   <view class="page-header glass gradient-top">
     <text class="page-title">📚 棋谱</text>
@@ -37,7 +37,7 @@
         <view class="empty-action" catchtap="onShowImport">导入PGN</view>
       </view>
 
-      <view wx:if="{{records.length > 0}}" class="record-card" wx:for="{{records}}" wx:key="recordId" data-record="{{item}}">
+      <view wx:if="{{records.length > 0}}" class="record-card" wx:for="{{records}}" wx:key="recordId" wx:for-index="recIdx">
         <view class="record-info">
           <view class="record-players">
             <text class="player-name">{{item.white}}</text>
@@ -52,8 +52,7 @@
           <text wx:if="{{item.event}}" class="record-event">{{item.event}}</text>
         </view>
         <view class="record-actions">
-          <view class="action-btn" catchtap="onReplayRecord">▶ 回放</view>
-          <view class="action-btn action-danger" catchtap="onDeleteRecord">🗑</view>
+          <view class="action-btn" catchtap="onReplayRecord" data-idx="{{recIdx}}">▶ 回放</view>
         </view>
       </view>
 
@@ -75,7 +74,7 @@
         <view class="empty-action" catchtap="goToGame">去下棋</view>
       </view>
 
-      <view wx:if="{{games.length > 0}}" class="record-card" wx:for="{{games}}" wx:key="gameId" data-game="{{item}}">
+      <view wx:if="{{games.length > 0}}" class="record-card" wx:for="{{games}}" wx:key="gameId" wx:for-index="idx">
         <view class="record-info">
           <view class="record-players">
             <text class="player-name">{{item.whiteName}}</text>
@@ -89,7 +88,7 @@
           </view>
         </view>
         <view class="record-actions">
-          <view class="action-btn" catchtap="onAnalyzeGame">📊 分析</view>
+          <view class="action-btn" catchtap="onAnalyzeGame" data-idx="{{idx}}">📊 分析</view>
         </view>
       </view>
     </scroll-view>
@@ -110,9 +109,10 @@
       <view wx:if="{{importResult}}" class="import-result">
         <text wx:if="{{importResult.count > 0}}">✅ 成功导入 {{importResult.count}} 局</text>
         <text wx:if="{{importResult.errors && importResult.errors.length > 0}}" class="import-errors">
-          ⚠️ {{importResult.errors.join('\n')}}
+          ⚠️ {{errorsText}}
         </text>
       </view>
     </view>
   </view>
+  
 </view>

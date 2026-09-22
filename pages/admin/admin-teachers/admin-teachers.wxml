@@ -1,0 +1,20 @@
+<view class="admin-page theme-{{__theme__}}">
+  <scroll-view scroll-y class="page-body">
+    <view class="page-header"><text class="page-title">教师管理</text></view>
+    <view wx:if="{{loading}}" class="loading-tip">加载中...</view>
+    <view wx:for="{{teachers}}" class="item-card">
+      <view class="item-row">
+        <text class="item-name">{{item.nickname || '用户'}}</text>
+        <text class="item-status" wx:if="{{item.status === 'approved'}}">已通过</text>
+        <text class="item-status pending" wx:if="{{item.status === 'pending'}}">待审核</text>
+        <text class="item-status disabled" wx:else>已拒绝</text>
+      </view>
+      <text class="item-desc">{{item.bio || '无简介'}} · 申请时间：{{item.createdAt || ''}}</text>
+      <view class="item-actions" wx:if="{{item.status === 'pending'}}">
+        <view class="action-btn success" catchtap="onApprove" data-index="{{index}}"><text>通过</text></view>
+        <view class="action-btn danger" catchtap="onReject" data-index="{{index}}"><text>拒绝</text></view>
+      </view>
+    </view>
+    <view wx:if="{{teachers.length === 0 && !loading}}" class="empty-tip">暂无教师申请</view>
+  </scroll-view>
+</view>

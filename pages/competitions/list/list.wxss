@@ -1,0 +1,140 @@
+.page {
+  background: var(--bg-page, #0f0f23);
+  color: var(--text-primary, #e8e8f0);
+  min-height: 100vh;
+}
+
+.nav-bar {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 32rpx;
+  background: var(--bg-card, #1a1a2e);
+  border-bottom: 1rpx solid var(--border-color, #2a2a4a);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-back {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 12rpx 20rpx;
+  border-radius: 12rpx;
+  background: var(--bg-hover, #252545);
+  margin-right: 24rpx;
+}
+
+.nav-back-icon {
+  font-size: 32rpx;
+  color: var(--text-primary, #e8e8f0);
+}
+
+.nav-back-text {
+  font-size: 26rpx;
+  color: var(--text-primary, #e8e8f0);
+}
+
+.nav-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--text-primary, #e8e8f0);
+  flex: 1;
+}
+
+.scroll-content {
+  padding: 24rpx 32rpx;
+  height: calc(100vh - 100rpx);
+}
+
+.competition-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.competition-card {
+  background: var(--bg-card, #1a1a2e);
+  border-radius: 20rpx;
+  padding: 28rpx;
+  border: 1rpx solid var(--border-color, #2a2a4a);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.2);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12rpx;
+}
+
+.card-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: var(--text-primary, #e8e8f0);
+  flex: 1;
+}
+
+.card-status {
+  font-size: 22rpx;
+  padding: 6rpx 14rpx;
+  border-radius: 8rpx;
+  font-weight: 600;
+}
+
+.card-status[status="registration"] {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.card-status[status="ongoing"] {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.card-status[status="finished"] {
+  color: #6b7280;
+  background: rgba(107, 114, 128, 0.15);
+}
+
+.card-desc {
+  font-size: 24rpx;
+  color: var(--text-secondary, #a0a0c0);
+  line-height: 1.5;
+  margin-bottom: 16rpx;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-info {
+  display: flex;
+  gap: 20rpx;
+  flex-wrap: wrap;
+}
+
+.info-item {
+  font-size: 22rpx;
+  color: var(--text-muted, #888);
+}
+
+.loading-tip, .empty-tip {
+  text-align: center;
+  padding: 60rpx 32rpx;
+}
+
+.loading-tip text, .empty-tip text {
+  font-size: 24rpx;
+  color: var(--text-muted, #666);
+}
+
+.load-more, .no-more {
+  text-align: center;
+  padding: 30rpx;
+}
+
+.load-more text, .no-more text {
+  font-size: 24rpx;
+  color: var(--accent, #6c63ff);
+}

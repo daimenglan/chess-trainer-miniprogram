@@ -1,0 +1,144 @@
+/* 用户明细 */
+.users-page {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  flex-wrap: wrap;
+  margin-bottom: 16rpx;
+}
+
+.filter-item {
+  flex-shrink: 0;
+}
+
+.filter-btn {
+  padding: 12rpx 20rpx;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14rpx;
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 200rpx;
+  padding: 12rpx 20rpx;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14rpx;
+  font-size: 24rpx;
+  color: var(--text-primary);
+}
+
+.filter-reset {
+  padding: 12rpx 20rpx;
+  font-size: 24rpx;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.total-tip {
+  font-size: 22rpx;
+  color: var(--text-muted);
+  margin-bottom: 16rpx;
+}
+
+/* 表格 */
+.table-scroll {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.user-table {
+  display: inline-block;
+  min-width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 16rpx;
+  overflow: hidden;
+  background: var(--bg-card);
+}
+
+.table-head,
+.table-row {
+  display: flex;
+}
+
+.table-head {
+  background: var(--bg-card-hover);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.th {
+  padding: 20rpx 24rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-right: 1px solid var(--border-color-light);
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  cursor: pointer;
+  user-select: none;
+}
+
+.th:last-child {
+  border-right: none;
+}
+
+.th-username { min-width: 200rpx; }
+.th-created { min-width: 200rpx; }
+.th-login { min-width: 200rpx; }
+.th-total { min-width: 180rpx; }
+.th-avg { min-width: 180rpx; }
+.th-module { min-width: 220rpx; }
+
+.table-row {
+  border-top: 1px solid var(--border-color-light);
+}
+
+.td {
+  padding: 20rpx 24rpx;
+  font-size: 24rpx;
+  color: var(--text-primary);
+  border-right: 1px solid var(--border-color-light);
+  display: flex;
+  align-items: center;
+}
+
+.td:last-child {
+  border-right: none;
+}
+
+.td-username { min-width: 200rpx; font-weight: 600; }
+.td-created { min-width: 200rpx; color: var(--text-secondary); }
+.td-login { min-width: 200rpx; color: var(--text-secondary); }
+.td-total { min-width: 180rpx; }
+.td-avg { min-width: 180rpx; }
+.td-module { min-width: 220rpx; }
+
+.empty-tip,
+.end-tip {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 26rpx;
+  padding: 40rpx 0;
+}
+
+.loading-tip {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 26rpx;
+  padding: 24rpx 0 60rpx;
+}

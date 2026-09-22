@@ -1,9 +1,24 @@
-<view class="settings-page">
+<view class="settings-page {{__theme__ ? 'theme-' + __theme__ : ''}} {{__theme__ ? 'theme-' + __theme__ : ''}}">
   <view class="page-header glass gradient-top">
     <text class="page-title">⚙️ 设置</text>
   </view>
 
   <scroll-view class="settings-content" scroll-y>
+    <!-- 系统主题 -->
+    <view class="setting-section">
+      <text class="section-title">系统主题</text>
+      <view class="theme-switch-row">
+        <view class="theme-switch-opt {{appSettings.uiTheme === 'dark' ? 'theme-switch-active' : ''}}"
+              data-theme="dark" catchtap="onThemeSwitch">
+          <text>🌙 深色</text>
+        </view>
+        <view class="theme-switch-opt {{appSettings.uiTheme === 'light' ? 'theme-switch-active' : ''}}"
+              data-theme="light" catchtap="onThemeSwitch">
+          <text>☀️ 浅色</text>
+        </view>
+      </view>
+    </view>
+
     <!-- 棋盘主题 -->
     <view class="setting-section">
       <text class="section-title">棋盘主题</text>
@@ -91,4 +106,5 @@
       </view>
     </view>
   </scroll-view>
+  
 </view>

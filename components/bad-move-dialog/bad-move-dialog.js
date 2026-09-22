@@ -58,6 +58,9 @@ Component({
         onExplore() {
             this.triggerEvent('explore');
         },
+        onAutoExplore() {
+            this.triggerEvent('autoexplore');
+        },
         onConfirm() {
             this.triggerEvent('confirm');
         },

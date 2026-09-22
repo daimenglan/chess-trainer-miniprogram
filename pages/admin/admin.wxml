@@ -1,0 +1,198 @@
+<!-- 数据监控仪表盘（管理员） -->
+<view class="admin-page theme-{{__theme__}}">
+  <scroll-view scroll-y class="page-body">
+
+    <!-- 功能入口 -->
+    <view class="entry-row">
+      <view class="entry-card" catchtap="goStats">
+        <view class="entry-icon">📈</view>
+        <view class="entry-info">
+          <view class="entry-title">统计分析</view>
+          <view class="entry-desc">对局分布 / 趋势 / 模块时长</view>
+        </view>
+        <view class="entry-arrow">›</view>
+      </view>
+      <view class="entry-card" catchtap="goLogs">
+        <view class="entry-icon">📋</view>
+        <view class="entry-info">
+          <view class="entry-title">数据监控明细</view>
+          <view class="entry-desc">用户行为日志查询</view>
+        </view>
+        <view class="entry-arrow">›</view>
+      </view>
+      <view class="entry-card" catchtap="goUsers">
+        <view class="entry-icon">👥</view>
+        <view class="entry-info">
+          <view class="entry-title">用户明细</view>
+          <view class="entry-desc">注册/登录/在线时长</view>
+        </view>
+        <view class="entry-arrow">›</view>
+      </view>
+    </view>
+
+    <!-- 系统管理 -->
+    <view class="section-title">系统管理</view>
+    <view class="entry-row">
+      <view class="entry-card" catchtap="goAiBots">
+        <view class="entry-icon">🤖</view>
+        <view class="entry-info">
+          <view class="entry-title">AI Bot 管理</view>
+          <view class="entry-desc">AI 陪练机器人配置</view>
+        </view>
+        <view class="entry-arrow">›</view>
+      </view>
+      <view class="entry-card" catchtap="goChessGames">
+        <view class="entry-icon">♟️</view>
+        <view class="entry-info">
+          <view class="entry-title">棋谱管理</view>
+          <view class="entry-desc">对局记录查看与删除</view>
+        </view>
+        <view class="entry-arrow">›</view>
+      </view>
+      <view class="entry-card" catchtap="goCompetitions">
+        <view class="entry-icon">🏆</view>
+        <view class="entry-info">
+          <view class="entry-title">竞赛管理</view>
+          <view class="entry-desc">创建与管理竞赛</view>
+        </view>
+        <view class="entry-arrow">›</view>
+      </view>
+      <view class="entry-card" catchtap="goTeachers">
+        <view class="entry-icon">👨‍🏫</view>
+        <view class="entry-info">
+          <view class="entry-title">教师管理</view>
+          <view class="entry-desc">教师申请审核</view>
+        </view>
+        <view class="entry-arrow">›</view>
+      </view>
+      <view class="entry-card" catchtap="goKnowledge">
+        <view class="entry-icon">📚</view>
+        <view class="entry-info">
+          <view class="entry-title">知识库管理</view>
+          <view class="entry-desc">AI 知识条目配置</view>
+        </view>
+        <view class="entry-arrow">›</view>
+      </view>
+      <view class="entry-card" catchtap="goPuzzles">
+        <view class="entry-icon">🧩</view>
+        <view class="entry-info">
+          <view class="entry-title">习题管理</view>
+          <view class="entry-desc">习题库创建与维护</view>
+        </view>
+        <view class="entry-arrow">›</view>
+      </view>
+      <view class="entry-card" catchtap="goSurveys">
+        <view class="entry-icon">📊</view>
+        <view class="entry-info">
+          <view class="entry-title">问卷调查</view>
+          <view class="entry-desc">创建与查看问卷</view>
+        </view>
+        <view class="entry-arrow">›</view>
+      </view>
+      <view class="entry-card" catchtap="goFeedback">
+        <view class="entry-icon">💬</view>
+        <view class="entry-info">
+          <view class="entry-title">反馈管理</view>
+          <view class="entry-desc">用户反馈查看与回复</view>
+        </view>
+        <view class="entry-arrow">›</view>
+      </view>
+    </view>
+
+    <!-- 营收管理 -->
+    <view class="section-title">营收管理</view>
+    <view class="entry-row">
+      <view class="entry-card" catchtap="goDistribution">
+        <view class="entry-icon">💰</view>
+        <view class="entry-info">
+          <view class="entry-title">分销管理</view>
+          <view class="entry-desc">分销商与佣金规则</view>
+        </view>
+        <view class="entry-arrow">›</view>
+      </view>
+      <view class="entry-card" catchtap="goDragonCoin">
+        <view class="entry-icon">🪙</view>
+        <view class="entry-info">
+          <view class="entry-title">龙币管理</view>
+          <view class="entry-desc">兑换比例与规则设置</view>
+        </view>
+        <view class="entry-arrow">›</view>
+      </view>
+      <view class="entry-card" catchtap="goMembership">
+        <view class="entry-icon">⭐</view>
+        <view class="entry-info">
+          <view class="entry-title">会员管理</view>
+          <view class="entry-desc">会员等级与订单</view>
+        </view>
+        <view class="entry-arrow">›</view>
+      </view>
+      <view class="entry-card" catchtap="goMenu">
+        <view class="entry-icon">☰</view>
+        <view class="entry-info">
+          <view class="entry-title">菜单管理</view>
+          <view class="entry-desc">导航菜单配置</view>
+        </view>
+        <view class="entry-arrow">›</view>
+      </view>
+      <view class="entry-card" catchtap="goSmtp">
+        <view class="entry-icon">📧</view>
+        <view class="entry-info">
+          <view class="entry-title">SMTP 配置</view>
+          <view class="entry-desc">邮件服务设置</view>
+        </view>
+        <view class="entry-arrow">›</view>
+      </view>
+    </view>
+
+    <!-- 今日指标 -->
+    <view class="section-title">今日概览</view>
+    <view class="stat-grid">
+      <view class="stat-card">
+        <view class="stat-value">{{today.newUsers}}</view>
+        <view class="stat-label">新注册</view>
+      </view>
+      <view class="stat-card">
+        <view class="stat-value">{{today.loginUsers}}</view>
+        <view class="stat-label">登录用户</view>
+      </view>
+      <view class="stat-card">
+        <view class="stat-value">{{today.gameUsers}}</view>
+        <view class="stat-label">对局用户</view>
+      </view>
+      <view class="stat-card">
+        <view class="stat-value">{{today.avgDurationText}}</view>
+        <view class="stat-label">平均使用时长</view>
+      </view>
+    </view>
+
+    <!-- 系统总览 -->
+    <view class="section-title">系统总览</view>
+    <view class="stat-grid">
+      <view class="stat-card">
+        <view class="stat-value">{{system.totalUsers}}</view>
+        <view class="stat-label">总用户数</view>
+      </view>
+      <view class="stat-card">
+        <view class="stat-value">{{system.totalGames}}</view>
+        <view class="stat-label">总对局数</view>
+      </view>
+      <view class="stat-card">
+        <view class="stat-value">{{system.totalRecords}}</view>
+        <view class="stat-label">棋谱总数</view>
+      </view>
+      <view class="stat-card">
+        <view class="stat-value engine-{{system.engineStatus}}">{{system.engineText}}</view>
+        <view class="stat-label">引擎状态</view>
+      </view>
+    </view>
+
+    <!-- 近7日趋势 -->
+    <view class="section-title">近7日趋势</view>
+    <view class="chart-panel">
+      <line-chart labels="{{trendLabels}}" series="{{trendSeries}}" theme="{{__theme__}}" />
+    </view>
+
+    <view wx:if="{{loading}}" class="loading-tip">加载中...</view>
+    <view wx:if="{{loadError}}" class="error-tip">{{loadError}}</view>
+  </scroll-view>
+</view>

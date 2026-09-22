@@ -1,0 +1,60 @@
+<!-- 用户明细（管理员） -->
+<view class="users-page theme-{{__theme__}}">
+
+  <!-- 筛选栏 -->
+  <view class="filter-bar">
+    <picker class="filter-item" range="{{dateFieldOptions}}" value="{{dateFieldIndex}}" bindchange="onDateFieldChange">
+      <view class="filter-btn">类型：{{dateFieldOptions[dateFieldIndex]}} ▾</view>
+    </picker>
+    <picker class="filter-item" mode="date" value="{{dateFrom}}" bindchange="onDateFromChange">
+      <view class="filter-btn">起：{{dateFrom || '不限'}} ▾</view>
+    </picker>
+    <picker class="filter-item" mode="date" value="{{dateTo}}" bindchange="onDateToChange">
+      <view class="filter-btn">止：{{dateTo || '不限'}} ▾</view>
+    </picker>
+    <input class="search-input" placeholder="用户名模糊搜索" value="{{search}}" bindinput="onSearchInput" bindconfirm="onSearchConfirm" />
+    <view class="filter-reset" catchtap="onResetFilter">重置</view>
+  </view>
+
+  <view class="total-tip">共 {{total}} 条记录</view>
+
+  <!-- 表格 -->
+  <scroll-view scroll-x class="table-scroll">
+    <view class="user-table">
+      <view class="table-head">
+        <view class="th th-username" catchtap="sortToggle" data-field="username">
+          用户名 {{sortArrows.username}}
+        </view>
+        <view class="th th-created" catchtap="sortToggle" data-field="createdAt">
+          注册时间 {{sortArrows.createdAt}}
+        </view>
+        <view class="th th-login" catchtap="sortToggle" data-field="latestLogin">
+          最新登录 {{sortArrows.latestLogin}}
+        </view>
+        <view class="th th-total" catchtap="sortToggle" data-field="totalDuration">
+          总在线时长 {{sortArrows.totalDuration}}
+        </view>
+        <view class="th th-avg" catchtap="sortToggle" data-field="avgDuration">
+          平均在线时长 {{sortArrows.avgDuration}}
+        </view>
+        <view class="th th-module" catchtap="sortToggle" data-field="longestModule">
+          停留最长模块 {{sortArrows.longestModule}}
+        </view>
+      </view>
+
+      <view class="table-body">
+        <view class="table-row" wx:for="{{users}}" wx:key="userId">
+          <view class="td td-username">{{item.username}}</view>
+          <view class="td td-created">{{item.createdAtShort}}</view>
+          <view class="td td-login">{{item.latestLoginShort}}</view>
+          <view class="td td-total">{{item.totalDurationText}}</view>
+          <view class="td td-avg">{{item.avgDurationText}}</view>
+          <view class="td td-module">{{item.longestModuleLabel}}</view>
+        </view>
+        <view wx:if="{{users.length === 0 && !loading}}" class="empty-tip">暂无数据</view>
+        <view wx:if="{{loading}}" class="loading-tip">加载中...</view>
+        <view wx:if="{{!loading && finished && users.length > 0}}" class="end-tip">没有更多了</view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

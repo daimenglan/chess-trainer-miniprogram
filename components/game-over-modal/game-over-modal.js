@@ -28,7 +28,12 @@ Component({
         'result': function (result) {
             if (!result)
                 return;
-            const playerSide = this.properties.playerSide;
+            let playerSide = this.properties.playerSide;
+            // 归一化：页面传入的 playerSide 可能是 'w'/'b'，需要转为 'white'/'black'
+            if (playerSide === 'w')
+                playerSide = 'white';
+            else if (playerSide === 'b')
+                playerSide = 'black';
             const isWin = result === playerSide ||
                 (result === '1-0' && playerSide === 'white') ||
                 (result === '0-1' && playerSide === 'black');

@@ -1,82 +1,309 @@
-<view class="analysis-page">
-  <view class="page-header glass gradient-top">
-    <text class="page-title">📊 对局分析</text>
+<view class="analysis-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
+  <!-- 顶部导航 -->
+  <view class="top-bar glass gradient-top">
+    <view class="top-bar-left">
+      <text class="mode-badge">🔍 分析模式</text>
+      <block wx:if="{{game}}">
+        <view class="player-tag"><text class="player-dot-white"></text><text>{{game.whiteName || game.white || '白方'}}</text></view>
+        <text class="vs-text">VS</text>
+        <view class="player-tag"><text class="player-dot-black"></text><text>{{game.blackName || game.black || '黑方'}}</text></view>
+        <text wx:if="{{game.result}}" class="result-tag">{{game.result}}</text>
+      </block>
+    </view>
+    <view class="top-bar-right">
+      <!-- 右下角菜单遮罩 -->
+      <view wx:if="{{showMoreMenu}}" class="more-mask" catchtap="onMoreTap"></view>
+      <!-- 更多操作按钮 -->
+      <view class="more-btn" catchtap="onMoreTap">
+        <text class="more-icon">☰</text>
+      </view>
+      <!-- 下拉菜单 -->
+      <view wx:if="{{showMoreMenu}}" class="more-dropdown">
+        <view class="more-item {{reviewLoading ? 'more-item-disabled' : ''}} {{moveReviewCount > 0 ? '' : ''}}"
+              catchtap="onToggleReview">
+          <text>{{reviewLoading ? '⏳ ' + reviewProgress + '%' : (moveReviewCount > 0 ? '📊 复盘' : '🤖 复盘')}}</text>
+        </view>
+        <view class="more-item {{explorationMode ? 'more-item-active' : ''}}" catchtap="onToggleExploration">
+          <text>{{explorationMode ? '📝 退出推演' : '✏️ 推演'}}</text>
+        </view>
+        <view class="more-item" catchtap="onStartAutoExploration">
+          <text>🤖 自动推演</text>
+        </view>
+        <view class="more-item" catchtap="onShowAiAnalysis">
+          <text>🤖 AI分析</text>
+        </view>
+        <view wx:if="{{showVideoGeneration}}" class="more-item" catchtap="onShowVideoModal">
+          <text>🎬 讲解视频</text>
+        </view>
+        <view class="more-item" catchtap="onShowShare">
+          <text>📤 分享</text>
+        </view>
+        <view class="more-item" catchtap="onFlip">
+          <text>🔄 翻转棋盘</text>
+        </view>
+      </view>
+    </view>
   </view>
 
-  <!-- 对局信息 -->
-  <view wx:if="{{game}}" class="game-summary">
-    <text class="summary-players">{{game.white}} VS {{game.black}}</text>
-    <text class="summary-result">{{game.result}}</text>
-  </view>
+  <!-- 优劣势走势图（复盘时显示在棋盘上方，点击数据点跳转到对应步；分析线与推荐走法均可折叠） -->
+  <view wx:if="{{!showMoreMenu && (reviewLoading || reviewError || (reviewDone && chartData.length >= 2))}}" class="chart-section-top">
+    <!-- 分析线：折叠头 -->
+    <view class="collapse-bar" catchtap="onToggleChartLine">
+      <text class="collapse-title">📈 分析线</text>
+      <text wx:if="{{!chartLineExpanded}}" class="collapse-hint">
+        {{reviewLoading ? '分析中 ' + reviewProgress + '%' : (reviewError ? '加载失败' : chartData.length + ' 个局面点')}}
+      </text>
+      <text class="collapse-icon">{{chartLineExpanded ? '收起 ▲' : '展开 ▼'}}</text>
+    </view>
+    <view wx:if="{{chartLineExpanded}}">
+      <canvas wx:if="{{reviewDone && chartData.length >= 2}}" type="2d" id="evalChart" class="eval-chart-top" catchtap="onChartTap"></canvas>
+      <view wx:elif="{{reviewLoading}}" class="chart-placeholder-top">
+        <text>⏳ 正在分析优劣势... {{reviewProgress > 0 ? reviewProgress + '%' : ''}}</text>
+      </view>
+      <view wx:else class="chart-placeholder-top">
+        <text class="text-warn">⚠️ 分析加载失败</text>
+      </view>
+    </view>
 
-  <!-- 分析按钮/进度 -->
-  <view wx:if="{{!analysisDone && moves.length > 0}}" class="review-action">
-    <view class="btn-primary {{isAnalyzing ? 'btn-loading' : ''}}" catchtap="startReview">
-      <text>{{isAnalyzing ? '分析中...' : '🚀 开始复盘分析'}}</text>
-    </view>
-    <view wx:if="{{isAnalyzing}}" class="progress-bar">
-      <view class="progress-fill" style="width: {{analysisProgress}}%"></view>
-    </view>
-  </view>
-
-  <!-- 分析总结 -->
-  <view wx:if="{{summary && analysisDone}}" class="summary-card glass">
-    <text class="summary-title">复盘总结</text>
-    <view class="summary-grid">
-      <view class="summary-item">
-        <text class="summary-value" style="color:#4ade80">{{summary.best}}</text>
-        <text class="summary-label">最佳走法</text>
+    <!-- 每一步的推荐走法（分阶段高亮摘要）：折叠头 -->
+    <block wx:if="{{chartPhaseInfo.length > 0}}">
+      <view class="collapse-bar collapse-bar-divided" catchtap="onTogglePhaseMoves">
+        <text class="collapse-title">🎯 每阶段推荐走法</text>
+        <text wx:if="{{!phaseMovesExpanded}}" class="collapse-hint">{{chartPhaseInfo.length}} 个阶段</text>
+        <text class="collapse-icon">{{phaseMovesExpanded ? '收起 ▲' : '展开 ▼'}}</text>
       </view>
-      <view class="summary-item">
-        <text class="summary-value" style="color:#22c55e">{{summary.good}}</text>
-        <text class="summary-label">好棋</text>
+      <view wx:if="{{phaseMovesExpanded}}" class="phase-summary">
+        <view class="phase-row" wx:for="{{chartPhaseInfo}}" wx:key="phaseLabel"
+              wx:for-item="ph">
+          <text class="phase-dot" style="color:{{ph.phaseColor}}">⬤</text>
+          <text class="phase-label">{{ph.phaseLabel}}</text>
+          <view class="phase-moves">
+            <text class="phase-tag phase-tag-best" data-index="{{ph.best.index}}" catchtap="onPhaseMoveTap">
+              ⭐{{ph.best.san}}
+            </text>
+            <text class="phase-tag phase-tag-worst" data-index="{{ph.worst.index}}" catchtap="onPhaseMoveTap">
+              ❌{{ph.worst.san}}
+            </text>
+            <text wx:if="{{ph.turningPoint.index !== ph.best.index && ph.turningPoint.index !== ph.worst.index}}"
+                  class="phase-tag phase-tag-turn" data-index="{{ph.turningPoint.index}}" catchtap="onPhaseMoveTap">
+              ⚡{{ph.turningPoint.san}}
+            </text>
+          </view>
+        </view>
       </view>
-      <view class="summary-item">
-        <text class="summary-value" style="color:#facc15">{{summary.inaccuracy}}</text>
-        <text class="summary-label">缓着</text>
-      </view>
-      <view class="summary-item">
-        <text class="summary-value" style="color:#fb923c">{{summary.mistake}}</text>
-        <text class="summary-label">失误</text>
-      </view>
-      <view class="summary-item">
-        <text class="summary-value" style="color:#f87171">{{summary.blunder}}</text>
-        <text class="summary-label">大漏</text>
-      </view>
-    </view>
+    </block>
   </view>
 
   <!-- 棋盘 -->
   <view class="board-area">
-    <chess-board
-      interactive="{{false}}"
+    <chess-board id="analysisBoard"
+      interactive="{{explorationMode ? true : false}}"
       flipped="{{flipped}}"
-      fen="{{fen}}"
+      fen="{{displayFen}}"
       isCheck="{{isCheck}}"
       isCheckmate="{{isCheckmate}}"
       isStalemate="{{isStalemate}}"
-      boardColorPreset="wood">
+      boardColorPreset="wood"
+      lastMoveFrom="{{lastMoveFrom}}"
+      lastMoveTo="{{lastMoveTo}}"
+      selectedSquare="{{selectedSquare}}"
+      legalMoves="{{legalMoves}}"
+      canvasHidden="{{showMoreMenu}}"
+      bind:squaretap="onExploreSquareTap">
     </chess-board>
   </view>
 
-  <!-- 导航 -->
+  <!-- 导航控制 -->
   <view class="nav-controls">
-    <view class="nav-btn {{currentMoveIndex < 0 ? 'nav-disabled' : ''}}" catchtap="goToPrevious">◀ 上一步</view>
-    <text class="nav-info">{{currentMoveIndex + 1}} / {{totalMoves}}</text>
-    <view class="nav-btn {{currentMoveIndex >= totalMoves - 1 ? 'nav-disabled' : ''}}" catchtap="goToNext">下一步 ▶</view>
-    <view class="nav-btn" catchtap="onFlip">🔄</view>
+    <view class="nav-btn {{currentMoveIndex <= 0 ? 'nav-disabled' : ''}}" catchtap="goToStart">⏮</view>
+    <view class="nav-btn {{currentMoveIndex <= 0 ? 'nav-disabled' : ''}}" catchtap="goToPrevious">◀</view>
+    <text class="replay-info">{{currentMoveIndex + 1}} / {{totalMoves}}</text>
+    <view class="nav-btn {{currentMoveIndex >= totalMoves - 1 ? 'nav-disabled' : ''}}" catchtap="goToNext">▶</view>
+    <view class="nav-btn {{currentMoveIndex >= totalMoves - 1 ? 'nav-disabled' : ''}}" catchtap="goToEnd">⏭</view>
   </view>
 
-  <!-- 走法历史（含复盘标注） -->
-  <view class="moves-section">
-    <move-history 
-      moveHistory="{{moves}}" 
-      moveReviews="{{moveReviews}}"
-      replayIndex="{{currentMoveIndex}}"
-      isReplay="{{true}}"
-      bind:gotomove="onGoToMove">
-    </move-history>
+  <!-- 推演模式状态栏 -->
+  <view wx:if="{{explorationMode}}" class="explore-bar glass">
+    <view class="explore-nav">
+      <view class="nav-arrow {{exploreStepIndex <= 0 ? 'nav-disabled' : ''}}" catchtap="onExplorePrev">◀</view>
+      <text class="explore-step">{{exploreStepIndex + 1}}/{{exploreSteps.length}}</text>
+      <view class="nav-arrow {{exploreStepIndex >= exploreSteps.length - 1 ? 'nav-disabled' : ''}}" catchtap="onExploreNext">▶</view>
+    </view>
+    <text class="explore-mode-label">
+      {{explorationMode === 'auto' ? '🤖 自动推演' : '📝 手动推演'}}
+    </text>
+    <view wx:if="{{explorationMode === 'auto'}}">
+      <view class="explore-pause-btn {{exploreAutoRunning ? '' : 'explore-hidden'}}" catchtap="onStartAutoExploration">⏸</view>
+      <view class="explore-play-btn {{exploreAutoPaused ? '' : 'explore-hidden'}}" catchtap="onStartAutoExploration">▶</view>
+    </view>
+    <text class="explore-exit" catchtap="onExitExploration">✕ 退出</text>
   </view>
 
-  <view class="back-btn" catchtap="goBack">← 返回</view>
+  <!-- 可滚动内容区域（面板+复盘+详情+棋谱） -->
+  <scroll-view class="content-scroll" scroll-y>
+    <!-- 局面分析面板（评估条 + 当前步推荐走法，可折叠） -->
+    <view class="section-card">
+      <view class="collapse-bar collapse-bar-flush" catchtap="onToggleAnalysisPanel">
+        <text class="collapse-title">🧭 局面分析</text>
+        <text wx:if="{{!panelExpanded}}" class="collapse-hint">
+          {{analysisCandidates.length > 0 ? analysisCandidates.length + ' 条推荐走法' : '评估条与推荐走法'}}
+        </text>
+        <text class="collapse-icon">{{panelExpanded ? '收起 ▲' : '展开 ▼'}}</text>
+      </view>
+      <view class="{{panelExpanded ? '' : 'collapse-hidden'}}">
+        <analysis-panel id="analysisPanel"
+          gameStarted="{{true}}"
+          fen="{{displayFen}}"
+          analysis="{{analysisCandidates}}"
+          openingName="{{openingName}}"
+          openingNameCN="{{openingNameCN}}"
+          ecoCode="{{ecoCode}}"
+          showHints="{{true}}"
+          playerSide="{{playerSide}}"
+          bind:startexploration="onExplorationStart"
+          bind:playcontinuation="onPlayContinuation"
+          bind:autocontinuation="onAutoContinuation">
+        </analysis-panel>
+      </view>
+    </view>
+
+    <!-- 复盘总结 -->
+    <view wx:if="{{summary}}" class="section-card">
+      <text class="section-title">📊 复盘总结</text>
+      <view class="summary-grid">
+        <view class="summary-cell"><text class="sum-val" style="color:var(--success)">{{summary.best}}</text><text class="sum-lbl">最佳</text></view>
+        <view class="summary-cell"><text class="sum-val" style="color:#22c55e">{{summary.good}}</text><text class="sum-lbl">好棋</text></view>
+        <view class="summary-cell"><text class="sum-val" style="color:var(--warning)">{{summary.inaccuracy}}</text><text class="sum-lbl">缓着</text></view>
+        <view class="summary-cell"><text class="sum-val" style="color:#fb923c">{{summary.mistake}}</text><text class="sum-lbl">失误</text></view>
+        <view class="summary-cell"><text class="sum-val" style="color:var(--danger)">{{summary.blunder}}</text><text class="sum-lbl">大漏</text></view>
+      </view>
+    </view>
+
+    <!-- 复盘进度 -->
+    <view wx:if="{{reviewLoading}}" class="review-progress section-card">
+      <view class="progress-bar-bg">
+        <view class="progress-bar-fill" style="width: {{reviewProgress}}%"></view>
+      </view>
+      <text class="progress-text">分析中 {{reviewProgress}}%</text>
+    </view>
+
+    <!-- 复盘列表 -->
+    <view wx:if="{{moveReviewList.length > 0}}" class="section-card">
+      <text class="section-title">📋 复盘详情</text>
+      <view class="review-item {{reviewDetailIndex === item.index ? 'review-item-active' : ''}}"
+            wx:for="{{moveReviewList}}" wx:key="index"
+            data-index="{{item.index}}" catchtap="onReviewItemTap">
+        <text class="review-icon {{item.classColor}}">{{item.classIcon}}</text>
+        <text class="review-move-num">#{{item.playerMoveNumber}}</text>
+        <text class="review-san">{{item.san}}</text>
+        <text wx:if="{{!item.isBest && item.bestUciShort}}" class="review-best">推荐 {{item.bestUciShort.from}}→{{item.bestUciShort.to}}</text>
+      </view>
+    </view>
+
+    <!-- 走法详情面板 -->
+    <view wx:if="{{reviewDetail}}" class="detail-panel">
+      <view class="detail-header">
+        <text class="detail-title">
+          第 {{reviewDetail.playerMoveNumber}} 手
+          <text class="detail-class {{reviewDetail.meta.color}}">{{reviewDetail.meta.icon}} {{reviewDetail.meta.label}}</text>
+        </text>
+        <text class="detail-close" catchtap="onCloseDetail">✕</text>
+      </view>
+      <view class="score-compare">
+        <view class="score-box">
+          <text class="score-box-label">实际走法</text>
+          <text class="score-box-val {{reviewDetail.playedScore <= -0.5 ? 'score-negative' : 'score-positive'}}">{{reviewDetail.playedScoreFormatted}}</text>
+        </view>
+        <view class="score-box">
+          <text class="score-box-label">推荐走法</text>
+          <text class="score-box-val score-positive">{{reviewDetail.bestScoreFormatted}}</text>
+        </view>
+      </view>
+      <view wx:if="{{!reviewDetail.isBest && reviewDetail.bestUciShort}}" class="detail-recommend">
+        <text class="recommend-label">推荐: {{reviewDetail.bestUciShort.from}}→{{reviewDetail.bestUciShort.to}}</text>
+      </view>
+      <view wx:if="{{reviewDetail.cons.length > 0}}" class="detail-section">
+        <text class="section-label-warn">⚠️ 问题</text>
+        <text class="detail-item" wx:for="{{reviewDetail.cons}}" wx:for-item="c" wx:key="*this">• {{c}}</text>
+      </view>
+      <view wx:if="{{reviewDetail.pros.length > 0}}" class="detail-section">
+        <text class="section-label-success">✅ 优势</text>
+        <text class="detail-item" wx:for="{{reviewDetail.pros}}" wx:for-item="p" wx:key="*this">• {{p}}</text>
+      </view>
+      <view wx:if="{{reviewDetail.tactics.length > 0}}" class="detail-tactics">
+        <text class="tactic-tag" wx:for="{{reviewDetail.tactics}}" wx:for-item="t" wx:key="*this">{{t}}</text>
+      </view>
+    </view>
+
+    <!-- 棋谱历史 -->
+    <view class="section-card">
+      <text class="section-title">📝 对局棋谱</text>
+      <move-history moveHistory="{{moves}}" moveReviews="{{moveReviews}}"
+        replayIndex="{{currentMoveIndex}}" isReplay="{{true}}"
+        bind:gotomove="onGoToMove">
+      </move-history>
+    </view>
+  </scroll-view>
+
+  <!-- AI 分析弹窗 -->
+  <view wx:if="{{showAiAnalysis}}" class="modal-overlay" catchtap="onHideAiAnalysis">
+    <view class="ai-analysis-modal glass-strong" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">🤖 AI 局面分析</text>
+        <text class="modal-close" catchtap="onHideAiAnalysis">✕</text>
+      </view>
+      <scroll-view class="modal-body" scroll-y>
+        <text wx:if="{{aiAnalysisLoading}}" class="modal-loading">⏳ AI 正在分析当前局面...</text>
+        <text wx:if="{{aiAnalysisText}}" class="modal-text">{{aiAnalysisText}}</text>
+      </scroll-view>
+    </view>
+  </view>
+
+  <!-- AI 教练 -->
+  <coach-chat fen="{{displayFen}}" moveHistory="{{moves}}" gameStarted="{{true}}"></coach-chat>
+
+  <!-- 视频生成弹窗 -->
+  <view wx:if="{{showVideoModal}}" class="modal-overlay" catchtap="onHideVideoModal">
+    <view class="video-modal glass-strong" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">🎬 生成讲解视频</text>
+        <text class="modal-close" catchtap="onHideVideoModal">✕</text>
+      </view>
+      <view class="modal-body">
+        <view wx:if="{{videoGenerating}}" class="modal-loading">
+          <text>⏳ 视频生成中...</text>
+          <text class="video-status">{{videoStatus}}</text>
+        </view>
+        <view wx:else>
+          <text class="video-desc">将本局棋谱生成带 AI 幽默解说的讲解视频（MP4）</text>
+          <view class="btn-row">
+            <view class="btn primary" catchtap="onGenerateVideo">
+              <text class="btn-text">开始生成</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 分享弹窗 -->
+  <view wx:if="{{showShareModal}}" class="modal-overlay" catchtap="onHideShare">
+    <view class="share-modal glass-strong" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">📤 分享对局</text>
+        <text class="modal-close" catchtap="onHideShare">✕</text>
+      </view>
+      <view class="modal-body">
+        <text class="share-desc">复制链接分享给好友，对方可查看本局棋谱与分析</text>
+        <view class="share-link-box">
+          <text class="share-link-text">{{shareLink || '生成中...'}}</text>
+        </view>
+        <view class="btn-row">
+          <view class="btn primary" catchtap="onCopyShareLink">
+            <text class="btn-text">复制链接</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
 </view>

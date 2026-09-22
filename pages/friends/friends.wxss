@@ -1,0 +1,157 @@
+.page {
+  background: var(--bg-page, #0f0f23);
+  color: var(--text-primary, #e8e8f0);
+  min-height: 100vh;
+}
+
+.nav-bar {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 32rpx;
+  background: var(--bg-card, #1a1a2e);
+  border-bottom: 1rpx solid var(--border-color, #2a2a4a);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-back {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 12rpx 20rpx;
+  border-radius: 12rpx;
+  background: var(--bg-hover, #252545);
+  margin-right: 24rpx;
+}
+
+.nav-back-icon { font-size: 32rpx; color: var(--text-primary, #e8e8f0); }
+.nav-back-text { font-size: 26rpx; color: var(--text-primary, #e8e8f0); }
+.nav-title { font-size: 32rpx; font-weight: 700; color: var(--text-primary, #e8e8f0); flex: 1; }
+
+.scroll-content { padding: 24rpx 32rpx; height: calc(100vh - 100rpx); }
+
+.search-section { margin-bottom: 24rpx; }
+
+.search-input {
+  width: 100%;
+  padding: 20rpx 24rpx;
+  background: var(--bg-input, #15152a);
+  border-radius: 12rpx;
+  border: 1rpx solid var(--border-color, #2a2a4a);
+  color: var(--text-primary, #e8e8f0);
+  font-size: 28rpx;
+}
+
+.placeholder { color: var(--text-muted, #666); }
+
+.search-results {
+  margin-top: 12rpx;
+  background: var(--bg-card, #1a1a2e);
+  border-radius: 12rpx;
+  border: 1rpx solid var(--border-color, #2a2a4a);
+  overflow: hidden;
+}
+
+.search-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 24rpx;
+  border-bottom: 1rpx solid var(--border-color, #2a2a4a);
+}
+
+.search-item:last-child { border-bottom: none; }
+
+.search-info { flex: 1; }
+.search-name { font-size: 26rpx; color: var(--text-primary, #e8e8f0); }
+
+.add-btn {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6c63ff, #8b8bff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-btn text { font-size: 28rpx; color: #fff; font-weight: 700; }
+
+.tabs {
+  display: flex;
+  gap: 12rpx;
+  margin-bottom: 20rpx;
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx;
+  background: var(--bg-card, #1a1a2e);
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  color: var(--text-secondary, #a0a0c0);
+  border: 1rpx solid var(--border-color, #2a2a4a);
+}
+
+.tab.active {
+  background: linear-gradient(135deg, #6c63ff, #8b8bff);
+  color: #fff;
+  font-weight: 600;
+}
+
+.tab-content { min-height: 400rpx; }
+
+.friend-list, .request-list { display: flex; flex-direction: column; gap: 16rpx; }
+
+.friend-item, .request-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 24rpx;
+  background: var(--bg-card, #1a1a2e);
+  border-radius: 16rpx;
+  border: 1rpx solid var(--border-color, #2a2a4a);
+}
+
+.friend-avatar, .request-avatar {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6c63ff, #8b8bff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16rpx;
+}
+
+.avatar-text { font-size: 28rpx; color: #fff; font-weight: 700; }
+
+.friend-info, .request-info { flex: 1; display: flex; flex-direction: column; }
+
+.friend-name, .request-name { font-size: 26rpx; font-weight: 600; color: var(--text-primary, #e8e8f0); }
+.friend-status { font-size: 22rpx; color: var(--text-muted, #888); }
+.request-msg { font-size: 22rpx; color: var(--text-secondary, #a0a0c0); margin-top: 4rpx; }
+
+.friend-actions, .request-actions { display: flex; gap: 12rpx; }
+
+.action-btn {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn chat { background: rgba(108, 99, 255, 0.15); }
+.action-btn chat text { font-size: 22rpx; }
+.action-btn del { background: rgba(239, 68, 68, 0.15); }
+.action-btn del text { font-size: 22rpx; }
+.action-btn accept { background: rgba(34, 197, 94, 0.15); }
+.action-btn accept text { font-size: 22rpx; color: #22c55e; }
+.action-btn reject { background: rgba(239, 68, 68, 0.15); }
+.action-btn reject text { font-size: 22rpx; color: #ef4444; }
+
+.empty-tip { text-align: center; padding: 60rpx 32rpx; }
+.empty-tip text { font-size: 24rpx; color: var(--text-muted, #666); }

@@ -1,0 +1,61 @@
+.pie-chart-wrap {
+  width: 100%;
+}
+
+.pie-body {
+  display: flex;
+  align-items: center;
+  gap: 32rpx;
+}
+
+.pie-canvas-box {
+  width: 280rpx;
+  height: 280rpx;
+  flex-shrink: 0;
+}
+
+.pie-canvas {
+  width: 280rpx;
+  height: 280rpx;
+}
+
+.pie-empty {
+  width: 280rpx;
+  height: 280rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 26rpx;
+}
+
+.pie-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  min-width: 0;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.legend-dot {
+  width: 18rpx;
+  height: 18rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-label {
+  font-size: 26rpx;
+  color: var(--text-secondary);
+}
+
+.legend-value {
+  font-size: 26rpx;
+  color: var(--text-primary);
+  font-weight: 600;
+}

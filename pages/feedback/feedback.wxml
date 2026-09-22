@@ -1,0 +1,69 @@
+<view class="page" __theme__="{{__theme__}}">
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="onBack">
+      <text class="nav-back-icon">←</text>
+      <text class="nav-back-text">返回</text>
+    </view>
+    <text class="nav-title">意见与反馈</text>
+  </view>
+
+  <scroll-view class="scroll-content" scroll-y="true">
+    <!-- 反馈表单 -->
+    <view class="form-section">
+      <view class="section-title">提交反馈</view>
+
+      <view class="field">
+        <text class="field-label">反馈类型</text>
+        <picker mode="selector" range="{{typeOptions}}" bindchange="onTypeChange">
+          <view class="picker-input">
+            <text>{{type === 'bug' ? 'Bug 报告' : type === 'feature' ? '功能建议' : type === 'complaint' ? '投诉建议' : type === 'suggestion' ? '其他建议' : '其他'}}</text>
+            <text class="picker-arrow">▼</text>
+          </view>
+        </picker>
+      </view>
+
+      <view class="field">
+        <text class="field-label">反馈内容 *</text>
+        <textarea class="textarea-input" value="{{content}}" bindinput="onContentInput" placeholder="请描述您遇到的问题或建议..." placeholder-class="placeholder" maxlength="500"></textarea>
+        <text class="char-count">{{content.length}}/500</text>
+      </view>
+
+      <view class="field">
+        <text class="field-label">联系方式（可选）</text>
+        <input class="input-field" value="{{contactInfo}}" bindinput="onContactInput" placeholder="微信或邮箱" placeholder-class="placeholder" />
+      </view>
+
+      <view class="submit-btn" bindtap="onSubmit">
+        <text class="submit-text">提交反馈</text>
+      </view>
+
+      <view class="error-tip" wx:if="{{error}}">
+        <text>{{error}}</text>
+      </view>
+      <view class="success-tip" wx:if="{{success}}">
+        <text>{{success}}</text>
+      </view>
+    </view>
+
+    <!-- 我的反馈 -->
+    <view class="form-section">
+      <view class="section-title">我的反馈</view>
+      <view class="feedback-list">
+        <view class="feedback-item" wx:for="{{myFeedbacks}}" wx:key="id">
+          <view class="feedback-header">
+            <text class="feedback-type">{{item.type === 'bug' ? 'Bug' : item.type === 'feature' ? '功能建议' : item.type === 'complaint' ? '投诉' : item.type === 'suggestion' ? '建议' : '其他'}}</text>
+            <text class="feedback-status" status="{{item.status}}">{{item.status === 'pending' ? '待处理' : item.status === 'processing' ? '处理中' : item.status === 'resolved' ? '已解决' : item.status === 'rejected' ? '已拒绝' : item.status}}</text>
+          </view>
+          <text class="feedback-content">{{item.content}}</text>
+          <text class="feedback-date">{{item.createdAt}}</text>
+        </view>
+        <view class="empty-tip" wx:if="{{myFeedbacks.length === 0 && !loadingList}}">
+          <text>暂无反馈记录</text>
+        </view>
+        <view class="loading-tip" wx:if="{{loadingList}}">
+          <text>加载中...</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

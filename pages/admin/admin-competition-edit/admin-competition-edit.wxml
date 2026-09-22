@@ -1,0 +1,17 @@
+<view class="admin-page theme-{{__theme__}}">
+  <scroll-view scroll-y class="page-body">
+    <view class="page-header"><text class="page-title">编辑竞赛</text></view>
+    <view wx:if="{{loading}}" class="loading-tip">加载中...</view>
+    <view class="form-group">
+      <text class="form-label">竞赛标题</text>
+      <input class="input-field" value="{{form.title}}" bindinput="onTitleInput" placeholder="输入竞赛标题" placeholder-class="placeholder" />
+      <text class="form-label">描述</text>
+      <textarea class="textarea-field" value="{{form.description}}" bindinput="onDescInput" placeholder="输入竞赛描述" placeholder-class="placeholder" />
+      <text class="form-label">最大参与人数</text>
+      <input class="input-field" value="{{form.maxParticipants}}" bindinput="onMaxInput" placeholder="100" placeholder-class="placeholder" type="number" />
+    </view>
+    <view class="btn-row">
+      <view class="btn primary" catchtap="onSubmit"><text class="btn-text">{{loading ? '提交中...' : '更新竞赛'}}</text></view>
+    </view>
+  </scroll-view>
+</view>

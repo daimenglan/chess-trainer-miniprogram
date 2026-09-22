@@ -1,0 +1,60 @@
+<view class="list-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
+  <scroll-view scroll-y class="page-scroll">
+    <!-- Tab切换 -->
+    <view class="tab-bar">
+      <view class="tab-item {{activeTab === 'wrong' ? 'tab-active' : ''}}" data-tab="wrong" catchtap="onTabSwitch">错题本</view>
+      <view class="tab-item {{activeTab === 'fav' ? 'tab-active' : ''}}" data-tab="fav" catchtap="onTabSwitch">收藏</view>
+    </view>
+
+    <!-- 错题本 -->
+    <view wx:if="{{activeTab === 'wrong'}}">
+      <view wx:if="{{loadingWrong}}" class="list-loading">加载中...</view>
+      <view wx:if="{{!loadingWrong && wrongItems.length === 0}}" class="list-empty">
+        <text class="empty-icon">✅</text>
+        <text>暂无错题记录</text>
+      </view>
+      <view wx:if="{{wrongItems.length > 0}}" class="list-card" wx:for="{{wrongItems}}" wx:key="puzzleId">
+        <view class="card-header">
+          <text class="card-diff">{{item.difficulty || '?'}} Elo</text>
+          <text wx:if="{{item.phase}}" class="card-phase">{{phaseLabel(item.phase)}}</text>
+          <text class="card-count">错 {{item.wrongCount}} 次</text>
+        </view>
+        <view wx:if="{{item.themes && item.themes.length > 0}}" class="card-themes">
+          <text class="theme-tag-sm" wx:for="{{item.themes}}" wx:key="*this">{{item}}</text>
+        </view>
+        <view class="card-actions">
+          <view class="action-sm action-primary" catchtap="onPracticeWrong" data-puzzleid="{{item.puzzleId}}">🔁 重练</view>
+          <view class="action-sm" catchtap="onResolveWrong" data-puzzleid="{{item.puzzleId}}">✅ 已掌握</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 收藏 -->
+    <view wx:if="{{activeTab === 'fav'}}">
+      <view wx:if="{{loadingFav}}" class="list-loading">加载中...</view>
+      <view wx:if="{{!loadingFav && favItems.length === 0}}" class="list-empty">
+        <text class="empty-icon">🤍</text>
+        <text>暂无收藏</text>
+      </view>
+      <view wx:if="{{favItems.length > 0}}" class="list-card" wx:for="{{favItems}}" wx:key="id">
+        <view class="card-header">
+          <text class="card-diff">{{item.difficulty || '?'}} Elo</text>
+          <text wx:if="{{item.phase}}" class="card-phase">{{phaseLabel(item.phase)}}</text>
+        </view>
+        <view wx:if="{{item.themes && item.themes.length > 0}}" class="card-themes">
+          <text class="theme-tag-sm" wx:for="{{item.themes}}" wx:key="*this">{{item}}</text>
+        </view>
+        <view class="card-actions">
+          <view class="action-sm action-primary" catchtap="onPracticeFav" data-puzzleid="{{item.id}}">🧩 练习</view>
+          <view class="action-sm action-danger" catchtap="onRemoveFav" data-puzzleid="{{item.id}}">🗑 移除</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 分页 -->
+    <view wx:if="hasMore" class="load-more">
+      <view class="btn-secondary" catchtap="onLoadMore">加载更多</view>
+    </view>
+  </scroll-view>
+  
+</view>

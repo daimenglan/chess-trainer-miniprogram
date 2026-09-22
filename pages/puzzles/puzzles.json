@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "习题训练",
+  "navigationBarBackgroundColor": "#1a1a2e",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#0f0f23",
+  "usingComponents": {
+    "chess-board": "../../components/chess-board/chess-board"
+  }
+}

@@ -1,28 +1,137 @@
+/* ===== 主题 CSS 变量（默认深色） ===== */
+page,
+.theme-dark {
+  /* 页面背景 */
+  --bg-primary: #0f0f23;
+  --bg-secondary: #1a1a2e;
+  --bg-card: rgba(255, 255, 255, 0.04);
+  --bg-card-hover: rgba(255, 255, 255, 0.08);
+  --bg-card-strong: rgba(255, 255, 255, 0.10);
+  --bg-input: rgba(255, 255, 255, 0.06);
+  --bg-overlay: rgba(0, 0, 0, 0.6);
+  --bg-glass: rgba(26, 26, 46, 0.95);
+
+  /* 边框 */
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-color-light: rgba(255, 255, 255, 0.06);
+  --border-color-strong: rgba(255, 255, 255, 0.12);
+
+  /* 文字 */
+  --text-primary: #e0e0f0;
+  --text-secondary: #c0c0e0;
+  --text-muted: #8888aa;
+  --text-dim: #666688;
+  --text-placeholder: #555577;
+  --text-white: #ffffff;
+
+  /* 主题色 */
+  --accent: #6c63ff;
+  --accent-dark: #4834d4;
+  --accent-gradient: linear-gradient(135deg, #6c63ff, #4834d4);
+  --accent-bg: rgba(108, 99, 255, 0.15);
+  --accent-bg-light: rgba(108, 99, 255, 0.10);
+  --accent-border: rgba(108, 99, 255, 0.2);
+
+  /* 状态色 */
+  --success: #4ade80;
+  --success-bg: rgba(34, 197, 94, 0.15);
+  --warning: #facc15;
+  --warning-bg: rgba(234, 179, 8, 0.15);
+  --danger: #f87171;
+  --danger-bg: rgba(239, 68, 68, 0.15);
+  --info: #60a5fa;
+  --info-bg: rgba(59, 130, 246, 0.15);
+
+  /* 紫色 */
+  --purple: #a78bfa;
+  --purple-bg: rgba(139, 92, 246, 0.12);
+  --purple-border: rgba(139, 92, 246, 0.2);
+
+  /* 阴影 */
+  --shadow: 0 4rpx 20rpx rgba(108, 99, 255, 0.3);
+  --shadow-card: 0 2rpx 8rpx rgba(0,0,0,0.3);
+
+  /* 棋盘 */
+  --board-light: #ffffff;
+  --board-dark: #5a7d9a;
+  --board-frame: #4a6fa5;
+}
+
+/* ===== 浅色主题 ===== */
+.theme-light {
+  --bg-primary: #f0f0f5;
+  --bg-secondary: #ffffff;
+  --bg-card: rgba(255, 255, 255, 0.7);
+  --bg-card-hover: rgba(255, 255, 255, 0.9);
+  --bg-card-strong: rgba(255, 255, 255, 0.85);
+  --bg-input: rgba(255, 255, 255, 0.8);
+  --bg-overlay: rgba(0, 0, 0, 0.4);
+  --bg-glass: rgba(255, 255, 255, 0.85);
+
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-color-light: rgba(0, 0, 0, 0.05);
+  --border-color-strong: rgba(0, 0, 0, 0.12);
+
+  --text-primary: #1a1a2e;
+  --text-secondary: #444466;
+  --text-muted: #8888aa;
+  --text-dim: #aaaacc;
+  --text-placeholder: #bbbbdd;
+  --text-white: #ffffff;
+
+  --accent: #6c63ff;
+  --accent-dark: #4834d4;
+  --accent-gradient: linear-gradient(135deg, #6c63ff, #4834d4);
+  --accent-bg: rgba(108, 99, 255, 0.12);
+  --accent-bg-light: rgba(108, 99, 255, 0.08);
+  --accent-border: rgba(108, 99, 255, 0.2);
+
+  --success: #22c55e;
+  --success-bg: rgba(34, 197, 94, 0.10);
+  --warning: #eab308;
+  --warning-bg: rgba(234, 179, 8, 0.10);
+  --danger: #ef4444;
+  --danger-bg: rgba(239, 68, 68, 0.10);
+  --info: #3b82f6;
+  --info-bg: rgba(59, 130, 246, 0.10);
+
+  --purple: #7c3aed;
+  --purple-bg: rgba(139, 92, 246, 0.10);
+  --purple-border: rgba(139, 92, 246, 0.2);
+
+  --shadow: 0 4rpx 20rpx rgba(108, 99, 255, 0.25);
+  --shadow-card: 0 2rpx 8rpx rgba(0,0,0,0.08);
+
+  --board-light: #ffffff;
+  --board-dark: #5a7d9a;
+  --board-frame: #8BA8CC;
+}
+
 /* ===== 全局样式 ===== */
 page {
-  background-color: #0f0f23;
-  color: #e0e0f0;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
   font-size: 14px;
   line-height: 1.5;
-  overflow: hidden;
+  overflow-y: auto;
   height: 100vh;
 }
 
 /* ===== 玻璃态效果 ===== */
 .glass {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--bg-card);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
 }
 
 .glass-strong {
-  background: rgba(255, 255, 255, 0.10);
+  background: var(--bg-card-strong);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--border-color-strong);
   border-radius: 12px;
 }
 
@@ -32,14 +141,14 @@ page {
   align-items: center;
   justify-content: center;
   padding: 10px 20px;
-  background: linear-gradient(135deg, #6c63ff, #4834d4);
-  color: #fff;
+  background: var(--accent-gradient);
+  color: var(--text-white);
   border: none;
   border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
   transition: all 0.2s;
-  box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);
+  box-shadow: var(--shadow);
 }
 
 .btn-primary:active {
@@ -57,9 +166,9 @@ page {
   align-items: center;
   justify-content: center;
   padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #c0c0e0;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--bg-card-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
@@ -67,7 +176,7 @@ page {
 }
 
 .btn-secondary:active {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--bg-card-strong);
   transform: scale(0.97);
 }
 
@@ -93,7 +202,7 @@ page {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--border-color);
   border-radius: 2px;
 }
 
@@ -128,7 +237,7 @@ page {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--bg-overlay);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   z-index: 1000;
@@ -143,31 +252,31 @@ page {
   padding: 2px 8px;
   font-size: 10px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #a0a0c0;
+  background: var(--bg-card-hover);
+  color: var(--text-muted);
   margin-right: 4px;
   margin-bottom: 4px;
 }
 
 .tag-success {
-  background: rgba(34, 197, 94, 0.2);
-  color: #4ade80;
+  background: var(--success-bg);
+  color: var(--success);
 }
 
 .tag-warning {
-  background: rgba(234, 179, 8, 0.2);
-  color: #facc15;
+  background: var(--warning-bg);
+  color: var(--warning);
 }
 
 .tag-danger {
-  background: rgba(239, 68, 68, 0.2);
-  color: #f87171;
+  background: var(--danger-bg);
+  color: var(--danger);
 }
 
 /* ===== 结果徽章 ===== */
 .badge-win {
-  background: rgba(34, 197, 94, 0.2);
-  color: #4ade80;
+  background: var(--success-bg);
+  color: var(--success);
   padding: 2px 8px;
   border-radius: 6px;
   font-size: 11px;
@@ -175,8 +284,8 @@ page {
 }
 
 .badge-loss {
-  background: rgba(239, 68, 68, 0.2);
-  color: #f87171;
+  background: var(--danger-bg);
+  color: var(--danger);
   padding: 2px 8px;
   border-radius: 6px;
   font-size: 11px;
@@ -184,10 +293,26 @@ page {
 }
 
 .badge-draw {
-  background: rgba(234, 179, 8, 0.2);
-  color: #facc15;
+  background: var(--warning-bg);
+  color: var(--warning);
   padding: 2px 8px;
   border-radius: 6px;
   font-size: 11px;
   font-weight: 600;
+}
+
+/* ===== 首页按钮（通用） ===== */
+.home-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16rpx;
+  margin: 16rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12rpx;
+  cursor: pointer;
 }

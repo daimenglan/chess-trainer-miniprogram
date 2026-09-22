@@ -3,7 +3,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #0f0f23;
+  background: var(--bg-primary);
   overflow: hidden;
   position: relative;
 }
@@ -34,7 +34,7 @@
   width: 520rpx;
   max-width: 85vw;
   background: rgba(26, 26, 46, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
   z-index: 1;
 }
 
@@ -55,14 +55,14 @@
 
 .logo-sub {
   font-size: 22rpx;
-  color: #8888aa;
+  color: var(--text-muted);
   margin-top: 8rpx;
   display: block;
 }
 
 .mode-tabs {
   display: flex;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-card-hover);
   border-radius: 12rpx;
   padding: 4rpx;
   margin-bottom: 24rpx;
@@ -75,14 +75,14 @@
   padding: 12rpx;
   border-radius: 10rpx;
   font-size: 24rpx;
-  color: #8888aa;
+  color: var(--text-muted);
   font-weight: 500;
   transition: all 0.2s;
 }
 
 .mode-active {
-  background: rgba(108, 99, 255, 0.15);
-  color: #6c63ff;
+  background: var(--accent-bg);
+  color: var(--accent);
   font-weight: 700;
 }
 
@@ -96,22 +96,22 @@
 .form-input {
   width: 100%;
   height: 80rpx;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-color);
   border-radius: 12rpx;
   padding: 0 20rpx;
   font-size: 24rpx;
-  color: #e0e0f0;
+  color: var(--text-primary);
   box-sizing: border-box;
 }
 
 .form-input::placeholder {
-  color: #555577;
+  color: var(--text-placeholder);
 }
 
 .error-msg {
   font-size: 20rpx;
-  color: #f87171;
+  color: var(--danger);
   text-align: center;
   padding: 8rpx;
 }
@@ -119,7 +119,7 @@
 .submit-btn {
   text-align: center;
   padding: 18rpx;
-  background: linear-gradient(135deg, #6c63ff, #4834d4);
+  background: var(--accent-gradient);
   border-radius: 12rpx;
   color: #fff;
   font-size: 26rpx;
@@ -135,13 +135,81 @@
   opacity: 0.7;
 }
 
-.skip-btn {
-  text-align: center;
+/* ===== 忘记密码 ===== */
+.forgot-link {
   font-size: 22rpx;
-  color: #666688;
-  padding: 12rpx;
+  color: var(--accent);
+  text-align: right;
+  padding: 0 4rpx;
+  margin-top: -6rpx;
+  cursor: pointer;
 }
 
-.skip-btn:active {
+.forgot-link:active {
+  opacity: 0.7;
+}
+
+.form-header {
+  text-align: center;
+  margin-bottom: 8rpx;
+}
+
+.form-header-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: 6rpx;
+}
+
+.form-header-desc {
+  font-size: 22rpx;
+  color: var(--text-muted);
+  display: block;
+  line-height: 1.5;
+}
+
+.code-row {
+  display: flex;
+  gap: 12rpx;
+  align-items: center;
+}
+
+.code-input {
+  flex: 1;
+}
+
+.send-code-btn {
+  flex-shrink: 0;
+  padding: 14rpx 24rpx;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 12rpx;
+  font-size: 24rpx;
+  color: var(--accent);
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: center;
+  min-width: 140rpx;
+}
+
+.send-code-btn:active {
+  opacity: 0.7;
+}
+
+.code-btn-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.back-link {
+  font-size: 24rpx;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 8rpx;
+  cursor: pointer;
+}
+
+.back-link:active {
   opacity: 0.7;
 }

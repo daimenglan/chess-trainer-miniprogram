@@ -1,10 +1,25 @@
 /**
  * 棋谱回放页
  */
-const Chess = require('../utils/chessjs');
+const Chess = require('../../utils/chessjs');
+const notation = require('../../utils/chessNotation');
+const util = require('../../utils/util');
 
 Page({
+
+  /** 同步主题 */
+  _syncTheme() {
+    try {
+      const app = getApp();
+      const theme = app?.globalData?.settings?.uiTheme || 'dark';
+      if (this.data.__theme__ !== theme) {
+        this.setData({ __theme__: theme });
+      }
+    } catch(e) { /* non-critical */ }
+  },
+
   data: {
+    __theme__: (typeof getApp === "function" ? (getApp().globalData?.settings?.uiTheme || "dark") : "dark"),
     record: null as any,
     fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     moves: [] as any[],
@@ -16,43 +31,76 @@ Page({
     isStalemate: false,
     lastMoveFrom: '',
     lastMoveTo: '',
+    recordId: null as number | null,
   },
 
   _chess: null as any,
 
   onLoad(options: any) {
-    if (options.record) {
-      try {
-        const record = JSON.parse(decodeURIComponent(options.record));
-        this.setData({ record });
-        this.loadPGN(record.pgn);
-      } catch (e) {
-        wx.showToast({ title: '加载棋谱失败', icon: 'none' });
+    this._syncTheme();
+
+    // 优先使用 globalData 传递的完整数据
+    let record = null;
+    try {
+      const app = getApp();
+      if (app.globalData._analysisGame) {
+        record = app.globalData._analysisGame;
+        app.globalData._analysisGame = null;
       }
+    } catch {}
+
+    if (!record && options.record) {
+      try {
+        record = JSON.parse(decodeURIComponent(options.record));
+      } catch (e) { /* non-critical */ }
+    }
+
+    if (record) {
+      this.setData({ record });
+      if (record.recordId) this.data.recordId = record.recordId;
+      this.loadPGN(record.pgn);
     }
   },
 
   loadPGN(pgn: string) {
     if (!pgn) return;
-    try {
-      const Chess = require('../utils/chessjs');
+    const cleanPgn = notation.normalizePgn(pgn);
+    if (!cleanPgn) return;
+    // 解析失败时用「仅走法文本」兜底重试（兼容头部标签异常的非标准 PGN）
+    const attempts = [cleanPgn, notation.stripPgnHeaders(cleanPgn)];
+    let parseError: any = null;
+    for (const candidate of attempts) {
+      if (!candidate) continue;
+      try {
+        this._chess = new Chess.Chess();
+        this._chess.loadPgn(candidate);
+        parseError = null;
+        break;
+      } catch (e) {
+        parseError = e;
+      }
+    }
+    if (parseError) {
+      console.error('[RecordDetail] PGN parse error:', parseError, 'PGN first 200:', pgn.substring(0, 200));
       this._chess = new Chess.Chess();
-
-      // 加载PGN
-      this._chess.loadPgn(pgn);
-      const moves = this._chess.history({ verbose: true });
-
-      // 重置到初始位置
-      this._chess.reset();
       this.setData({
-        moves,
-        totalMoves: moves.length,
+        moves: [],
+        totalMoves: 0,
         currentMoveIndex: -1,
         fen: this._chess.fen(),
       });
-    } catch (e) {
       wx.showToast({ title: 'PGN解析失败', icon: 'none' });
+      return;
     }
+    const moves = this._chess.history({ verbose: true });
+    // 重置到初始位置
+    this._chess.reset();
+    this.setData({
+      moves,
+      totalMoves: moves.length,
+      currentMoveIndex: -1,
+      fen: this._chess.fen(),
+    });
   },
 
   goToStart() {
@@ -96,7 +144,7 @@ Page({
         lastMoveFrom: move.from,
         lastMoveTo: move.to,
       });
-    } catch (e) {}
+    } catch (e) { /* non-critical */ }
   },
 
   goToEnd() {
@@ -149,6 +197,24 @@ Page({
   },
 
   goBackToRecords() {
-    wx.navigateBack();
+    util.navigateBackSafe('/pages/records/records');
   },
-});export {}
+
+  /**
+   * 跳转到完整分析/复盘页
+   */
+  onAnalysis() {
+    const record = this.data.record;
+    if (record) {
+      // 通过 globalData 传递完整数据避免 URL 截断
+      const app = getApp();
+      app.globalData._analysisGame = record;
+      wx.navigateTo({
+        url: `/pages/analysis/analysis`,
+      });
+    }
+  },
+
+  stopPropagation() {},
+});
+export {}

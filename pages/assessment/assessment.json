@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "AI 定级测评",
+  "navigationBarBackgroundColor": "#1a1a2e",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#0f0f23",
+  "backgroundTextStyle": "light",
+  "usingComponents": {
+    "chess-board": "../../components/chess-board/chess-board"
+  }
+}

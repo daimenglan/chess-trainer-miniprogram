@@ -1,0 +1,46 @@
+<view class="page" __theme__="{{__theme__}}">
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="onBack">
+      <text class="nav-back-icon">←</text>
+      <text class="nav-back-text">返回</text>
+    </view>
+    <text class="nav-title">教室</text>
+  </view>
+
+  <scroll-view class="scroll-content" scroll-y="true">
+    <!-- 教师状态 -->
+    <view class="status-card" wx:if="{{teacherStatus && teacherStatus.status === 'approved'}}">
+      <text class="status-text">✅ 您已是教师</text>
+    </view>
+    <view class="status-card pending" wx:if="{{teacherStatus && teacherStatus.status === 'pending'}}">
+      <text class="status-text">⏳ 教师申请审核中</text>
+    </view>
+    <view class="status-card none" wx:if="{{!teacherStatus || teacherStatus.status !== 'approved'}}">
+      <text class="status-text">尚未成为教师</text>
+      <text class="status-desc">申请成为教师后可使用教室功能</text>
+      <view class="apply-btn" bindtap="onApplyTeacher">
+        <text class="apply-btn-text">申请成为教师</text>
+      </view>
+    </view>
+
+    <!-- 教室功能 -->
+    <view class="feature-grid" wx:if="{{teacherStatus && teacherStatus.status === 'approved'}}">
+      <view class="feature-card" bindtap="onBoard">
+        <text class="feature-icon">♟</text>
+        <text class="feature-name">棋盘教学</text>
+      </view>
+      <view class="feature-card" bindtap="onCourseware">
+        <text class="feature-icon">📚</text>
+        <text class="feature-name">课件管理</text>
+      </view>
+      <view class="feature-card" bindtap="onReview">
+        <text class="feature-icon">📊</text>
+        <text class="feature-name">教学反馈</text>
+      </view>
+    </view>
+
+    <view class="loading-tip" wx:if="{{loading}}">
+      <text>加载中...</text>
+    </view>
+  </scroll-view>
+</view>

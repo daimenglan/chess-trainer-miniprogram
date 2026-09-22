@@ -21,8 +21,8 @@ function decodeJwtPayload(token) {
         return null;
     }
 }
-/** 后端 WS 地址（手机真机调试需改为本机局域网 IP，部署到腾讯云后改回生产地址） */
-const WS_URL = 'ws://192.168.3.168:3001/ws';
+/** 后端 WS 地址（必须为 wss:// 的已备案域名，小程序 socket 合法域名不接受裸 IP 与非加密连接） */
+const WS_URL = 'wss://mychess.com.cn/ws';
 class WsClient {
     constructor() {
         this._ws = null;

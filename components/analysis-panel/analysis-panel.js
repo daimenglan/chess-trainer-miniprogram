@@ -65,6 +65,14 @@ Component({
             type: Number,
             value: 10,
         },
+        playerSide: {
+            type: String,
+            value: 'w',
+        },
+        turn: {
+            type: String,
+            value: 'w',
+        },
     },
     data: {
         evaluation: 0,
@@ -72,11 +80,14 @@ Component({
         evaluationBarWidth: 50,
         evaluationText: '均势',
         candidates: [],
+        openingEntry: null,
+        openingLoading: false,
+        openingError: '',
         showOpeningModal: false,
         scrollTarget: '',
     },
     observers: {
-        'analysis': function (analysis) {
+        'analysis, turn': function (analysis) {
             if (analysis && analysis.length > 0) {
                 const ev = analysis[0].score;
                 // 归一化到 -5..5 范围
@@ -135,24 +146,37 @@ Component({
             this.triggerEvent('startexploration', { uci });
         },
         /**
+         * 触发自动续着推演（AI自动走完变化）
+         */
+        onAutoContinuation(e) {
+            const uci = e.currentTarget.dataset.uci;
+            this.triggerEvent('autocontinuation', { uci });
+        },
+        /**
          * 触发续着推演
          */
         onPlayContinuation(e) {
             const uci = e.currentTarget.dataset.uci;
             this.triggerEvent('playcontinuation', { uci });
         },
-        /**
-         * 切换提示开关（转发到父页面）
-         */
-        onToggleHints() {
-            this.triggerEvent('togglehints', {});
-        },
         onShowOpening() {
-            this.setData({ showOpeningModal: true });
+            this.setData({ showOpeningModal: true, openingLoading: true, openingError: '', openingEntry: null });
+            const ecoCode = this.properties.ecoCode;
+            const openingName = this.properties.openingName;
+            if (ecoCode && openingName) {
+                api.getOpeningEncyclopedia({ ecoCode, openingName }).then((res) => {
+                    this.setData({ openingEntry: res?.data || res || null, openingLoading: false });
+                }).catch((err) => {
+                    this.setData({ openingError: err?.message || '加载失败', openingLoading: false });
+                });
+            } else {
+                this.setData({ openingLoading: false });
+            }
         },
         onCloseOpening() {
             this.setData({ showOpeningModal: false });
         },
+        stopPropagation() {},
         /**
          * 格式化评分
          */

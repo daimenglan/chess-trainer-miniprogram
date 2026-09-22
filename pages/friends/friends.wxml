@@ -1,0 +1,71 @@
+<view class="page" __theme__="{{__theme__}}">
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="onBack">
+      <text class="nav-back-icon">←</text>
+      <text class="nav-back-text">返回</text>
+    </view>
+    <text class="nav-title">好友</text>
+  </view>
+
+  <scroll-view class="scroll-content" scroll-y="true">
+    <!-- 搜索 -->
+    <view class="search-section">
+      <input class="search-input" value="{{searchQuery}}" bindinput="onSearchInput" placeholder="搜索用户添加好友" placeholder-class="placeholder" />
+      <view class="search-results" wx:if="{{searchResults.length}}">
+        <view class="search-item" wx:for="{{searchResults}}" wx:key="userId">
+          <view class="search-info">
+            <text class="search-name">{{item.username}}</text>
+          </view>
+          <view class="add-btn" bindtap="onAddFriend" data-id="{{item.userId}}"><text>+</text></view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 标签页 -->
+    <view class="tabs">
+      <view class="tab {{activeTab === 'friends' ? 'active' : ''}}" bindtap="onTabChange" data-tab="friends">好友</view>
+      <view class="tab {{activeTab === 'requests' ? 'active' : ''}}" bindtap="onTabChange" data-tab="requests">请求</view>
+    </view>
+
+    <!-- 好友列表 -->
+    <view class="tab-content" wx:if="{{activeTab === 'friends'}}">
+      <view class="friend-list">
+        <view class="friend-item" wx:for="{{friends}}" wx:key="userId">
+          <view class="friend-avatar">
+            <text class="avatar-text">{{item.username ? item.username.substring(0,1) : '?'}}</text>
+          </view>
+          <view class="friend-info">
+            <text class="friend-name">{{item.username}}</text>
+            <text class="friend-status">{{item.status === 'online' ? '在线' : '离线'}}</text>
+          </view>
+          <view class="friend-actions">
+            <view class="action-btn chat" bindtap="onChatFriend" data-id="{{item.userId}}"><text>💬</text></view>
+            <view class="action-btn del" bindtap="onRemoveFriend" data-id="{{item.userId}}"><text>🗑</text></view>
+          </view>
+        </view>
+        <view class="empty-tip" wx:if="{{friends.length === 0 && !loading}}">
+          <text>暂无好友，搜索上方用户添加吧</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 好友请求 -->
+    <view class="tab-content" wx:if="{{activeTab === 'requests'}}">
+      <view class="request-list">
+        <view class="request-item" wx:for="{{requests}}" wx:key="id">
+          <view class="request-info">
+            <text class="request-name">{{item.fromUsername}}</text>
+            <text class="request-msg">{{item.message || '想加您为好友'}}</text>
+          </view>
+          <view class="request-actions">
+            <view class="action-btn accept" bindtap="onAcceptRequest" data-id="{{item.id}}"><text>✓</text></view>
+            <view class="action-btn reject" bindtap="onRejectRequest" data-id="{{item.id}}"><text>✕</text></view>
+          </view>
+        </view>
+        <view class="empty-tip" wx:if="{{requests.length === 0}}">
+          <text>暂无好友请求</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

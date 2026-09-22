@@ -1,0 +1,17 @@
+<view class="admin-page theme-{{__theme__}}">
+  <scroll-view scroll-y class="page-body">
+    <view class="page-header"><text class="page-title">会员订单</text></view>
+    <view wx:if="{{loading}}" class="loading-tip">加载中...</view>
+    <view wx:for="{{orders}}" class="item-card">
+      <view class="item-row">
+        <text class="item-name">{{item.userNickname || '用户'}}</text>
+        <text class="item-amount">¥{{item.amount || 0}}</text>
+      </view>
+      <text class="item-desc">等级：{{item.levelName || '-'}} · {{item.status === 'paid' ? '已支付' : item.status === 'refunded' ? '已退款' : '待支付'}}</text>
+      <view class="item-actions" wx:if="{{item.status === 'paid'}}">
+        <view class="action-btn danger" catchtap="onRefund" data-index="{{index}}"><text>退款</text></view>
+      </view>
+    </view>
+    <view wx:if="{{orders.length === 0 && !loading}}" class="empty-tip">暂无订单</view>
+  </scroll-view>
+</view>

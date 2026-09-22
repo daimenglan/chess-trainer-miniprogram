@@ -29,6 +29,7 @@
 
     <view class="dialog-actions">
       <view class="btn-option" catchtap="onExplore">🔍 推演一下</view>
+      <view class="btn-option btn-auto" catchtap="onAutoExplore">🤖 自动推演</view>
       <view class="btn-option btn-confirm" catchtap="onConfirm">确定</view>
       <view class="btn-option btn-cancel" catchtap="onCancel">取消</view>
     </view>

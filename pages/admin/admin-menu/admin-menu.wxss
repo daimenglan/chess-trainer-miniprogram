@@ -1,0 +1,25 @@
+.admin-page { background: var(--bg-page, #0f0f23); color: var(--text-primary, #e8e8f0); min-height: 100vh; }
+.page-body { padding: 24rpx 32rpx; }
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24rpx; }
+.page-title { font-size: 32rpx; font-weight: 700; color: var(--text-primary, #e8e8f0); }
+.add-btn { padding: 12rpx 20rpx; background: var(--accent, #6c63ff); border-radius: 12rpx; }
+.add-btn-text { font-size: 26rpx; color: #fff; font-weight: 600; }
+.item-card { background: var(--bg-card, #1a1a2e); border-radius: 16rpx; padding: 24rpx; margin-bottom: 16rpx; border: 1rpx solid var(--border-color, #2a2a4a); }
+.item-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8rpx; }
+.item-name { font-size: 28rpx; font-weight: 600; color: var(--text-primary, #e8e8f0); }
+.item-path { font-size: 22rpx; color: var(--text-secondary, #a0a0c0); }
+.item-desc { font-size: 22rpx; color: var(--text-secondary, #a0a0c0); margin-bottom: 12rpx; }
+.item-actions { display: flex; gap: 12rpx; }
+.action-btn { padding: 8rpx 16rpx; border-radius: 8rpx; background: var(--bg-hover, #252545); }
+.action-btn text { font-size: 22rpx; color: var(--text-primary, #e8e8f0); }
+.action-btn.danger { background: rgba(239, 68, 68, 0.1); }
+.action-btn.danger text { color: #ef4444; }
+.loading-tip, .empty-tip { text-align: center; color: var(--text-muted, #888); font-size: 24rpx; padding: 40rpx 0; }/* toggle switch */
+.toggle-btn { display: inline-flex; align-items: center; width: 72rpx; height: 40rpx; border-radius: 40rpx; cursor: pointer; transition: all 0.3s; position: relative; }
+.toggle-btn.on { background: #6c63ff; }
+.toggle-btn.off { background: #444; }
+.toggle-knob { width: 32rpx; height: 32rpx; background: #fff; border-radius: 50%; position: absolute; top: 4rpx; transition: all 0.3s; }
+.toggle-btn.on .toggle-knob { left: 36rpx; }
+.toggle-btn.off .toggle-knob { left: 4rpx; }
+.action-row { display: flex; align-items: center; justify-content: space-between; padding: 8rpx 0; }
+.action-label { font-size: 22rpx; color: var(--text-secondary, #a0a0c0); }

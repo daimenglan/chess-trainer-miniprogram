@@ -1,0 +1,38 @@
+<view class="page" __theme__="{{__theme__}}">
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="onBack">
+      <text class="nav-back-icon">←</text>
+      <text class="nav-back-text">返回</text>
+    </view>
+    <text class="nav-title">竞赛列表</text>
+  </view>
+
+  <scroll-view class="scroll-content" scroll-y="true" bindscrolltolower="onLoadMore">
+    <view class="competition-list">
+      <view class="competition-card" wx:for="{{competitions}}" wx:key="id" bindtap="onCompetitionTap" data-id="{{item.id}}">
+        <view class="card-header">
+          <text class="card-title">{{item.title}}</text>
+          <text class="card-status" status="{{item.status}}">{{item.status === 'registration' ? '报名中' : item.status === 'ongoing' ? '进行中' : item.status === 'finished' ? '已结束' : item.status}}</text>
+        </view>
+        <text class="card-desc">{{item.description}}</text>
+        <view class="card-info">
+          <text class="info-item">📅 {{item.startDate}}</text>
+          <text class="info-item">👥 {{item.participantCount || 0}}人</text>
+          <text class="info-item">🏆 {{item.prize || '待公布'}}</text>
+        </view>
+      </view>
+      <view class="loading-tip" wx:if="{{loading}}">
+        <text>加载中...</text>
+      </view>
+      <view class="empty-tip" wx:if="{{competitions.length === 0 && !loading}}">
+        <text>暂无竞赛</text>
+      </view>
+      <view class="load-more" wx:if="{{hasMore && !loading}}" bindtap="onLoadMore">
+        <text>点击加载更多</text>
+      </view>
+      <view class="no-more" wx:if="{{!hasMore && competitions.length > 0}}">
+        <text>—— 已加载全部 ——</text>
+      </view>
+    </view>
+  </scroll-view>
+</view>

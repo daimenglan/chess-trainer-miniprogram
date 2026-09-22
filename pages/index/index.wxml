@@ -1,23 +1,28 @@
-<view class="game-page">
-  <!-- 游戏状态栏（含右上角功能下拉） -->
+<view class="game-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
+  <!-- 游戏状态栏（右上功能下拉） -->
   <view class="status-bar">
-    <view class="status-item {{playerSide === 'w' ? 'status-active' : ''}}">
-      <text class="status-label">白方</text>
-      <text class="status-name">{{playerSide === 'w' ? '你' : 'AI'}}</text>
-    </view>
-    <view class="status-result">
-      <text wx:if="{{offlineMode}}" class="offline-badge">离线</text>
-      <text wx:if="{{gameOver}}">{{resultLabel}}</text>
-      <text wx:elif="{{isAIThinking}}">AI 思考中...</text>
-      <text wx:else>{{turn === 'w' ? '白方走棋' : '黑方走棋'}}</text>
-    </view>
-    <view class="status-item {{playerSide === 'b' ? 'status-active' : ''}}">
-      <text class="status-label">黑方</text>
-      <text class="status-name">{{playerSide === 'b' ? '你' : 'AI'}}</text>
+    <view class="status-left"></view>
+    <view class="status-center">
+      <view class="status-item {{playerSide === 'w' ? 'status-active' : ''}}">
+        <text class="status-label">白方</text>
+        <text class="status-name">{{playerSide === 'w' ? '你' : 'AI'}}</text>
+      </view>
+      <view class="status-result">
+        <text wx:if="{{offlineMode}}" class="offline-badge">离线</text>
+        <text wx:if="{{gameOver}}">{{resultLabel}}</text>
+        <text wx:elif="{{isAIThinking}}">AI 思考中...</text>
+        <text wx:else>{{turn === 'w' ? '白方走棋' : '黑方走棋'}}</text>
+      </view>
+      <view class="status-item {{playerSide === 'b' ? 'status-active' : ''}}">
+        <text class="status-label">黑方</text>
+        <text class="status-name">{{playerSide === 'b' ? '你' : 'AI'}}</text>
+      </view>
     </view>
     <!-- 右上角功能下拉按钮 -->
-    <view class="more-btn" catchtap="onMoreTap">
-      <text class="more-icon">☰</text>
+    <view class="status-right">
+      <view class="more-btn" catchtap="onMoreTap">
+        <text class="more-icon">☰</text>
+      </view>
     </view>
   </view>
 
@@ -26,7 +31,8 @@
   <view wx:if="{{showMoreMenu}}" class="more-dropdown">
     <view class="more-item {{moveHistory.length === 0 || isAIThinking ? 'more-item-disabled' : ''}}" catchtap="onUndo">↩ 悔棋</view>
     <view class="more-item" catchtap="onFlipBoard">🔄 翻转棋盘</view>
-    <view class="more-item {{settings.showHints ? 'more-item-active' : ''}}" catchtap="onToggleHints">💡 提示开关</view>
+    <view class="more-item" catchtap="onStartManualExploration">📝 手动推演</view>
+    <view class="more-item {{settings.showHints ? 'more-item-active' : ''}}" catchtap="onCoachRex">🤖 AI教练 Rex</view>
     <view class="more-item {{settings.pieceStyle3d ? 'more-item-active' : ''}}" catchtap="onToggle3D">🎲 3D 棋子</view>
     <view class="more-item" catchtap="onExportPGN">📥 导出 PGN</view>
     <view class="more-item" catchtap="onShareGame">🔗 分享对局</view>
@@ -58,6 +64,8 @@
       flipped="{{boardFlipped}}"
       selectedSquare="{{selectedSquare}}"
       legalMoves="{{legalMoves}}"
+      lastMoveFrom="{{lastMoveFrom}}"
+      lastMoveTo="{{lastMoveTo}}"
       showHints="{{settings.showHints}}"
       boardColorPreset="{{settings.boardColorPreset}}"
       analysis="{{analysis}}"
@@ -78,10 +86,14 @@
   <view wx:if="{{explorationMode}}" class="exploration-bar">
     <view class="exploration-nav">
       <view class="exploration-nav-btn {{explorationStepIndex <= 0 ? 'exploration-nav-disabled' : ''}}" catchtap="explorationPrev">◀</view>
-      <text class="exploration-label">📝 推演 · {{explorationStepIndex + 1}}/{{explorationSteps.length}}</text>
+      <text class="exploration-label">📝 {{explorationMode === 'auto' ? '🤖 自动推演' : '手动推演'}} · {{explorationStepIndex + 1}}/{{explorationSteps.length}}</text>
       <view class="exploration-nav-btn {{explorationStepIndex >= explorationSteps.length - 1 ? 'exploration-nav-disabled' : ''}}" catchtap="explorationNext">▶</view>
     </view>
     <view class="exploration-actions">
+      <view wx:if="{{explorationMode === 'auto'}}">
+        <view class="exploration-pause-btn {{exploreAutoRunning ? '' : 'explore-hidden'}}" catchtap="onStartAutoExploration">⏸</view>
+        <view class="exploration-pause-btn {{exploreAutoPaused ? '' : 'explore-hidden'}}" catchtap="onStartAutoExploration">▶</view>
+      </view>
       <view class="exploration-btn" catchtap="exitExploration">✕ 退出</view>
     </view>
   </view>
@@ -89,86 +101,15 @@
   <!-- 下方被吃棋子 -->
   <captured-pieces side="bottom" fen="{{fen}}"></captured-pieces>
 
-<!-- 提示全屏模式（替代面板+控制栏） -->
-    <view wx:if="{{showHintsFull && gameStarted}}" class="hints-panel">
-      <scroll-view class="hints-scroll" scroll-y enable-flex
-                    scroll-into-view="{{scrollTargetHints}}" scroll-with-animation>
-<!-- 评估条 -->
-        <view class="hints-eval">
-          <view class="hints-eval-bar">
-            <view class="hints-eval-fill" style="width: {{analysis.length > 0 ? (50 + Math.max(-5, Math.min(5, analysis[0].score)) / 5 * 50) : 50}}%;
-              background: linear-gradient(90deg, #f87171, #facc15, #4ade80);"></view>
-          </view>
-          <text class="hints-eval-score" style="color: {{analysis.length > 0 ? (analysis[0].score > 0.3 ? '#4ade80' : analysis[0].score < -0.3 ? '#f87171' : '#facc15') : '#facc15'}};">
-            {{analysis.length > 0 ? analysis[0].scoreFormatted : '0.00'}}
-          </text>
-          <text class="hints-eval-label">{{analysis.length > 0 ? (analysis[0].score > 3 ? '胜势' : analysis[0].score > 1.5 ? '优势' : analysis[0].score > 0.5 ? '稍优' : analysis[0].score > -0.5 ? '均势' : analysis[0].score > -1.5 ? '稍差' : analysis[0].score > -3 ? '劣势' : '败势') : '均势'}}</text>
-        </view>
-
-      <!-- 开局名称 -->
-      <view wx:if="{{ecoCode}}" class="hints-opening">
-        <text class="hints-eco">{{ecoCode}}</text>
-        <text class="hints-opening-text">{{openingNameCN || openingName}}</text>
-      </view>
-
-      <!-- AI 思考中 -->
-      <view wx:if="{{isAIThinking}}" class="hints-thinking">
-        <view class="hints-thinking-dot"></view>
-        <text>AI 思考中...</text>
-      </view>
-
-      <!-- 分析错误 -->
-      <view wx:if="{{analysisError}}" class="hints-error">
-        <text>{{analysisError}}</text>
-      </view>
-
-      <!-- 候选走法列表 -->
-      <view class="hints-candidates">
-        <view wx:for="{{analysis}}" wx:for-item="c" wx:key="uci" class="hints-candidate" id="hints-candidate-{{index + 1}}">
-          <view class="hints-rank rank-{{index + 1}}">
-            <text>#{{index + 1}}</text>
-          </view>
-          <view class="hints-cinfo">
-            <view class="hints-cheader">
-              <text class="hints-clabel">{{c.uci.slice(0,2)}}→{{c.uci.slice(2,4)}}</text>
-              <text class="hints-cscore" style="color: {{c.scoreColor}};">
-                {{c.scoreFormatted}}
-              </text>
-            </view>
-            <view wx:if="{{c.pros && c.pros.length > 0}}" class="hints-detail">
-              <text wx:for="{{c.pros}}" wx:for-item="pro" wx:key="key" class="hints-pro">✓ {{pro.text}}</text>
-            </view>
-            <view wx:if="{{c.cons && c.cons.length > 0}}" class="hints-detail">
-              <text wx:for="{{c.cons}}" wx:for-item="con" wx:key="key" class="hints-con">! {{con.text}}</text>
-            </view>
-            <view wx:if="{{c.tactics && c.tactics.length > 0}}" class="hints-tactics">
-              <text wx:for="{{c.tactics}}" wx:for-item="t" wx:key="key" class="hints-tag">{{t.text}}</text>
-            </view>
-            <view wx:if="{{c.line && c.line.length > 1}}" class="hints-line">
-              <text class="hints-line-label">预计变化：</text>
-              <text wx:for="{{c.line}}" wx:for-item="mv" wx:key="key" class="hints-line-move">{{mv.text}}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <!-- 无候选走法 -->
-      <view wx:if="{{analysis.length === 0 && !isAIThinking}}" class="hints-empty">
-        <text>暂无候选走法</text>
-      </view>
-    </scroll-view>
-  </view>
-
-  <!-- 分析/棋谱 Tab 区域 -->
-  <view wx:if="{{gameStarted && !showHintsFull}}" class="panel-tabs">
-    <view class="panel-tab-head">
-      <view class="panel-tab {{activePanel === 'analysis' ? 'panel-tab-active' : ''}}"
-            data-panel="analysis" catchtap="onPanelSwitch">📊 分析</view>
-      <view class="panel-tab {{activePanel === 'history' ? 'panel-tab-active' : ''}}"
-            data-panel="history" catchtap="onPanelSwitch">📝 棋谱</view>
+<!-- 分析/提示面板（可展开收起） -->
+  <view wx:if="{{gameStarted}}" class="panel-tabs {{panelExpanded ? '' : 'panel-collapsed'}}">
+    <!-- 折叠/展开条 -->
+    <view class="panel-toggle-bar" catchtap="onTogglePanel">
+      <view class="panel-toggle-handle"></view>
+      <text class="panel-toggle-icon">{{panelExpanded ? '▼' : '▲'}}</text>
     </view>
-    <view class="panel-body">
-      <analysis-panel id="analysis-panel" wx:if="{{activePanel === 'analysis'}}"
+    <view class="panel-body" wx:if="{{panelExpanded}}">
+      <analysis-panel id="analysis-panel"
         gameStarted="{{gameStarted}}"
         gameOver="{{gameOver}}"
         fen="{{fen}}"
@@ -181,22 +122,17 @@
         isAIThinking="{{isAIThinking}}"
         showHints="{{settings.showHints}}"
         analysisDepth="{{settings.analysisDepth}}"
+        playerSide="{{playerSide}}"
+        turn="{{turn}}"
         bind:startexploration="onStartExploration"
         bind:playcontinuation="onPlayContinuation"
-        bind:togglehints="onToggleHints">
+        bind:autocontinuation="onAutoContinuation">
       </analysis-panel>
-      <move-history wx:if="{{activePanel === 'history'}}"
-        moveHistory="{{moveHistory}}"
-        moveReviews="{{moveReviews}}"
-        replayIndex="{{replayIndex}}"
-        isReplay="{{isReplay}}"
-        bind:gotomove="onGoToMove">
-      </move-history>
     </view>
   </view>
 
   <!-- 重演模式导航 -->
-  <view wx:if="{{isReplay && !showHintsFull}}" class="replay-bar-inline">
+  <view wx:if="{{isReplay}}" class="replay-bar-inline">
     <view class="replay-btn" catchtap="replayPrev">◀ 上一步</view>
     <text class="replay-info">{{replayIndex + 1}} / {{moveHistory.length}}</text>
     <view class="replay-btn" catchtap="replayNext">下一步 ▶</view>
@@ -232,6 +168,7 @@
                    bestScore="{{badMoveData.bestScore}}"
                    loss="{{badMoveData.loss}}"
                    bind:explore="onBadMoveExplore"
+                   bind:autoexplore="onBadMoveAutoExplore"
                    bind:confirm="onBadMoveConfirm"
                    bind:cancel="onBadMoveCancel"></bad-move-dialog>
 

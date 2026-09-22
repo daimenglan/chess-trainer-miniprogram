@@ -75,13 +75,13 @@ function parseSSEEvents(text: string, state: SSEState): any[] {
 function createSSERequest(url: string, data: any, callbacks: SSECallbacks): { abort: () => void } {
   const { onEvent, onError, onDone } = callbacks;
 
-  let baseUrl = 'http://192.168.3.168:3001';
+  let baseUrl = 'https://mychess.com.cn';
   try {
     const app = typeof getApp === 'function' ? getApp() : null;
     if (app && app.globalData && app.globalData.baseUrl) {
       baseUrl = app.globalData.baseUrl;
     }
-  } catch (e) { }
+  } catch (e) { /* non-critical */ }
 
   const token = (wx as any).getStorageSync('auth_token');
   const state: SSEState = { buffer: '', done: false };
@@ -150,7 +150,7 @@ function createSSERequest(url: string, data: any, callbacks: SSECallbacks): { ab
     abort() {
       if (finished) return;
       finished = true;
-      try { requestTask && requestTask.abort(); } catch (e) { }
+      try { requestTask && requestTask.abort(); } catch (e) { /* non-critical */ }
       onDone && onDone();
     },
   };

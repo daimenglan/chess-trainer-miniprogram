@@ -1,0 +1,24 @@
+<view class="page" __theme__="{{__theme__}}">
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="onBack">
+      <text class="nav-back-icon">←</text>
+      <text class="nav-back-text">返回</text>
+    </view>
+    <text class="nav-title">棋盘教学</text>
+    <view class="nav-add" bindtap="onResetBoard">
+      <text>↻</text>
+    </view>
+  </view>
+
+  <view class="board-container">
+    <view class="board-wrapper">
+      <!-- 棋盘组件 -->
+      <text class="board-placeholder">♟ 棋盘区域</text>
+      <text class="board-fen">FEN: {{fen}}</text>
+    </view>
+
+    <view class="board-actions">
+      <view class="action-btn" bindtap="onResetBoard"><text>重置棋盘</text></view>
+    </view>
+  </view>
+</view>

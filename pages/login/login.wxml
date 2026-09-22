@@ -1,4 +1,4 @@
-<view class="login-page">
+<view class="login-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
   <view class="login-bg">
     <view wx:for="{{floatPieces}}" wx:key="ch" 
           class="float-piece" style="left: {{item.left}}%; top: {{item.top}}%; 
@@ -7,14 +7,14 @@
     </view>
   </view>
 
-  <view class="login-card glass-strong">
+<view class="login-card glass-strong">
     <view class="login-header">
       <text class="logo-text">mychess AI</text>
       <text class="logo-sub">国际象棋陪练</text>
     </view>
 
-    <!-- 模式切换 -->
-    <view class="mode-tabs">
+    <!-- 模式切换（忘记密码时不显示） -->
+    <view wx:if="{{mode !== 'forgot'}}" class="mode-tabs">
       <view class="mode-tab {{mode === 'login' ? 'mode-active' : ''}}" catchtap="onSwitchMode" data-mode="login">
         <text>登录</text>
       </view>
@@ -23,25 +23,85 @@
       </view>
     </view>
 
-    <!-- 表单 -->
-    <view class="form">
-      <input class="form-input" placeholder="用户名" value="{{username}}" 
+    <!-- ===== 登录模式 ===== -->
+    <view wx:if="{{mode === 'login'}}" class="form">
+      <input class="form-input" placeholder="用户名" value="{{username}}"
              maxlength="20" bindinput="onUsernameInput" />
-      <input class="form-input" placeholder="密码" type="password" value="{{password}}" 
+      <input class="form-input" placeholder="密码" type="password" value="{{password}}"
              bindinput="onPasswordInput" />
-      <input wx:if="{{mode === 'register'}}" class="form-input" placeholder="确认密码" 
-             type="password" value="{{confirmPassword}}" bindinput="onConfirmInput" />
+      <text class="forgot-link" catchtap="onForgotPassword">忘记密码？</text>
 
-      <!-- 错误提示 -->
       <view wx:if="{{error}}" class="error-msg">{{error}}</view>
 
-      <!-- 提交按钮 -->
       <view class="submit-btn {{loading ? 'btn-loading' : ''}}" catchtap="onSubmit">
-        <text>{{loading ? '处理中...' : (mode === 'login' ? '登录' : '注册')}}</text>
+        <text>{{loading ? '处理中...' : '登录'}}</text>
       </view>
 
-      <!-- 跳过 -->
-      <view class="skip-btn" catchtap="onSkip">跳过，直接开始对弈</view>
+    </view>
+
+    <!-- ===== 注册模式 ===== -->
+    <view wx:if="{{mode === 'register'}}" class="form">
+      <input class="form-input" placeholder="用户名" value="{{username}}"
+             maxlength="20" bindinput="onUsernameInput" />
+      <input class="form-input" placeholder="邮箱（可选，用于找回密码）" type="text" value="{{registerEmail}}"
+             maxlength="64" bindinput="onRegisterEmailInput" />
+      <input class="form-input" placeholder="密码" type="password" value="{{password}}"
+             bindinput="onPasswordInput" />
+      <input class="form-input" placeholder="确认密码"
+             type="password" value="{{confirmPassword}}" bindinput="onConfirmInput" />
+
+      <view wx:if="{{error}}" class="error-msg">{{error}}</view>
+
+      <view class="submit-btn {{loading ? 'btn-loading' : ''}}" catchtap="onSubmit">
+        <text>{{loading ? '处理中...' : '注册'}}</text>
+      </view>
+
+    </view>
+
+    <!-- ===== 忘记密码模式：第一步——输入邮箱获取验证码 ===== -->
+    <view wx:if="{{mode === 'forgot' && forgotStep === 'send'}}" class="form">
+      <view class="form-header">
+        <text class="form-header-title">🔑 重置密码</text>
+        <text class="form-header-desc">输入注册时使用的邮箱地址，我们将向您发送验证码</text>
+      </view>
+      <input class="form-input" placeholder="邮箱地址" type="text" value="{{email}}"
+             bindinput="onEmailInput" />
+
+      <view wx:if="{{error}}" class="error-msg">{{error}}</view>
+
+      <view class="submit-btn {{loading ? 'btn-loading' : ''}}" catchtap="onSendCode">
+        <text>{{loading ? '发送中...' : '发送验证码'}}</text>
+      </view>
+
+      <view class="back-link" catchtap="onBackToLogin">← 返回登录</view>
+    </view>
+
+    <!-- ===== 忘记密码模式：第二步——验证码 + 新密码 ===== -->
+    <view wx:if="{{mode === 'forgot' && forgotStep === 'reset'}}" class="form">
+      <view class="form-header">
+        <text class="form-header-title">🔑 设置新密码</text>
+        <text class="form-header-desc">请输入验证码并设置新密码</text>
+      </view>
+      <view class="code-row">
+        <input class="form-input code-input" placeholder="验证码" type="text" value="{{code}}"
+               maxlength="6" bindinput="onCodeInput" />
+        <view class="send-code-btn {{countdown > 0 ? 'code-btn-disabled' : ''}} {{loading ? 'btn-loading' : ''}}"
+              catchtap="onSendCode">
+          <text>{{countdown > 0 ? countdown + 's' : '重新发送'}}</text>
+        </view>
+      </view>
+      <input class="form-input" placeholder="新密码（至少6位）" type="password" value="{{newPassword}}"
+             bindinput="onNewPasswordInput" />
+      <input class="form-input" placeholder="确认新密码" type="password" value="{{confirmNewPassword}}"
+             bindinput="onConfirmNewPasswordInput" />
+
+      <view wx:if="{{error}}" class="error-msg">{{error}}</view>
+
+      <view class="submit-btn {{loading ? 'btn-loading' : ''}}" catchtap="onResetPassword">
+        <text>{{loading ? '重设中...' : '重设密码'}}</text>
+      </view>
+
+      <view class="back-link" catchtap="onBackToLogin">← 返回登录</view>
     </view>
   </view>
 </view>

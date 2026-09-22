@@ -1,0 +1,55 @@
+<view class="page" __theme__="{{__theme__}}">
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="onBack">
+      <text class="nav-back-icon">←</text>
+      <text class="nav-back-text">返回</text>
+    </view>
+    <text class="nav-title">我的习题</text>
+    <view class="nav-add" bindtap="onCreatePuzzle">
+      <text>＋</text>
+    </view>
+  </view>
+
+  <scroll-view class="scroll-content" scroll-y="true">
+    <!-- 统计 -->
+    <view class="stats-row" wx:if="{{stats}}">
+      <view class="stat-box">
+        <text class="stat-num">{{stats.total || 0}}</text>
+        <text class="stat-label">总数</text>
+      </view>
+      <view class="stat-box">
+        <text class="stat-num">{{stats.mastered || 0}}</text>
+        <text class="stat-label">已掌握</text>
+      </view>
+      <view class="stat-box">
+        <text class="stat-num">{{stats.dueReview || 0}}</text>
+        <text class="stat-label">待复习</text>
+      </view>
+    </view>
+
+    <!-- 习题列表 -->
+    <view class="puzzle-list">
+      <view class="puzzle-card" wx:for="{{puzzles}}" wx:key="id" bindtap="onPuzzleTap" data-id="{{item.id}}">
+        <view class="puzzle-header">
+          <text class="puzzle-title">{{item.title || '未命名习题'}}</text>
+          <text class="puzzle-status" status="{{item.status}}">{{item.status === 'mastered' ? '已掌握' : item.status === 'due' ? '待复习' : '进行中'}}</text>
+        </view>
+        <text class="puzzle-desc">{{item.description || '暂无描述'}}</text>
+        <view class="puzzle-meta">
+          <text class="meta-item">{{item.phase || ''}}</text>
+          <text class="meta-item">{{item.createdAt}}</text>
+        </view>
+        <view class="puzzle-actions">
+          <view class="action-mini" bindtap="onPuzzleTap" data-id="{{item.id}}"><text>做题</text></view>
+          <view class="action-mini del" bindtap="onDeletePuzzle" data-id="{{item.id}}"><text>删除</text></view>
+        </view>
+      </view>
+      <view class="empty-tip" wx:if="{{puzzles.length === 0 && !loading}}">
+        <text>暂无习题，点击右上角创建</text>
+      </view>
+      <view class="loading-tip" wx:if="{{loading}}">
+        <text>加载中...</text>
+      </view>
+    </view>
+  </scroll-view>
+</view>

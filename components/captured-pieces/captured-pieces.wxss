@@ -2,9 +2,9 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4rpx;
-  padding: 4rpx 16rpx;
-  min-height: 40rpx;
+  gap: 6rpx;
+  padding: 6rpx 20rpx;
+  min-height: 44rpx;
 }
 
 .captured-top {
@@ -18,12 +18,12 @@
 .captured-group {
   display: flex;
   align-items: center;
-  gap: 2rpx;
+  gap: 4rpx;
   opacity: 0.7;
 }
 
 .captured-count {
-  font-size: 18rpx;
-  color: #8888aa;
+  font-size: 22rpx;
+  color: var(--text-muted);
   font-weight: 600;
 }

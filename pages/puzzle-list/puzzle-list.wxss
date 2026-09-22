@@ -1,0 +1,120 @@
+.list-page {
+  height: 100vh;
+  background: var(--bg-primary);
+}
+
+.page-scroll {
+  height: 100%;
+  padding: 0 16rpx 40rpx;
+}
+
+.tab-bar {
+  display: flex;
+  margin: 16rpx 0;
+  background: var(--bg-card);
+  border-radius: 10rpx;
+  padding: 4rpx;
+}
+
+.tab-item {
+  flex: 1;
+  text-align: center;
+  padding: 12rpx;
+  font-size: 20rpx;
+  color: var(--text-muted);
+  border-radius: 8rpx;
+}
+
+.tab-active {
+  background: var(--accent-border);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.list-loading, .list-empty {
+  text-align: center;
+  padding: 80rpx 0;
+  font-size: 22rpx;
+  color: var(--text-muted);
+}
+
+.empty-icon { font-size: 60rpx; display: block; margin-bottom: 16rpx; }
+
+.list-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12rpx;
+  padding: 16rpx;
+  margin-bottom: 12rpx;
+}
+
+.card-header {
+  display: flex;
+  gap: 12rpx;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+
+.card-diff {
+  font-size: 20rpx;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.card-phase {
+  font-size: 16rpx;
+  color: var(--text-muted);
+  background: rgba(255,255,255,0.05);
+  padding: 2rpx 10rpx;
+  border-radius: 6rpx;
+}
+
+.card-count {
+  font-size: 16rpx;
+  color: var(--danger);
+  margin-left: auto;
+}
+
+.card-themes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6rpx;
+  margin-bottom: 12rpx;
+}
+
+.theme-tag-sm {
+  font-size: 14rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 8rpx;
+  background: var(--info-bg);
+  color: var(--info);
+}
+
+.card-actions {
+  display: flex;
+  gap: 10rpx;
+}
+
+.action-sm {
+  padding: 8rpx 20rpx;
+  font-size: 18rpx;
+  border-radius: 8rpx;
+  background: var(--bg-card-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.action-primary {
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-color: rgba(108, 99, 255, 0.2);
+}
+
+.action-danger {
+  color: var(--danger);
+}
+
+.load-more {
+  text-align: center;
+  margin: 20rpx 0;
+}

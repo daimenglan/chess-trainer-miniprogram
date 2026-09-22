@@ -5,7 +5,6 @@
     "timer-display": "../../components/timer-display/timer-display",
     "captured-pieces": "../../components/captured-pieces/captured-pieces",
     "analysis-panel": "../../components/analysis-panel/analysis-panel",
-    "move-history": "../../components/move-history/move-history",
     "coach-chat": "../../components/coach-chat/coach-chat",
     "game-over-modal": "../../components/game-over-modal/game-over-modal",
     "bad-move-dialog": "../../components/bad-move-dialog/bad-move-dialog",

@@ -2,7 +2,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #0f0f23;
+  background: var(--bg-primary);
   padding: 20rpx;
   box-sizing: border-box;
 }
@@ -20,12 +20,12 @@
 .match-title {
   font-size: 42rpx;
   font-weight: 700;
-  color: #e0e0ff;
+  color: var(--text-primary);
 }
 
 .match-desc {
   font-size: 24rpx;
-  color: #8888aa;
+  color: var(--text-muted);
   text-align: center;
   padding: 0 60rpx;
 }
@@ -66,12 +66,12 @@
 
 .match-timer {
   font-size: 24rpx;
-  color: #8888aa;
+  color: var(--text-muted);
 }
 
 .match-cancel {
   font-size: 26rpx;
-  color: #f87171;
+  color: var(--danger);
   padding: 16rpx 40rpx;
   cursor: pointer;
 }
@@ -86,18 +86,45 @@
 
 .vs-label {
   font-size: 24rpx;
-  color: #6666aa;
+  color: var(--text-dim);
   margin-left: 20rpx;
+}
+
+/* ===== 观战人数 ===== */
+.spectator-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  padding: 6rpx 0;
+}
+
+.spectator-icon {
+  font-size: 24rpx;
+  line-height: 1;
+}
+
+.spectator-count {
+  font-size: 22rpx;
+  font-weight: 500;
+  color: var(--text-muted);
 }
 
 .player-info {
   display: flex;
   align-items: center;
   gap: 14rpx;
-  background: rgba(108, 99, 255, 0.06);
-  border: 1px solid rgba(108, 99, 255, 0.15);
+  background: rgba(108, 99, 255, 0.10);
+  border: 1px solid rgba(108, 99, 255, 0.25);
   border-radius: 16rpx;
-  padding: 12rpx 24rpx;
+  padding: 14rpx 28rpx;
+  transition: all 0.2s;
+}
+
+.player-info.active-turn {
+  background: rgba(108, 99, 255, 0.18);
+  border-color: rgba(108, 99, 255, 0.45);
+  box-shadow: 0 0 20rpx rgba(108, 99, 255, 0.15);
 }
 
 .player-color-signal {
@@ -113,7 +140,7 @@
 
 .player-name {
   font-size: 26rpx;
-  color: #e0e0ff;
+  color: var(--text-primary);
   font-weight: 500;
   max-width: 200rpx;
   overflow: hidden;
@@ -122,16 +149,17 @@
 }
 
 .player-time {
-  font-size: 28rpx;
+  font-size: 30rpx;
   font-weight: 700;
-  color: #ccccee;
+  color: var(--text-primary);
   font-variant-numeric: tabular-nums;
-  min-width: 70rpx;
+  min-width: 80rpx;
   text-align: right;
+  text-shadow: 0 0 8rpx rgba(108, 99, 255, 0.4);
 }
 
 .time-low {
-  color: #f87171;
+  color: var(--danger);
   animation: blink 1s infinite;
 }
 
@@ -147,6 +175,10 @@
   margin: 0 auto;
 }
 
+.online-board-area chess-board {
+  width: 100%;
+}
+
 /* ===== 操作按钮 ===== */
 .action-bar {
   display: flex;
@@ -157,29 +189,33 @@
 }
 
 .action-btn {
-  padding: 14rpx 24rpx;
-  background: rgba(108, 99, 255, 0.1);
-  border: 1px solid rgba(108, 99, 255, 0.2);
+  padding: 14rpx 28rpx;
+  background: rgba(108, 99, 255, 0.15);
+  border: 1px solid rgba(108, 99, 255, 0.4);
   border-radius: 14rpx;
-  color: #ccccee;
-  font-size: 22rpx;
-  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 24rpx;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all 0.15s;
+  min-width: 120rpx;
+  text-align: center;
 }
 
 .action-btn:active {
-  background: rgba(108, 99, 255, 0.2);
+  background: rgba(108, 99, 255, 0.3);
+  transform: scale(0.97);
 }
 
 .action-disabled {
-  opacity: 0.4;
+  opacity: 0.5;
   pointer-events: none;
 }
 
 .action-danger {
-  border-color: rgba(248, 113, 113, 0.3);
-  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.5);
+  color: var(--danger);
+  background: rgba(248, 113, 113, 0.10);
 }
 
 /* ===== 状态提示 ===== */
@@ -196,7 +232,7 @@
 }
 
 .status-toast.info {
-  background: rgba(108, 99, 255, 0.2);
+  background: var(--accent-border);
   border: 1px solid rgba(108, 99, 255, 0.3);
   color: #ccccee;
 }
@@ -204,7 +240,7 @@
 .status-toast.warn {
   background: rgba(248, 113, 113, 0.2);
   border: 1px solid rgba(248, 113, 113, 0.3);
-  color: #f87171;
+  color: var(--danger);
 }
 
 @keyframes fadeInOut {
@@ -218,7 +254,9 @@
 .confirm-overlay, .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--bg-overlay);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -226,91 +264,424 @@
 }
 
 .confirm-dialog, .gameover-dialog {
-  background: #1a1a2e;
-  border: 1px solid rgba(108, 99, 255, 0.3);
+  background: var(--bg-glass);
+  border: 1px solid rgba(108, 99, 255, 0.5);
   border-radius: 24rpx;
-  padding: 40rpx;
-  width: 80%;
-  max-width: 500rpx;
+  padding: 48rpx;
+  width: 85%;
+  max-width: 560rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20rpx;
+  gap: 24rpx;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.5);
 }
 
 .confirm-title {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #e0e0ff;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
 }
 
 .confirm-desc {
-  font-size: 24rpx;
-  color: #8888aa;
+  font-size: 26rpx;
+  color: var(--text-secondary);
   text-align: center;
+  line-height: 1.6;
 }
 
 .confirm-actions {
   display: flex;
-  gap: 20rpx;
-  margin-top: 10rpx;
+  gap: 24rpx;
+  margin-top: 8rpx;
 }
 
 .confirm-btn {
-  padding: 14rpx 40rpx;
-  border-radius: 14rpx;
-  font-size: 26rpx;
-  font-weight: 600;
-  background: #6c63ff;
+  padding: 16rpx 48rpx;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  font-weight: 700;
+  background: var(--accent);
   color: #fff;
   cursor: pointer;
+  transition: all 0.15s;
+  min-width: 140rpx;
+  text-align: center;
+}
+
+.confirm-btn:active {
+  transform: scale(0.97);
+  opacity: 0.9;
 }
 
 .confirm-btn-no {
-  background: rgba(255, 255, 255, 0.1);
-  color: #8888aa;
+  background: rgba(255, 255, 255, 0.10);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* ===== 结束弹窗 ===== */
 .gameover-icon {
-  font-size: 72rpx;
+  font-size: 80rpx;
+  line-height: 1;
 }
 
 .gameover-title {
-  font-size: 36rpx;
+  font-size: 40rpx;
   font-weight: 700;
-  color: #e0e0ff;
+  color: var(--text-primary);
+  text-align: center;
 }
 
 .gameover-desc {
-  font-size: 24rpx;
-  color: #8888aa;
+  font-size: 26rpx;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.6;
 }
 
 .gameover-actions {
   display: flex;
-  gap: 20rpx;
-  margin-top: 10rpx;
+  gap: 24rpx;
+  margin-top: 8rpx;
   flex-wrap: wrap;
   justify-content: center;
 }
 
 .btn-primary {
-  padding: 16rpx 40rpx;
-  background: #6c63ff;
-  border-radius: 14rpx;
+  padding: 18rpx 52rpx;
+  background: var(--accent);
+  border-radius: 16rpx;
   color: #fff;
-  font-size: 26rpx;
-  font-weight: 600;
+  font-size: 28rpx;
+  font-weight: 700;
   cursor: pointer;
+  transition: all 0.15s;
+  min-width: 160rpx;
+  text-align: center;
+}
+
+.btn-primary:active {
+  transform: scale(0.97);
+  opacity: 0.9;
 }
 
 .btn-secondary {
-  padding: 16rpx 40rpx;
+  padding: 18rpx 52rpx;
   background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 14rpx;
-  color: #8888aa;
-  font-size: 26rpx;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16rpx;
+  color: var(--text-secondary);
+  font-size: 28rpx;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.15s;
+  min-width: 160rpx;
+  text-align: center;
+}
+
+.btn-secondary:active {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(0.97);
+}
+
+/* ===== 棋桌大厅 ===== */
+
+.table-actions {
+  display: flex;
+  gap: 24rpx;
+  width: 100%;
+  max-width: 600rpx;
+  padding: 0 20rpx;
+}
+
+.table-action-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  padding: 28rpx 20rpx;
+  border-radius: 20rpx;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid rgba(108, 99, 255, 0.3);
+}
+
+.table-action-btn:active {
+  transform: scale(0.95);
+}
+
+.card-match {
+  background: linear-gradient(135deg, #6c63ff, #5a52d5);
+  border: none;
+}
+
+.card-table {
+  background: rgba(108, 99, 255, 0.10);
+  border-color: rgba(108, 99, 255, 0.4);
+}
+
+.table-action-icon {
+  font-size: 48rpx;
+  line-height: 1;
+}
+
+.table-action-label {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.card-match .table-action-label {
+  color: #fff;
+}
+
+.card-match .table-action-desc {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.table-action-desc {
+  font-size: 20rpx;
+  color: var(--text-muted);
+}
+
+/* 摆桌等待状态 */
+.tabling-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  padding: 36rpx 40rpx;
+  background: linear-gradient(135deg, rgba(108, 99, 255, 0.15), rgba(90, 82, 213, 0.08));
+  border: 1px solid rgba(108, 99, 255, 0.4);
+  border-radius: 24rpx;
+  width: 100%;
+  max-width: 500rpx;
+}
+
+.tabling-icon-wrap {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: rgba(108, 99, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tabling-pulse-icon {
+  font-size: 44rpx;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.7; }
+}
+
+.tabling-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.tabling-subtitle {
+  font-size: 24rpx;
+  color: var(--text-muted);
+}
+
+.tabling-info {
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  background: rgba(108, 99, 255, 0.10);
+  padding: 8rpx 24rpx;
+  border-radius: 12rpx;
+}
+
+.tabling-cancel {
+  font-size: 26rpx;
+  color: var(--danger);
+  padding: 12rpx 36rpx;
+  cursor: pointer;
+  margin-top: 4rpx;
+}
+
+/* 棋桌大厅区域 */
+.table-lobby-section {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-top: 20rpx;
+}
+
+.lobby-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12rpx 10rpx;
+  border-bottom: 1px solid rgba(108, 99, 255, 0.15);
+}
+
+.lobby-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.lobby-count {
+  font-size: 22rpx;
+  color: var(--text-muted);
+}
+
+.lobby-scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 12rpx 0;
+}
+
+.lobby-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  padding: 60rpx 0;
+}
+
+.lobby-empty-icon {
+  font-size: 64rpx;
+  opacity: 0.4;
+}
+
+.lobby-empty-text {
+  font-size: 24rpx;
+  color: var(--text-muted);
+}
+
+/* 棋桌卡片 */
+.table-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 24rpx;
+  margin-bottom: 12rpx;
+  background: rgba(108, 99, 255, 0.06);
+  border: 1px solid rgba(108, 99, 255, 0.15);
+  border-radius: 16rpx;
+  transition: all 0.15s;
+}
+
+.table-card:active {
+  background: rgba(108, 99, 255, 0.12);
+}
+
+.table-card-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  min-width: 0;
+  flex: 1;
+}
+
+.table-host-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.table-host-avatar {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6c63ff, #5a52d5);
+  color: #fff;
+  font-size: 22rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.table-host-name {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.table-meta-row {
+  display: flex;
+  gap: 20rpx;
+  padding-left: 56rpx;
+}
+
+.table-meta-time, .table-meta-wait {
+  font-size: 20rpx;
+  color: var(--text-muted);
+}
+
+.table-card-right {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+}
+
+.table-join-btn {
+  padding: 12rpx 32rpx;
+  background: linear-gradient(135deg, #6c63ff, #5a52d5);
+  border-radius: 12rpx;
+  color: #fff;
+  font-size: 26rpx;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.table-join-btn:active {
+  transform: scale(0.93);
+  opacity: 0.85;
+}
+
+/* ===== 邀请弹窗 ===== */
+.invite-dialog {
+  padding: 40rpx 48rpx;
+}
+
+.invite-emoji {
+  font-size: 72rpx;
+  line-height: 1;
+}
+
+.invite-desc {
+  font-size: 28rpx;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.invite-username {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.invite-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 8rpx 0;
+  border-bottom: 1px solid rgba(108, 99, 255, 0.1);
+}
+
+.invite-detail-label {
+  font-size: 24rpx;
+  color: var(--text-muted);
+}
+
+.invite-detail-value {
+  font-size: 26rpx;
+  color: var(--text-primary);
+  font-weight: 600;
 }

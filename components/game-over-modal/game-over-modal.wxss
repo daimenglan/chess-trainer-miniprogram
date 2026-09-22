@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--bg-overlay);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   z-index: 1000;
@@ -14,51 +14,51 @@
 }
 
 .game-over-modal {
-  padding: 48rpx 60rpx;
+  padding: 56rpx 72rpx;
   text-align: center;
   background: rgba(26, 26, 46, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  min-width: 400rpx;
+  border: 1px solid var(--border-color);
+  min-width: 460rpx;
 }
 
 .emoji {
-  font-size: 80rpx;
-  margin-bottom: 16rpx;
+  font-size: 100rpx;
+  margin-bottom: 20rpx;
 }
 
 .title {
-  font-size: 40rpx;
+  font-size: 48rpx;
   font-weight: 800;
-  color: #e0e0f0;
-  margin-bottom: 8rpx;
-}
-
-.subtitle {
-  font-size: 24rpx;
-  color: #8888aa;
+  color: var(--text-primary);
   margin-bottom: 12rpx;
 }
 
+.subtitle {
+  font-size: 30rpx;
+  color: var(--text-muted);
+  margin-bottom: 16rpx;
+}
+
 .result-text {
-  font-size: 22rpx;
-  color: #666688;
-  margin-bottom: 32rpx;
+  font-size: 28rpx;
+  color: var(--text-dim);
+  margin-bottom: 40rpx;
 }
 
 .actions {
   display: flex;
-  gap: 16rpx;
+  gap: 20rpx;
   justify-content: center;
 }
 
 .action-btn {
-  padding: 16rpx 32rpx;
-  border-radius: 12rpx;
-  background: rgba(255, 255, 255, 0.08);
-  color: #c0c0e0;
-  font-size: 24rpx;
+  padding: 20rpx 40rpx;
+  border-radius: 14rpx;
+  background: var(--bg-card-hover);
+  color: var(--text-secondary);
+  font-size: 30rpx;
   font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-color);
 }
 
 .action-btn:active {
@@ -67,7 +67,7 @@
 }
 
 .action-primary {
-  background: linear-gradient(135deg, #6c63ff, #4834d4);
+  background: var(--accent-gradient);
   color: #fff;
   border: none;
   box-shadow: 0 4rpx 20rpx rgba(108, 99, 255, 0.3);

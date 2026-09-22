@@ -1,0 +1,12 @@
+<view class="admin-page theme-{{__theme__}}">
+  <scroll-view scroll-y class="page-body">
+    <view class="page-header"><text class="page-title">游戏详情</text></view>
+    <view wx:if="{{loading}}" class="loading-tip">加载中...</view>
+    <view class="detail-card">
+      <text class="detail-title">{{game.whiteName || '白方'}} vs {{game.blackName || '黑方'}}</text>
+      <text class="detail-desc">结果：{{game.result || '-'}} · 模式：{{game.mode || '-'}}</text>
+      <text class="detail-info">日期：{{game.date || '-'}} · 步数：{{game.moves ? game.moves.length : 0}}</text>
+      <text class="detail-info">用户ID：{{game.userId || '-'}} · 棋谱ID：{{game.recordId || '-'}}</text>
+    </view>
+  </scroll-view>
+</view>

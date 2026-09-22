@@ -1,0 +1,66 @@
+<view class="page" __theme__="{{__theme__}}">
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="onBack">
+      <text class="nav-back-icon">←</text>
+      <text class="nav-back-text">返回</text>
+    </view>
+    <text class="nav-title">分销中心</text>
+  </view>
+
+  <scroll-view class="scroll-content" scroll-y="true">
+    <!-- 概览 -->
+    <view class="overview-section" wx:if="{{profile && profile.status === 'active'}}">
+      <view class="overview-card">
+        <text class="overview-title">我的推广码</text>
+        <text class="overview-code">{{referralInfo.referralCode || '未生成'}}</text>
+        <view class="code-actions">
+          <view class="action-mini" bindtap="onRegenerateCode"><text>重新生成</text></view>
+        </view>
+      </view>
+
+      <view class="stats-grid">
+        <view class="stat-box">
+          <text class="stat-num">{{profile.totalCommission || 0}}</text>
+          <text class="stat-label">累计佣金 (龙币)</text>
+        </view>
+        <view class="stat-box">
+          <text class="stat-num">{{profile.referralCount || 0}}</text>
+          <text class="stat-label">推广人数</text>
+        </view>
+        <view class="stat-box">
+          <text class="stat-num">{{profile.teamSize || 0}}</text>
+          <text class="stat-label">团队人数</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 未激活状态 -->
+    <view class="activate-section" wx:if="{{!profile || profile.status !== 'active'}}">
+      <view class="activate-card">
+        <text class="activate-title">尚未成为分销员</text>
+        <text class="activate-desc">激活后可获得推广码，邀请好友注册即可获得佣金奖励</text>
+        <view class="activate-btn" bindtap="onActivate">
+          <text class="activate-btn-text">立即激活</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 佣金记录 -->
+    <view class="section" wx:if="{{profile && profile.status === 'active'}}">
+      <text class="section-title">佣金记录</text>
+      <view class="commission-list">
+        <view class="commission-item" wx:for="{{commissions}}" wx:key="id">
+          <view class="commission-info">
+            <text class="commission-amount">+{{item.amount || 0}} 龙币</text>
+            <text class="commission-desc">{{item.description || ''}}</text>
+            <text class="commission-date">{{item.createdAt}}</text>
+          </view>
+          <text class="commission-status" status="{{item.status}}">{{item.status === 'settled' ? '已结算' : item.status === 'pending' ? '待结算' : item.status}}</text>
+        </view>
+        <view class="empty-tip" wx:if="{{commissions.length === 0}}">
+          <text>暂无佣金记录</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

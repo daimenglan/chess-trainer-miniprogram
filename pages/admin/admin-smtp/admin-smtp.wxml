@@ -1,0 +1,24 @@
+<view class="admin-page theme-{{__theme__}}">
+  <scroll-view scroll-y class="page-body">
+    <view class="page-header"><text class="page-title">SMTP 配置</text></view>
+    <view wx:if="{{loading}}" class="loading-tip">加载中...</view>
+    <view class="form-group">
+      <text class="form-label">SMTP 主机</text>
+      <input class="input-field" value="{{config.host}}" bindinput="onHostInput" placeholder="smtp.example.com" placeholder-class="placeholder" />
+      <text class="form-label">端口</text>
+      <input class="input-field" value="{{config.port}}" bindinput="onPortInput" placeholder="587" placeholder-class="placeholder" type="number" />
+      <text class="form-label">用户名</text>
+      <input class="input-field" value="{{config.user}}" bindinput="onUserInput" placeholder="user@example.com" placeholder-class="placeholder" />
+      <text class="form-label">密码</text>
+      <input class="input-field" value="{{config.pass}}" bindinput="onPassInput" placeholder="密码" placeholder-class="placeholder" type="password" />
+      <text class="form-label">发件人</text>
+      <input class="input-field" value="{{config.from}}" bindinput="onFromInput" placeholder="noreply@example.com" placeholder-class="placeholder" />
+      <text class="form-label">TLS 加密</text>
+      <switch checked="{{config.secure}}" color="#6c63ff" bindchange="onSecureChange" />
+    </view>
+    <view class="btn-row">
+      <view class="btn primary" catchtap="onSave"><text class="btn-text">保存配置</text></view>
+      <view class="btn" catchtap="onTest"><text class="btn-text">{{testing ? '测试中...' : '测试连接'}}</text></view>
+    </view>
+  </scroll-view>
+</view>

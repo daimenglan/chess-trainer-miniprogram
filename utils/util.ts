@@ -180,6 +180,147 @@ function keyedList(arr: string[] | undefined | null, prefix: string): Array<{ ke
   return (arr || []).map((text, i) => ({ key: prefix + '_' + i + '_' + text, text }));
 }
 
+/**
+ * 安全返回：页面栈只有一层时（分享卡片、小程序码等外部入口直接打开本页），
+ * wx.navigateBack 不会生效，此时改跳兜底页，避免用户被困在当前页。
+ */
+function navigateBackSafe(fallbackUrl: string = '/pages/choice/choice'): void {
+  if (getCurrentPages().length > 1) {
+    wx.navigateBack();
+    return;
+  }
+  wx.reLaunch({ url: fallbackUrl });
+}
+
+/**
+ * 解析 JWT payload（兼容 base64url 字符集）
+ */
+function parseJwtPayload(token: string): any {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) base64 += '=';
+    return JSON.parse(atob(base64));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 判断当前登录用户是否为管理员（用于管理后台入口与页面的权限校验）
+ * 依次取 globalData.user.role → user_info 存储 → JWT payload 中的 role
+ */
+function isAdminUser(): boolean {
+  let user: any = null;
+  try {
+    const app = typeof getApp === 'function' ? getApp() : null;
+    user = (app && app.globalData && app.globalData.user) || null;
+  } catch {}
+  if (!user) {
+    try { user = wx.getStorageSync('user_info') || null; } catch {}
+  }
+  if (user && user.role) return user.role === 'admin';
+
+  // 旧版登录未保存 role 时，从 JWT payload 恢复（后端签发的 payload 含 role）
+  let token = '';
+  try {
+    const app = typeof getApp === 'function' ? getApp() : null;
+    token = (app && app.globalData && app.globalData.token) || '';
+  } catch {}
+  if (!token) {
+    try { token = wx.getStorageSync('auth_token') || ''; } catch {}
+  }
+  if (token) {
+    const payload = parseJwtPayload(token);
+    if (payload && payload.role) return payload.role === 'admin';
+  }
+  return false;
+}
+
+/**
+ * 判断当前用户是否为教师（与网页版逻辑一致：admin 或 teacherStatus === 'approved'）
+ */
+function isTeacherUser(role: string | undefined, teacherStatus: string | undefined): boolean {
+  return role === 'admin' || teacherStatus === 'approved';
+}
+
+function isTeacher(): boolean {
+  let user: any = null;
+  try {
+    const app = typeof getApp === 'function' ? getApp() : null;
+    user = (app && app.globalData && app.globalData.user) || null;
+  } catch {}
+  if (!user) {
+    try { user = wx.getStorageSync('user_info') || null; } catch {}
+  }
+  if (!user) return false;
+  return isTeacherUser(user.role, user.teacherStatus);
+}
+
+/**
+ * 从全局配置获取分销系统是否启用（与网页版 distributionEnabled 一致）
+ * 启动时由 app.ts 异步加载并写入 globalData.permissions
+ */
+function isDistributionEnabled(): boolean {
+  try {
+    const app = typeof getApp === 'function' ? getApp() : null;
+    const perms = (app && app.globalData && app.globalData.permissions) || null;
+    if (perms && typeof perms.distributionEnabled === 'boolean') return perms.distributionEnabled;
+  } catch {}
+  // 默认开启，与网页版失败时的回退一致
+  return true;
+}
+
+/**
+ * 从全局配置获取会员系统是否启用（与网页版 membershipEnabled 一致）
+ */
+function isMembershipEnabled(): boolean {
+  try {
+    const app = typeof getApp === 'function' ? getApp() : null;
+    const perms = (app && app.globalData && app.globalData.permissions) || null;
+    if (perms && typeof perms.membershipEnabled === 'boolean') return perms.membershipEnabled;
+  } catch {}
+  // 默认开启
+  return true;
+}
+
+/**
+ * 获取菜单可见性配置（与网页版 getAdminMenuVisibility 一致）
+ * 返回 null 表示使用默认全部可见
+ */
+function getMenuVisibility(): any {
+  try {
+    const app = typeof getApp === 'function' ? getApp() : null;
+    return (app && app.globalData && app.globalData.permissions && app.globalData.permissions.menuVisibility) || null;
+  } catch {}
+  return null;
+}
+
+/**
+ * 检查指定菜单路径对当前用户是否可见（与网页版 isMenuItemVisible 逻辑一致）
+ * - 无菜单配置 → 全部可见
+ * - 菜单项未隐藏 → 可见
+ * - 菜单项已隐藏 → 管理员始终可见；普通用户看白名单
+ */
+function isMenuItemVisible(menuPath: string): boolean {
+  const visibility = getMenuVisibility();
+  if (!visibility) return true;
+  const items = visibility.items || [];
+  const config = items.find((v: any) => v.path === menuPath);
+  if (!config || !config.hidden) return true;
+  // 管理员始终可见
+  if (isAdminUser()) return true;
+  // 普通用户检查白名单
+  let user: any = null;
+  try {
+    const app = typeof getApp === 'function' ? getApp() : null;
+    user = (app && app.globalData && app.globalData.user) || null;
+  } catch {}
+  if (!user) return false;
+  return (config.visibleToUserIds || []).includes(user.userId);
+}
+
 export {
   formatTime,
   formatDate,
@@ -197,4 +338,13 @@ export {
   throttle,
   deepClone,
   keyedList,
+  navigateBackSafe,
+  parseJwtPayload,
+  isAdminUser,
+  isTeacherUser,
+  isTeacher,
+  isDistributionEnabled,
+  isMembershipEnabled,
+  getMenuVisibility,
+  isMenuItemVisible,
 };

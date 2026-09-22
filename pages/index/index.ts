@@ -30,7 +30,20 @@ interface MoveHistoryItem {
 }
 
 Page({
+
+  /** 同步主题 */
+  _syncTheme() {
+    try {
+      const app = getApp();
+      const theme = app?.globalData?.settings?.uiTheme || 'dark';
+      if (this.data.__theme__ !== theme) {
+        this.setData({ __theme__: theme });
+      }
+    } catch(e) { /* non-critical */ }
+  },
+
   data: {
+    __theme__: (typeof getApp === "function" ? (getApp().globalData?.settings?.uiTheme || "dark") : "dark"),
     TIME_PRESETS,
 
     // 棋盘状态
@@ -50,6 +63,8 @@ Page({
     isStalemate: false,
     moveHistory: [] as MoveHistoryItem[],
     moveReviews: {} as Record<number, any>,
+    lastMoveFrom: '',
+    lastMoveTo: '',
 
     // 设置
     settings: app.globalData.settings || app.getDefaultSettings(),
@@ -83,6 +98,8 @@ Page({
     explorationSteps: [] as any[],
     explorationStepIndex: -1,
     explorationFen: '',
+    exploreAutoRunning: false,
+    exploreAutoPaused: false,
 
     // 重演
     replayIndex: -1,
@@ -103,15 +120,11 @@ Page({
     },
     showGameOver: false,
 
-    // 底部分析/棋谱面板
-    activePanel: 'analysis',
-
     // 棋盘翻转
     boardFlipped: false,
 
-    // 全屏提示模式
-    showHintsFull: false,
-    scrollTargetHints: '',
+    // 右下方面板展开/收起
+    panelExpanded: true,
 
     // 右上角下拉菜单
     showMoreMenu: false,
@@ -128,6 +141,7 @@ Page({
   _lightMoves: [] as MoveHistoryItem[],
   _explorationChess: null as any,
   _reviewAbort: null as any,
+  _exploreAutoTimer: null as any,
 
 onLoad(options: any) {
     // 从模式选择页跳转过来，直接开始AI对弈（switchTab 传参）
@@ -142,16 +156,8 @@ onLoad(options: any) {
       setTimeout(() => this.onNewGame(), 100);
       return;
     }
-    // 已登录用户重定向到模式选择页（但不要在从选择页跳转回来时重定向）
-    if (app.globalData.pendingStartAI) {
-      // 从选择页 switchTab 跳转过来，不重定向，由 onShow 处理
-      return;
-    }
-    const token = (wx as any).getFileSync?.('auth_token') || (wx as any).getFileSync?.('authToken');
-    if (token) {
-      wx.redirectTo({ url: '/pages/choice/choice' });
-      return;
-    }
+    // 从选择页 switchTab 过来时由 onShow 处理开局，这里不重复初始化
+    if (app.globalData.pendingStartAI) return;
     this._chess = new Chess.Chess();
     this._lightMoves = [];
     this.setData({
@@ -164,9 +170,11 @@ onLoad(options: any) {
   onUnload() {
     this.clearTimer();
     this.clearAnalysisTimer();
+    this.clearExploreAutoTimer();
   },
 
   onShow() {
+    this._syncTheme();
     // 从模式选择页通过 switchTab 跳转过来，开始AI对弈
     if (app.globalData.pendingStartAI) {
       app.globalData.pendingStartAI = false;
@@ -283,6 +291,8 @@ onLoad(options: any) {
       const chessData = this.getBoardData(chess);
       this.setData({
         ...chessData,
+        lastMoveFrom: move.from,
+        lastMoveTo: move.to,
         selectedSquare: '',
         legalMoves: [],
       });
@@ -349,6 +359,11 @@ onLoad(options: any) {
     this.startExploration(this.data.badMoveData.uci);
   },
 
+  onBadMoveAutoExplore() {
+    this.setData({ showBadMove: false });
+    this.onAutoContinuation({ detail: { uci: this.data.badMoveData.uci } });
+  },
+
   onBadMoveConfirm() {
     this.setData({ showBadMove: false });
   },
@@ -406,6 +421,7 @@ onLoad(options: any) {
           captured: move.captured || '',
         });
 
+        this.setData({ lastMoveFrom: move.from, lastMoveTo: move.to });
         this.updateBoardState();
         this.setData({
           moveHistory: this._lightMoves.slice(),
@@ -475,18 +491,25 @@ onLoad(options: any) {
       })
         .then((res: any) => {
           if (res?.data) {
-            const candidates = (res.data.candidates || []).map((c: any, i: number) => ({
-              ...c,
-              rank: i + 1,
-              score: typeof c.score === 'number' ? c.score : 0,
-              scoreFormatted: util.formatScore(c.score),
-              scoreColor: util.getScoreColor(c.score),
-              // 字符串数组转带唯一键对象，避免 wx:key 重复告警
-              pros: util.keyedList(c.pros, 'p' + (i + 1)),
-              cons: util.keyedList(c.cons, 'c' + (i + 1)),
-              tactics: util.keyedList(c.tactics, 't' + (i + 1)),
-              line: util.keyedList(c.line, 'l' + (i + 1)),
-            }));
+            const playerSide = this.data.playerSide; // 'w' or 'b'
+            const candidates = (res.data.candidates || []).map((c: any, i: number) => {
+              // 引擎分数始终是白方视角（正数=白方好）。
+              // 如果玩家执黑，需要翻转分数，让正数始终代表对玩家有利
+              let score = typeof c.score === 'number' ? c.score : 0;
+              if (playerSide === 'b') score = -score;
+              return {
+                ...c,
+                rank: i + 1,
+                score,
+                scoreFormatted: util.formatScore(score),
+                scoreColor: util.getScoreColor(score),
+                // 字符串数组转带唯一键对象，避免 wx:key 重复告警
+                pros: util.keyedList(c.pros, 'p' + (i + 1)),
+                cons: util.keyedList(c.cons, 'c' + (i + 1)),
+                tactics: util.keyedList(c.tactics, 't' + (i + 1)),
+                line: util.keyedList(c.line, 'l' + (i + 1)),
+              };
+            });
             this.setData({
               analysis: candidates,
               analysisError: '',
@@ -514,6 +537,26 @@ onLoad(options: any) {
   },
 
   // ===== 推演模式 =====
+  onStartManualExploration() {
+    if (this.data.explorationMode) {
+      this.exitExploration();
+      return;
+    }
+    const chess = new Chess.Chess(this._chess.fen());
+    this._explorationChess = chess;
+    this.setData({
+      explorationMode: 'manual',
+      explorationSteps: [],
+      explorationStepIndex: -1,
+      explorationFen: this._chess.fen(),
+      exploreAutoRunning: false,
+      exploreAutoPaused: false,
+      selectedSquare: '',
+      legalMoves: [],
+    });
+    util.showToast('手动推演：可自由操作黑白双方');
+  },
+
   onStartExploration(e: any) {
     const uci = e.detail?.uci || e.currentTarget?.dataset?.uci;
     this.startExploration(uci);
@@ -522,6 +565,107 @@ onLoad(options: any) {
   onPlayContinuation(e: any) {
     const uci = e.detail?.uci || e.currentTarget?.dataset?.uci;
     this.startExploration(uci);
+  },
+
+  /** 开启自动推演（AI交替走黑白双方） */
+  onStartAutoExploration() {
+    if (this.data.explorationMode === 'auto') {
+      // 已处于自动推演模式，暂停/继续
+      if (this.data.exploreAutoRunning) {
+        this.setData({ exploreAutoPaused: true, exploreAutoRunning: false });
+        this.clearExploreAutoTimer();
+        util.showToast('推演已暂停');
+      } else {
+        this.setData({ exploreAutoPaused: false, exploreAutoRunning: true });
+        this.autoExploreNext();
+      }
+      return;
+    }
+    if (this.data.explorationMode) {
+      this.exitExploration();
+    }
+    const fen = this._chess.fen();
+    const chess = new Chess.Chess(fen);
+    this._explorationChess = chess;
+    this.setData({
+      explorationMode: 'auto',
+      explorationSteps: [],
+      explorationStepIndex: -1,
+      explorationFen: fen,
+      exploreAutoRunning: true,
+      exploreAutoPaused: false,
+      selectedSquare: '',
+      legalMoves: [],
+    });
+    // 开始自动走子
+    setTimeout(() => this.autoExploreNext(), 500);
+  },
+
+  /** 自动推演下一步 */
+  autoExploreNext() {
+    if (this.data.exploreAutoPaused || !this.data.exploreAutoRunning) return;
+    const chess = this._explorationChess;
+    if (!chess || chess.isGameOver()) {
+      this.autoExplorationComplete();
+      return;
+    }
+    const fen = chess.fen();
+    const uci = localAI.getLocalAIMove(fen, 8);
+    if (!uci) {
+      this.autoExplorationComplete();
+      return;
+    }
+    try {
+      const move = chess.move({ from: uci.slice(0,2), to: uci.slice(2,4), promotion: uci.length > 4 ? uci.slice(4) : 'q' });
+      if (move) {
+        const steps = [...this.data.explorationSteps, {
+          fen: chess.fen(),
+          san: move.san,
+          uci: move.from + move.to,
+        }];
+        this._explorationChess = chess;
+        this.setData({
+          explorationSteps: steps,
+          explorationStepIndex: steps.length - 1,
+          explorationFen: chess.fen(),
+          lastMoveFrom: move.from,
+          lastMoveTo: move.to,
+          isCheck: chess.isCheck(),
+          isCheckmate: chess.isCheckmate(),
+          isStalemate: chess.isStalemate(),
+        });
+        if (chess.isGameOver()) {
+          this.autoExplorationComplete();
+          return;
+        }
+        // 继续下一步
+        this._exploreAutoTimer = setTimeout(() => this.autoExploreNext(), 500);
+      } else {
+        this.autoExplorationComplete();
+      }
+    } catch (e) {
+      this.autoExplorationComplete();
+    }
+  },
+
+  autoExplorationComplete() {
+    this.clearExploreAutoTimer();
+    this.setData({ exploreAutoRunning: false });
+    const chess = this._explorationChess;
+    if (chess && chess.isCheckmate()) {
+      util.showToast(`将杀！${chess.turn() === 'w' ? '黑方' : '白方'}胜`);
+    } else if (chess && (chess.isStalemate() || chess.isDraw())) {
+      util.showToast('和棋');
+    } else {
+      util.showToast('自动推演结束');
+    }
+  },
+
+  clearExploreAutoTimer() {
+    if (this._exploreAutoTimer) {
+      clearTimeout(this._exploreAutoTimer);
+      this._exploreAutoTimer = null;
+    }
   },
 
   startExploration(uci: string) {
@@ -543,7 +687,7 @@ onLoad(options: any) {
             uci: move.from + move.to,
           });
         }
-      } catch (e) {}
+      } catch (e) { /* non-critical */ }
     }
 
     this.setData({
@@ -551,7 +695,43 @@ onLoad(options: any) {
       explorationSteps: steps,
       explorationStepIndex: steps.length > 0 ? 0 : -1,
       explorationFen: steps.length > 0 ? steps[0].fen : this._chess.fen(),
+      lastMoveFrom: steps.length > 0 ? uci.slice(0, 2) : '',
+      lastMoveTo: steps.length > 0 ? uci.slice(2, 4) : '',
+      selectedSquare: '',
+      legalMoves: [],
     });
+  },
+
+  /** 从候选走法开始自动续着 */
+  onAutoContinuation(e: any) {
+    const uci = e.detail?.uci;
+    if (!uci) return;
+    if (this.data.explorationMode) this.exitExploration();
+    const fen = this._chess.fen();
+    const chess = new Chess.Chess(fen);
+    this._explorationChess = chess;
+    const steps: any[] = [];
+    try {
+      const move = chess.move({ from: uci.slice(0,2), to: uci.slice(2,4), promotion: uci.length > 4 ? uci.slice(4) : 'q' });
+      if (move) {
+        steps.push({ fen: chess.fen(), san: move.san, uci: move.from + move.to });
+      }
+    } catch (e) { /* non-critical */ }
+    this.setData({
+      explorationMode: 'auto',
+      explorationSteps: steps,
+      explorationStepIndex: steps.length > 0 ? 0 : -1,
+      explorationFen: steps.length > 0 ? steps[steps.length - 1].fen : fen,
+      lastMoveFrom: steps.length > 0 ? uci.slice(0, 2) : '',
+      lastMoveTo: steps.length > 0 ? uci.slice(2, 4) : '',
+      exploreAutoRunning: true,
+      exploreAutoPaused: false,
+    });
+    if (steps.length > 0) {
+      setTimeout(() => this.autoExploreNext(), 500);
+    } else {
+      this.autoExploreNext();
+    }
   },
 
   handleExplorationMove(square: string) {
@@ -559,6 +739,7 @@ onLoad(options: any) {
     const from = this.data.selectedSquare;
 
     if (!from) {
+      // 推演模式下允许选择任意颜色的棋子
       const piece = chess.get(square);
       if (piece) {
         const moves = chess.moves({ square, verbose: true });
@@ -584,11 +765,16 @@ onLoad(options: any) {
             explorationSteps: steps,
             explorationStepIndex: steps.length - 1,
             explorationFen: chess.fen(),
+            lastMoveFrom: move.from,
+            lastMoveTo: move.to,
             selectedSquare: '',
             legalMoves: [],
+            isCheck: chess.isCheck(),
+            isCheckmate: chess.isCheckmate(),
+            isStalemate: chess.isStalemate(),
           });
         }
-      } catch (e) {}
+      } catch (e) { /* non-critical */ }
     } else {
       const piece = chess.get(square);
       if (piece) {
@@ -597,17 +783,24 @@ onLoad(options: any) {
           selectedSquare: square,
           legalMoves: moves.map((m: any) => m.to),
         });
+      } else {
+        this.setData({ selectedSquare: '', legalMoves: [] });
       }
     }
   },
 
   exitExploration() {
+    this.clearExploreAutoTimer();
     this._explorationChess = null;
     this.setData({
       explorationMode: '',
       explorationSteps: [],
       explorationStepIndex: -1,
       explorationFen: '',
+      exploreAutoRunning: false,
+      exploreAutoPaused: false,
+      selectedSquare: '',
+      legalMoves: [],
     });
     this.updateBoardState();
   },
@@ -631,10 +824,24 @@ onLoad(options: any) {
   explorationGoToStep(index: number) {
     const steps = this.data.explorationSteps;
     if (index < 0 || index >= steps.length) return;
-    this.setData({
-      explorationStepIndex: index,
-      explorationFen: steps[index].fen,
-    });
+    const step = steps[index];
+    const fen = step.fen;
+    try {
+      const chess = new Chess.Chess(fen);
+      this.setData({
+        explorationStepIndex: index,
+        explorationFen: fen,
+        lastMoveFrom: step.uci ? step.uci.slice(0, 2) : '',
+        lastMoveTo: step.uci ? step.uci.slice(2, 4) : '',
+        isCheck: chess.isCheck(),
+        isCheckmate: chess.isCheckmate(),
+        isStalemate: chess.isStalemate(),
+        selectedSquare: '',
+        legalMoves: [],
+      });
+    } catch (e) {
+      this.setData({ explorationStepIndex: index, explorationFen: fen });
+    }
   },
 
   // ===== 重演模式 =====
@@ -645,23 +852,16 @@ onLoad(options: any) {
     }
   },
 
-  onPanelSwitch(e: any) {
-    const panel = e.currentTarget.dataset.panel;
-    if (panel) this.setData({ activePanel: panel });
+  /** 展开/收起底部提示面板 */
+  onTogglePanel() {
+    this.setData({ panelExpanded: !this.data.panelExpanded });
   },
 
   onScrollToCandidate(e: any) {
     const rank = e.detail.rank;
-    if (this.data.showHintsFull) {
-      this.setData({ scrollTargetHints: 'hints-candidate-' + rank });
-      setTimeout(() => {
-        this.setData({ scrollTargetHints: '' });
-      }, 500);
-    } else {
-      const analysisPanel = this.selectComponent('#analysis-panel');
-      if (analysisPanel && analysisPanel.scrollToCandidate) {
-        analysisPanel.scrollToCandidate(rank);
-      }
+    const analysisPanel = this.selectComponent('#analysis-panel');
+    if (analysisPanel && analysisPanel.scrollToCandidate) {
+      analysisPanel.scrollToCandidate(rank);
     }
   },
 
@@ -694,6 +894,7 @@ onLoad(options: any) {
       }
     }
 
+    const lastMove = history[index];
     this.setData({
       fen: chess.fen(),
       isCheck: chess.isCheck(),
@@ -701,6 +902,8 @@ onLoad(options: any) {
       isStalemate: chess.isStalemate(),
       replayIndex: index,
       isReplay: true,
+      lastMoveFrom: lastMove?.from || '',
+      lastMoveTo: lastMove?.to || '',
     });
   },
 
@@ -708,6 +911,8 @@ onLoad(options: any) {
     this.setData({
       replayIndex: -1,
       isReplay: false,
+      lastMoveFrom: '',
+      lastMoveTo: '',
     });
     this.updateBoardState();
   },
@@ -729,6 +934,9 @@ onLoad(options: any) {
     this._chess = new Chess.Chess();
     this._lightMoves = [];
 
+    // 棋盘翻转：执黑时翻转，让黑方在下方；执白时正常，白方在下方
+    const boardFlipped = playerSide === 'black';
+
     const timeControl = this.data.timeControlMode;
     let initTime = this.data.initialTime;
 
@@ -739,6 +947,9 @@ onLoad(options: any) {
       playerSide: playerSide === 'white' ? 'w' : 'b',
       aiSide: playerSide === 'white' ? 'b' : 'w',
       difficulty: app.globalData.settings?.aiDifficulty || 5,
+      boardFlipped,
+      lastMoveFrom: '',
+      lastMoveTo: '',
       isAIThinking: false,
       gameStarted: true,
       gameOver: false,
@@ -758,6 +969,11 @@ onLoad(options: any) {
       replayIndex: -1,
       isReplay: false,
       explorationMode: '',
+      explorationSteps: [],
+      explorationStepIndex: -1,
+      explorationFen: '',
+      exploreAutoRunning: false,
+      exploreAutoPaused: false,
       whiteTime: initTime,
       blackTime: initTime,
       timerActiveSide: '',
@@ -785,8 +1001,15 @@ onLoad(options: any) {
         chess.undo();
         this._lightMoves.pop();
       }
-    } catch (e) {}
+    } catch (e) { /* non-critical */ }
 
+    // 更新最后一步箭头
+    const hist = chess.history({ verbose: true });
+    const last = hist.length > 0 ? hist[hist.length - 1] : null;
+    this.setData({
+      lastMoveFrom: last ? last.from : '',
+      lastMoveTo: last ? last.to : '',
+    });
     this.updateBoardState();
     this.setData({ showGameOver: false, gameOver: false, result: 'playing' });
     this.triggerAnalysis();
@@ -818,6 +1041,23 @@ onLoad(options: any) {
     });
   },
 
+  /** AI教练 Rex：切换提示走法开关 */
+  onCoachRex() {
+    this.setData({ showMoreMenu: false });
+    const showHints = !this.data.settings.showHints;
+    const settings = { ...this.data.settings, showHints };
+    app.globalData.settings = settings;
+    app.saveSettings();
+    this.setData({ settings });
+    if (showHints) {
+      this.triggerAnalysis();
+      const analysisPanel = this.selectComponent('#analysis-panel');
+      if (analysisPanel && analysisPanel.scrollToCandidate) {
+        analysisPanel.scrollToCandidate(1);
+      }
+    }
+  },
+
   onToggleHints() {
     this.setData({ showMoreMenu: false });
     const settings = { ...this.data.settings, showHints: !this.data.settings.showHints };
@@ -826,18 +1066,7 @@ onLoad(options: any) {
     this.setData({ settings });
     if (settings.showHints) {
       this.triggerAnalysis();
-      this.setData({ showHintsFull: true });
-    } else {
-      this.setData({ showHintsFull: false });
     }
-  },
-
-  onCloseHintsFull() {
-    this.setData({ showHintsFull: false });
-    const settings = { ...this.data.settings, showHints: false };
-    app.globalData.settings = settings;
-    app.saveSettings();
-    this.setData({ settings });
   },
 
   onToggle3D() {
@@ -880,7 +1109,7 @@ onLoad(options: any) {
   },
 
   onAnalysisFull() {
-    this.setData({ showMoreMenu: false, activePanel: 'analysis' });
+    this.setData({ showMoreMenu: false });
     this.triggerAnalysis();
   },
 
@@ -962,6 +1191,8 @@ onLoad(options: any) {
       moveHistory: this._lightMoves.slice(),
       replayIndex: -1,
       isReplay: false,
+      lastMoveFrom: this.data.lastMoveFrom,
+      lastMoveTo: this.data.lastMoveTo,
     };
   },
 

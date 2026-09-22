@@ -1,4 +1,4 @@
-<view class="about-page">
+<view class="about-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
   <view class="about-header">
     <text class="app-icon">♟</text>
     <text class="app-name">mychess AI</text>
@@ -22,4 +22,5 @@
     <text class="footer-text">基于 chess.js</text>
     <text class="footer-copy">© 2026 mychess</text>
   </view>
+  
 </view>

@@ -7,8 +7,8 @@
   position: fixed;
   bottom: 40rpx;
   right: 30rpx;
-  width: 100rpx;
-  height: 100rpx;
+  width: 110rpx;
+  height: 110rpx;
   border-radius: 50%;
   background: linear-gradient(135deg, #f97316, #ea580c);
   display: flex;
@@ -23,19 +23,19 @@
 }
 
 .coach-icon {
-  font-size: 48rpx;
+  font-size: 54rpx;
 }
 
 .unread-dot {
   position: absolute;
   top: -4rpx;
   right: -4rpx;
-  width: 28rpx;
-  height: 28rpx;
+  width: 32rpx;
+  height: 32rpx;
   border-radius: 50%;
-  background: #ef4444;
+  background: var(--danger);
   color: #fff;
-  font-size: 16rpx;
+  font-size: 20rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -54,14 +54,14 @@
   position: fixed;
   bottom: 20rpx;
   right: 20rpx;
-  width: 640rpx;
-  max-width: 90vw;
-  height: 720rpx;
-  max-height: 80vh;
+  width: 680rpx;
+  max-width: 92vw;
+  height: 780rpx;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
   background: rgba(26, 26, 46, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-color);
   z-index: 100;
   overflow: hidden;
 }
@@ -70,58 +70,58 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20rpx;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 24rpx;
+  border-bottom: 1px solid var(--border-color);
   background: linear-gradient(135deg, rgba(108, 99, 255, 0.15), rgba(72, 52, 212, 0.15));
 }
 
 .coach-title {
-  font-size: 28rpx;
+  font-size: 32rpx;
   font-weight: 700;
-  color: #e0e0f0;
+  color: var(--text-primary);
 }
 
 .coach-actions {
   display: flex;
-  gap: 12rpx;
-  font-size: 20rpx;
+  gap: 14rpx;
+  font-size: 24rpx;
 }
 
 .stop-btn, .clear-btn, .close-btn {
-  padding: 6rpx 12rpx;
-  border-radius: 6rpx;
-  color: #8888aa;
+  padding: 8rpx 16rpx;
+  border-radius: 8rpx;
+  color: var(--text-muted);
 }
 
-.stop-btn { color: #f87171; }
-.close-btn { font-size: 24rpx; }
+.stop-btn { color: var(--danger); }
+.close-btn { font-size: 28rpx; }
 
 .coach-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 16rpx;
+  padding: 20rpx;
   display: flex;
   flex-direction: column;
-  gap: 12rpx;
+  gap: 14rpx;
 }
 
 .welcome-msg {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12rpx;
-  padding: 30rpx 20rpx;
+  gap: 14rpx;
+  padding: 36rpx 24rpx;
 }
 
 .welcome-title {
-  font-size: 28rpx;
+  font-size: 34rpx;
   font-weight: 700;
-  color: #e0e0f0;
+  color: var(--text-primary);
 }
 
 .welcome-text {
-  font-size: 22rpx;
-  color: #8888aa;
+  font-size: 28rpx;
+  color: var(--text-muted);
   text-align: center;
 }
 
@@ -129,17 +129,17 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 8rpx;
-  margin-top: 8rpx;
+  gap: 10rpx;
+  margin-top: 10rpx;
 }
 
 .suggestion-chip {
-  padding: 8rpx 16rpx;
-  background: rgba(108, 99, 255, 0.12);
-  border-radius: 16rpx;
-  border: 1px solid rgba(108, 99, 255, 0.2);
-  font-size: 20rpx;
-  color: #6c63ff;
+  padding: 12rpx 20rpx;
+  background: var(--accent-bg);
+  border-radius: 20rpx;
+  border: 1px solid var(--accent-border);
+  font-size: 26rpx;
+  color: var(--accent);
 }
 
 .suggestion-chip:active {
@@ -148,7 +148,7 @@
 
 .msg-row {
   display: flex;
-  margin-bottom: 8rpx;
+  margin-bottom: 10rpx;
 }
 
 .msg-user {
@@ -160,22 +160,22 @@
 }
 
 .msg-bubble {
-  max-width: 80%;
-  padding: 12rpx 16rpx;
-  border-radius: 12rpx;
-  font-size: 22rpx;
+  max-width: 82%;
+  padding: 16rpx 20rpx;
+  border-radius: 14rpx;
+  font-size: 28rpx;
   line-height: 1.5;
 }
 
 .msg-user .msg-bubble {
-  background: linear-gradient(135deg, #6c63ff, #4834d4);
+  background: var(--accent-gradient);
   color: #fff;
   border-bottom-right-radius: 4rpx;
 }
 
 .msg-assistant .msg-bubble {
-  background: rgba(255, 255, 255, 0.08);
-  color: #c0c0e0;
+  background: var(--bg-card-hover);
+  color: var(--text-secondary);
   border-bottom-left-radius: 4rpx;
 }
 
@@ -187,7 +187,7 @@
 .streaming-cursor {
   display: inline-block;
   animation: blink 0.8s step-end infinite;
-  color: #6c63ff;
+  color: var(--accent);
   font-weight: bold;
 }
 
@@ -199,31 +199,31 @@
   display: flex;
   align-items: center;
   gap: 12rpx;
-  padding: 16rpx 20rpx;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 20rpx;
+  border-top: 1px solid var(--border-color);
 }
 
 .coach-input {
   flex: 1;
-  height: 64rpx;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12rpx;
-  padding: 0 16rpx;
-  font-size: 22rpx;
-  color: #e0e0f0;
+  height: 76rpx;
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-color);
+  border-radius: 14rpx;
+  padding: 0 20rpx;
+  font-size: 28rpx;
+  color: var(--text-primary);
 }
 
 .send-btn {
-  padding: 12rpx 24rpx;
-  border-radius: 10rpx;
-  font-size: 22rpx;
+  padding: 16rpx 32rpx;
+  border-radius: 12rpx;
+  font-size: 28rpx;
   font-weight: 600;
-  color: #666688;
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+  background: var(--bg-card-hover);
 }
 
 .send-active {
   color: #fff;
-  background: linear-gradient(135deg, #6c63ff, #4834d4);
+  background: var(--accent-gradient);
 }

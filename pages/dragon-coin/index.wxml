@@ -1,0 +1,66 @@
+<view class="page" __theme__="{{__theme__}}">
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="onBack">
+      <text class="nav-back-icon">←</text>
+      <text class="nav-back-text">返回</text>
+    </view>
+    <text class="nav-title">龙币兑换</text>
+  </view>
+
+  <scroll-view class="scroll-content" scroll-y="true">
+    <!-- 余额 -->
+    <view class="balance-card">
+      <text class="balance-label">当前龙币余额</text>
+      <text class="balance-num">{{balance}}</text>
+    </view>
+
+    <!-- 兑换配置 -->
+    <view class="section">
+      <text class="section-title">兑换选项</text>
+      <view class="config-list">
+        <view class="config-card {{selectedConfig && selectedConfig.id === item.id ? 'selected' : ''}}" wx:for="{{configs}}" wx:key="id" bindtap="onConfigTap" data-index="{{index}}">
+          <text class="config-name">{{item.name}}</text>
+          <text class="config-desc">{{item.description || '点击兑换'}}</text>
+          <text class="config-cost">消耗 {{item.cost || 0}} 龙币/次</text>
+        </view>
+        <view class="empty-tip" wx:if="{{configs.length === 0 && !loading}}">
+          <text>暂无兑换选项</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 兑换操作 -->
+    <view class="section" wx:if="{{selectedConfig}}">
+      <text class="section-title">确认兑换</text>
+      <view class="exchange-box">
+        <text class="exchange-label">兑换次数</text>
+        <view class="amount-control">
+          <view class="amount-btn minus" bindtap="onAmountChange" data-value="{{amount - 1}}"><text>−</text></view>
+          <input class="amount-input" value="{{amount}}" bindinput="onAmountChange" />
+          <view class="amount-btn plus" bindtap="onAmountChange" data-value="{{amount + 1}}"><text>＋</text></view>
+        </view>
+        <text class="exchange-total">共消耗 {{selectedConfig.cost * amount}} 龙币</text>
+        <view class="exchange-btn" bindtap="onExchange">
+          <text class="exchange-btn-text">立即兑换</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 兑换记录 -->
+    <view class="section">
+      <text class="section-title">兑换记录</text>
+      <view class="record-list">
+        <view class="record-item" wx:for="{{records}}" wx:key="id">
+          <view class="record-info">
+            <text class="record-name">{{item.configName || '兑换'}}</text>
+            <text class="record-date">{{item.createdAt}}</text>
+          </view>
+          <text class="record-amount">-{{item.amount || 0}}次</text>
+        </view>
+        <view class="empty-tip" wx:if="{{records.length === 0}}">
+          <text>暂无兑换记录</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

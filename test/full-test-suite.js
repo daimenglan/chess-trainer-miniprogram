@@ -666,7 +666,212 @@ const castleTest = new Chess.Chess('r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1');
 assert('短易位', !!castleTest.move({ from: 'e1', to: 'g1', promotion: 'q' }));
 
 // ═══════════════════════════════════════════════════════════════
-section('36. 最终汇总');
+section('36. 新增 API 函数完整性');
+// ═══════════════════════════════════════════════════════════════
+
+const api = require('../utils/api');
+const newApiFunctions = [
+  // 对局扩展
+  'loadGame', 'saveInProgressGame', 'getInProgressGame', 'deleteInProgressGame', 'completeInProgressGame',
+  // 棋谱扩展
+  'getRecordAnalyses', 'getRecordDetail', 'getRecordDataSources', 'addRecordDataSource',
+  'deleteRecordDataSource', 'triggerRecordAutoUpdate',
+  // 知识库
+  'triggerLearning', 'getKnowledgeStatus',
+  // 深度复盘
+  'deepReviewGameStream', 'loadDeepReview', 'saveDeepReview', 'deleteDeepReview',
+  // 概念提示
+  'getConceptHint',
+  // 用户自建习题
+  'createUserPuzzle', 'batchCreateUserPuzzles', 'getUserPuzzles', 'getDueReviews',
+  'getUserPuzzleStats', 'getUserPuzzleDetail', 'solveUserPuzzle', 'deleteUserPuzzle',
+  'batchDeleteUserPuzzles',
+  // 每周主题
+  'getCurrentWeeklyTheme', 'getWeeklyThemePuzzles',
+  // 训练扩展
+  'getUpgradePlan', 'getTrainingDashboard', 'saveGradeSettings', 'saveMistakesFromReview',
+  'getMistakeSummary', 'getMistakeMatchingPuzzles', 'getTrainingCenterData',
+  'triggerDynamicAssessment', 'getWeeklyPlan', 'submitWeeklyEvaluation', 'getWeeklyEvaluations',
+  // 全局开关
+  'isDistributionEnabled', 'isVideoGenerationEnabled', 'isAIAnalysisReportEnabled',
+  'getMembershipToggle', 'setMembershipToggle',
+  'getAdminVideoGenerationToggle', 'setAdminVideoGenerationToggle',
+  'getAdminAIAnalysisToggle', 'setAdminAIAnalysisToggle',
+  'getAdminDistributionToggle', 'setAdminDistributionToggle',
+  // 视频生成
+  'generateGameVideo', 'getVideoStatus', 'getVideoDownloadUrl', 'getVideoVoices',
+  'resumeVideoGeneration', 'getCompletedVideoTasks',
+  // AI 棋手
+  'getEnabledAiBots', 'startAiBotMatch', 'getMyAiBotGames',
+  'getAdminAiBots', 'getAdminAiBot', 'createAdminAiBot', 'updateAdminAiBot',
+  'deleteAdminAiBot', 'toggleAdminAiBot', 'generateAdminAiBots',
+  'batchOnlineAiBots', 'batchOfflineAiBots', 'batchDeleteAiBots',
+  // 分销
+  'getMyDistributionProfile', 'activateDistributor', 'getMyReferralInfo',
+  'regenerateReferralCode', 'getMyCommissions', 'getMyCommissionSummary',
+  'getMyTeam', 'createWithdrawalRequest', 'getMyWithdrawals',
+  'getDistributionSettings', 'updateDistributionSettings', 'getDistributionStats',
+  'getDistributors', 'getDistributorDetail', 'toggleDistributorStatus',
+  'getCommissionRules', 'createCommissionRule', 'updateCommissionRule',
+  'deleteCommissionRule', 'getAdminCommissionRecords', 'settleCommissionManually',
+  'getAdminWithdrawals', 'approveWithdrawal', 'rejectWithdrawal', 'completeWithdrawal',
+  // 反馈
+  'submitFeedback', 'getMyFeedback', 'getFeedbackDetail', 'replyToFeedback',
+  'getAdminFeedback', 'getAdminFeedbackReplies', 'replyFeedback', 'getFeedbackStats',
+  // 问卷
+  'getPendingSurvey', 'submitSurveyResponse', 'skipSurvey',
+  'getAdminSurveys', 'getAdminSurveyDetail', 'createSurvey', 'updateSurvey',
+  'deleteSurvey', 'getSurveyStats', 'getSurveyResponses', 'aiGenerateSurvey',
+  // 消息
+  'sendMessage', 'getMessageSessions', 'getConversation', 'getUnreadCount',
+  // 好友
+  'sendFriendRequest', 'acceptFriendRequest', 'rejectFriendRequest',
+  'getFriendList', 'getFriendRequests', 'removeFriend', 'searchUsers',
+  // 群组
+  'createGroup', 'getUserGroups', 'getGroupDetail', 'updateGroup', 'deleteGroup',
+  'addGroupMembers', 'removeGroupMember', 'updateMemberRole',
+  'getGroupMessages', 'sendGroupMessage',
+  // 教师课件
+  'getTeacherStatus', 'applyTeacher', 'listCoursewares', 'createCourseware',
+  'getCoursewareDetail', 'updateCourseware', 'deleteCourseware',
+  'addCoursewareItem', 'removeCoursewareItem', 'updateCoursewareItemNote',
+  'reorderCoursewareItems', 'getAdminTeacherApplications',
+  'getAdminTeacherApplicationCounts', 'reviewAdminTeacherApplication',
+  'getAdminTeachers', 'revokeAdminTeacher',
+  // 龙币
+  'getDragonCoinBalance', 'getDragonCoinLedger', 'getDragonCoinConfigs',
+  'getDragonCoinExchanges', 'exchangeDragonCoin', 'getDragonCoinExchangeRecords',
+  'getAdminDragonCoinConfigs', 'createDragonCoinConfig', 'updateDragonCoinConfig',
+  'deleteDragonCoinConfig', 'getAdminDragonCoinExchanges', 'createDragonCoinExchange',
+  'updateDragonCoinExchange', 'deleteDragonCoinExchange',
+  'getAdminDragonCoinExchangeRecords', 'getAdminDragonCoinUserBalance',
+  'adjustDragonCoinBalance', 'getAdminDragonCoinStats',
+  // 管理扩展
+  'getAdminDayStats', 'getAdminUsers', 'getAdminUserDetail', 'updateAdminUserRole',
+  'updateAdminUserTeacherStatus', 'adminResetPassword', 'getAdminUserActivity',
+  'getAdminUserActivityModules', 'getAdminGames', 'getAdminGameDetail',
+  'getAdminModuleStats', 'getAdminExtendedStats', 'getAdminSettings',
+  'updateAdminSettings', 'getAdminKnowledgeStatus', 'triggerAdminKnowledgeLearn',
+  'changeAdminPassword',
+  // 会员管理
+  'getAdminMembershipLevels', 'getAdminMembershipBenefits', 'createAdminMembershipLevel',
+  'updateAdminMembershipLevel', 'deleteAdminMembershipLevel', 'getAdminMembershipUsers',
+  'getAdminUserMembership', 'adminGrantMembership', 'adminExtendMembership',
+  'adminExpireMembership', 'getAdminMembershipOrders', 'adminRefundMembershipOrder',
+  'generateMembershipCodes', 'getMembershipCodes', 'disableMembershipCode',
+  'getAdminMembershipStats', 'getAdminMembershipLogs',
+  // 棋谱库
+  'getChessGameRecords', 'getChessGameRecordDetail', 'deleteChessGameRecord',
+  'batchDeleteChessGameRecords', 'updateChessGameTags', 'searchChessGamesExternal',
+  'importChessGameFromUrl', 'searchAndImportChessGame', 'importChessGamePgn',
+  'getChessDataService', 'createChessGameDataSource', 'updateChessGameDataSource',
+  'deleteChessGameDataSource', 'testChessGameDataSource',
+  'importFromChessGameDataSource', 'triggerChessGameAutoUpdate', 'getChessGameLibraryStats',
+  // 棋谱分析
+  'getChessGameAnalysis', 'getChessGameAnalyses', 'analyzeChessGame',
+  'analyzeAllChessGames', 'getChessGameBatchAnalysisStatus', 'cancelChessGameAnalysis',
+  'cancelAllChessGameAnalyses', 'resetAllChessGameAnalyses', 'deleteChessGameAnalysis',
+  // LLM
+  'getLLMProviders', 'getLLMProvider', 'createLLMProvider', 'updateLLMProvider',
+  'deleteLLMProvider', 'setDefaultLLMProvider', 'testLLMConnection',
+  // 菜单
+  'getAdminMenuVisibility', 'updateAdminMenuVisibility',
+  // SMTP
+  'getSmtpConfig', 'saveSmtpConfig', 'deleteSmtpConfig', 'testSmtpConnection',
+  // 竞赛
+  'getCompetitions', 'getCompetitionDetail', 'joinCompetition',
+  'getCompetitionRounds', 'getCompetitionStandings', 'getCompetitionNotifications',
+  'getCompetitionMatch', 'submitCompetitionMove',
+  'getCompetitionAdminCompetitions', 'createCompetition', 'updateCompetition',
+  'deleteCompetition', 'getCompetitionManageDetail', 'getCompetitionRegistrationPopup',
+];
+for (const fn of newApiFunctions) {
+  assert(`API 函数 ${fn} 已导出`, typeof api[fn] === 'function', `${fn} 不是函数`);
+}
+
+// ═══════════════════════════════════════════════════════════════
+section('37. 新增页面文件完整性');
+// ═══════════════════════════════════════════════════════════════
+
+const newPages = [
+  'pages/feedback/feedback',
+  'pages/competitions/list/list',
+  'pages/competitions/detail/detail',
+  'pages/friends/friends',
+  'pages/groups/list/list',
+  'pages/messages/chat/chat',
+  'pages/distribution/index',
+  'pages/dragon-coin/index',
+  'pages/my-puzzles/index',
+  'pages/classroom/home/home',
+  'pages/puzzles/user-solve/user-solve',
+  'pages/competitions/play/play',
+  'pages/groups/chat/chat',
+  'pages/classroom/board/board',
+  'pages/classroom/courseware/courseware',
+  'pages/classroom/review/review',
+  'pages/reward-center/index',
+  'pages/reset-password/index',
+  'pages/admin/admin-ai-bots/admin-ai-bots',
+  'pages/admin/admin-chess-games/admin-chess-games',
+  'pages/admin/admin-competitions/admin-competitions',
+  'pages/admin/admin-distribution/admin-distribution',
+  'pages/admin/admin-dragon-coin/admin-dragon-coin',
+  'pages/admin/admin-feedback/admin-feedback',
+  'pages/admin/admin-knowledge/admin-knowledge',
+  'pages/admin/admin-membership/admin-membership',
+  'pages/admin/admin-menu/admin-menu',
+  'pages/admin/admin-puzzles/admin-puzzles',
+  'pages/admin/admin-smtp/admin-smtp',
+  'pages/admin/admin-surveys/admin-surveys',
+  'pages/admin/admin-teachers/admin-teachers',
+];
+for (const page of newPages) {
+  const dir = path.join(root, page);
+  assert(`页面 ${page} TS`, fs.existsSync(dir + '.ts'));
+  assert(`页面 ${page} WXML`, fs.existsSync(dir + '.wxml'));
+  assert(`页面 ${page} JSON`, fs.existsSync(dir + '.json'));
+}
+
+// ═══════════════════════════════════════════════════════════════
+section('38. app.json 页面注册');
+// ═══════════════════════════════════════════════════════════════
+
+const appJson2 = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8'));
+for (const page of newPages) {
+  assert(`app.json 包含 ${page}`, appJson2.pages.includes(page), `${page} 未注册`);
+}
+assert('app.json 页面总数 >= 40', appJson2.pages.length >= 40, `当前 ${appJson2.pages.length} 个页面`);
+
+// ═══════════════════════════════════════════════════════════════
+section('39. 首页导航方法');
+// ═══════════════════════════════════════════════════════════════
+
+const choiceTs = fs.readFileSync(path.join(root, 'pages/choice/choice.ts'), 'utf8');
+const navMethods = [
+  'onCompetitions', 'onFriends', 'onGroups', 'onFeedback',
+  'onDistribution', 'onDragonCoin', 'onMyPuzzles',
+];
+for (const method of navMethods) {
+  assert(`choice.ts 包含 ${method}`, choiceTs.includes(method), `${method} 未定义`);
+}
+
+// ═══════════════════════════════════════════════════════════════
+section('41. 管理后台导航方法');
+// ═══════════════════════════════════════════════════════════════
+
+const adminTs = fs.readFileSync(path.join(root, 'pages/admin/admin.ts'), 'utf8');
+const adminNavMethods = [
+  'goAiBots', 'goChessGames', 'goCompetitions', 'goTeachers',
+  'goKnowledge', 'goPuzzles', 'goSurveys', 'goFeedback',
+  'goDistribution', 'goDragonCoin', 'goMembership', 'goMenu', 'goSmtp',
+];
+for (const method of adminNavMethods) {
+  assert(`admin.ts 包含 ${method}`, adminTs.includes(method), `${method} 未定义`);
+}
+
+// ═══════════════════════════════════════════════════════════════
+section('42. 最终汇总');
 // ═══════════════════════════════════════════════════════════════
 
 console.log(`\n${'='.repeat(60)}`);

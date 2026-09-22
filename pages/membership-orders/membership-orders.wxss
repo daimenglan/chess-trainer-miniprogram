@@ -1,0 +1,109 @@
+.orders-page {
+  height: 100vh;
+  background: var(--bg-primary);
+}
+
+.page-scroll {
+  height: 100%;
+  padding: 0 16rpx 40rpx;
+}
+
+.page-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 20rpx 0;
+}
+
+.loading-state, .empty-state {
+  text-align: center;
+  padding: 80rpx 0;
+  color: var(--text-dim);
+  font-size: 24rpx;
+}
+
+.empty-icon { font-size: 80rpx; display: block; }
+.empty-text { font-size: 24rpx; margin-top: 16rpx; display: block; }
+
+.order-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12rpx;
+  padding: 20rpx;
+  margin-bottom: 12rpx;
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+
+.order-level {
+  font-size: 22rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.order-status {
+  font-size: 18rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 6rpx;
+}
+
+.status-pending { background: var(--warning-bg); color: var(--warning); }
+.status-paid { background: var(--success-bg); color: var(--success); }
+.status-completed { background: var(--accent-border); color: var(--accent); }
+.status-cancelled { background: var(--danger-bg); color: var(--danger); }
+.status-refunded { background: var(--danger-bg); color: var(--danger); }
+
+.order-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-amount {
+  font-size: 32rpx;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.order-date {
+  font-size: 16rpx;
+  color: var(--text-muted);
+}
+
+.order-actions {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 12rpx;
+}
+
+.action-btn-pay {
+  flex: 1;
+  text-align: center;
+  padding: 12rpx;
+  background: var(--accent-gradient);
+  color: #fff;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+  font-weight: 600;
+}
+
+.action-btn-cancel {
+  flex: 1;
+  text-align: center;
+  padding: 12rpx;
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-radius: 8rpx;
+  font-size: 20rpx;
+}
+
+.load-more {
+  text-align: center;
+  margin: 20rpx 0;
+}

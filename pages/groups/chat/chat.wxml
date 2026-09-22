@@ -1,0 +1,28 @@
+<view class="page" __theme__="{{__theme__}}">
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="onBack">
+      <text class="nav-back-icon">←</text>
+      <text class="nav-back-text">返回</text>
+    </view>
+    <text class="nav-title">{{groupName}}</text>
+  </view>
+
+  <scroll-view class="messages-container" scroll-y="true">
+    <view class="message-list">
+      <view class="message-item" wx:for="{{messages}}" wx:key="id">
+        <view class="message-bubble">
+          <text class="message-text">{{item.content}}</text>
+          <text class="message-time">{{item.createdAt}}</text>
+        </view>
+      </view>
+      <view class="loading-tip" wx:if="{{loading && messages.length === 0}}">
+        <text>加载中...</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="input-bar">
+    <input class="input-field" value="{{inputText}}" bindinput="onInput" placeholder="输入群消息" placeholder-class="placeholder" />
+    <view class="send-btn" bindtap="onSend"><text class="send-btn-text">发送</text></view>
+  </view>
+</view>

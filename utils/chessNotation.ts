@@ -63,6 +63,54 @@ function uciToSanLine(fen: string, uciMoves: string[], limit: number = 6): strin
 }
 
 /**
+ * 规范化 PGN 文本，兼容非标准格式：
+ * - 统一换行符，去除 BOM 与零宽字符
+ * - 头部标签块与走法之间补空行（后端生成的部分 PGN 缺少空行，
+ *   chess.js 的头部正则会匹配失败并把 [Tag] 当作走法抛错）
+ * - 只有走法没有头部时补全最小头部
+ */
+function normalizePgn(raw: string): string {
+  if (typeof raw !== 'string') return '';
+  let pgn = raw
+    .replace(/^\uFEFF/, '')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .trim();
+  if (!pgn) return '';
+  const isTagLine = (line: string) => /^\s*\[[^\]]*\]\s*$/.test(line);
+  const lines = pgn.split('\n');
+  if (isTagLine(lines[0] || '')) {
+    // 跳过头部标签块（允许标签之间夹杂空行）
+    let i = 0;
+    while (i < lines.length && (isTagLine(lines[i]) || lines[i].trim() === '')) i++;
+    const headerLines = lines.slice(0, i).filter((l) => l.trim() !== '');
+    const moveLines = lines.slice(i);
+    while (moveLines.length > 0 && moveLines[0].trim() === '') moveLines.shift();
+    pgn = headerLines.join('\n') + '\n\n' + moveLines.join('\n');
+  } else {
+    pgn = '[Event "?"]\n[Site "?"]\n[Date "????.??.??"]\n[Round "?"]\n[White "?"]\n[Black "?"]\n[Result "*"]\n\n' + pgn;
+  }
+  return pgn.trim();
+}
+
+/**
+ * 去掉 PGN 头部标签，只保留走法文本（解析兜底用）
+ */
+function stripPgnHeaders(pgn: string): string {
+  if (typeof pgn !== 'string') return '';
+  const lines = pgn.split('\n');
+  const out: string[] = [];
+  let inHeader = true;
+  for (const line of lines) {
+    if (inHeader && (line.trim() === '' || /^\s*\[[^\]]*\]\s*$/.test(line))) continue;
+    inHeader = false;
+    out.push(line);
+  }
+  return out.join('\n').trim();
+}
+
+/**
  * 获取棋盘上某格子的棋子描述
  */
 function getPieceAt(fen: string, square: string): { type: string; color: string; name: string; symbol: string } | null {
@@ -86,4 +134,6 @@ export {
   describeMove,
   uciToSanLine,
   getPieceAt,
+  normalizePgn,
+  stripPgnHeaders,
 };

@@ -1,0 +1,14 @@
+<view class="admin-page theme-{{__theme__}}">
+  <scroll-view scroll-y class="page-body">
+    <view class="page-header"><text class="page-title">游戏管理</text></view>
+    <view wx:if="{{loading}}" class="loading-tip">加载中...</view>
+    <view wx:for="{{games}}" class="item-card" catchtap="onDetail" data-index="{{index}}">
+      <view class="item-row">
+        <text class="item-name">{{item.whiteName || '白方'}} vs {{item.blackName || '黑方'}}</text>
+        <text class="item-result">{{item.result || ''}}</text>
+      </view>
+      <text class="item-desc">{{item.date || ''}} · {{item.mode || '人机'}} · {{item.moves ? item.moves.length + '步' : '无数据'}}</text>
+    </view>
+    <view wx:if="{{games.length === 0 && !loading}}" class="empty-tip">暂无对局</view>
+  </scroll-view>
+</view>
