@@ -1,5 +1,5 @@
 /**
- * 首页 - 模式选择 + AI定级/棋手档案/训练计划概览
+ * 首页 - 模式选择 + AI定级/棋手档案/训练计划概览 + 训练中心/周计划
  */
 const app = getApp();
 const api = require('../../utils/api');
@@ -22,18 +22,34 @@ Page({
     username: '',
 
     // AI定级概览
-    assessmentInfo: null as any,     // { estimatedElo, gradeLabel }
+    assessmentInfo: null as any,
     assessmentLoading: true,
 
     // 棋手档案概览
-    profileInfo: null as any,        // { estimatedRating, style, winRate }
+    profileInfo: null as any,
     profileLoading: true,
 
     // 训练计划概览
-    trainingInfo: null as any,       // { todayCompleted, todayTarget, currentStreak, level }
+    trainingInfo: null as any,
     trainingLoading: true,
 
-    // 权限控制：与网页版 AdminSettings 全局开关一致
+    // 训练中心数据
+    trainingCenter: null as any,
+    trainingCenterLoading: true,
+
+    // 周计划
+    weeklyPlan: null as any,
+    weeklyPlanLoading: true,
+
+    // 错题本
+    mistakeSummary: null as any,
+    mistakeLoading: true,
+
+    // 竞赛状态
+    activeCompetitions: [] as any[],
+    competitionsLoading: true,
+
+    // 权限控制
     showMembership: true,
     showDistribution: true,
     showClassroom: false,
@@ -53,36 +69,27 @@ Page({
       username: app.globalData.user?.username || app.globalData.token?.substring(0, 8) || '棋手',
     });
     this.loadOverviewData();
+    this.loadTrainingCenter();
+    this.loadWeeklyPlan();
+    this.loadMistakeSummary();
+    this.loadCompetitions();
     this.updatePermissionUI();
   },
 
-  /** 权限配置更新回调（app.ts 加载权限后通知） */
   onPermissionsChanged() {
     this.updatePermissionUI();
   },
 
-  /** 根据全局权限状态更新菜单可见性（与网页版 AdminSettings 全局开关一致） */
   updatePermissionUI() {
     const user = app.globalData.user;
     const perms = app.globalData.permissions;
 
-    // 会员：仅当会员系统启用时显示（与网页版 membershipEnabled 一致）
     const membershipEnabled = perms ? perms.membershipEnabled !== false : true;
-
-    // 分销：仅当分销系统启用时显示（与网页版 distributionEnabled 一致）
     const distributionEnabled = perms ? perms.distributionEnabled !== false : true;
-
-    // 视频生成：仅当视频制作启用时显示
     const videoGenerationEnabled = perms ? perms.videoGenerationEnabled !== false : true;
-
-    // AI分析报告：仅当 AI 分析报告启用时显示
     const aiAnalysisReportEnabled = perms ? perms.aiAnalysisReportEnabled !== false : true;
-
-    // 教室：教师或管理员可见（与网页版 classroom 菜单项一致）
     const isTeacher = util.isTeacher();
     const isAdmin = util.isAdminUser();
-
-    // 反馈：默认可见，但菜单可见性配置可隐藏
     const feedbackVisible = util.isMenuItemVisible('/feedback');
 
     this.setData({
@@ -96,26 +103,21 @@ Page({
     });
   },
 
-  /** 并行加载三个功能的概览数据 */
+  /** 并行加载概览数据 */
   async loadOverviewData() {
-    // 并行拉取
     const [historyRes, profileRes, statsRes] = await Promise.all([
       api.getAssessmentHistory().catch(() => null),
       api.getSavedProfileAnalysis().catch(() => null),
       api.getTrainingStats().catch(() => null),
     ]);
 
-    // AI定级：取最新一条历史报告的等级分
     const historyList = historyRes?.data || historyRes || [];
     const assessmentInfo = historyList.length > 0 ? {
       ...historyList[0],
       confidencePct: Math.round((historyList[0].confidence || 0) * 100),
     } : null;
 
-    // 棋手档案
     const profileData = profileRes?.data || profileRes || null;
-
-    // 训练统计
     const statsData = statsRes?.data || statsRes || null;
 
     this.setData({
@@ -137,8 +139,148 @@ Page({
     });
   },
 
+  /** 加载训练中心数据 */
+  async loadTrainingCenter() {
+    try {
+      const res = await api.getTrainingCenterData();
+      const data = res?.data || res;
+      if (data) {
+        this.setData({
+          trainingCenter: {
+            upgradePlan: data.upgradePlan || null,
+            dashboard: data.dashboard || null,
+            level: data.level || 1,
+            streak: data.currentStreak || 0,
+          },
+          trainingCenterLoading: false,
+        });
+      }
+    } catch {
+      this.setData({ trainingCenterLoading: false });
+    }
+  },
+
+  /** 加载周计划 */
+  async loadWeeklyPlan() {
+    try {
+      const res = await api.getWeeklyPlan();
+      const data = res?.data || res;
+      if (data) {
+        this.setData({
+          weeklyPlan: {
+            weekStart: data.weekStart,
+            weekEnd: data.weekEnd,
+            items: (data.items || []).map((item: any) => ({
+              ...item,
+              completedPct: item.total > 0 ? Math.round((item.completed / item.total) * 100) : 0,
+            })),
+            overallPct: data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0,
+          },
+          weeklyPlanLoading: false,
+        });
+      }
+    } catch {
+      this.setData({ weeklyPlanLoading: false });
+    }
+  },
+
+  /** 加载错题本摘要 */
+  async loadMistakeSummary() {
+    try {
+      const res = await api.getMistakeSummary();
+      const data = res?.data || res;
+      if (data) {
+        this.setData({
+          mistakeSummary: {
+            total: data.total || 0,
+            unresolved: data.unresolved || 0,
+            byPhase: data.byPhase || {},
+            topWeakness: data.topWeakness || null,
+          },
+          mistakeLoading: false,
+        });
+      }
+    } catch {
+      this.setData({ mistakeLoading: false });
+    }
+  },
+
+  /** 加载竞赛状态 */
+  async loadCompetitions() {
+    try {
+      const res = await api.getCompetitions({ status: 'registration_open', limit: 3 });
+      const data = res?.data || res;
+      const comps = data?.competitions || data || [];
+      this.setData({
+        activeCompetitions: comps,
+        competitionsLoading: false,
+      });
+    } catch {
+      this.setData({ competitionsLoading: false });
+    }
+  },
+
+  /** 刷新周计划 */
+  onRefreshWeeklyPlan() {
+    this.setData({ weeklyPlanLoading: true });
+    api.getWeeklyPlan(true)
+      .then((res: any) => {
+        const data = res?.data || res;
+        if (data) {
+          this.setData({
+            weeklyPlan: {
+              weekStart: data.weekStart,
+              weekEnd: data.weekEnd,
+              items: (data.items || []).map((item: any) => ({
+                ...item,
+                completedPct: item.total > 0 ? Math.round((item.completed / item.total) * 100) : 0,
+              })),
+              overallPct: data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0,
+            },
+            weeklyPlanLoading: false,
+          });
+        }
+      })
+      .catch(() => this.setData({ weeklyPlanLoading: false }));
+  },
+
+  /** 动态评估 */
+  onDynamicAssessment() {
+    wx.showModal({
+      title: '动态评估',
+      content: '将根据你最近的表现重新评估等级分，约需 2-3 分钟',
+      confirmText: '开始评估',
+      cancelText: '稍后再说',
+      success: (res: any) => {
+        if (res.confirm) {
+          util.showLoading('评估中...');
+          api.triggerDynamicAssessment()
+            .then(() => {
+              util.hideLoading();
+              util.showToast('评估已完成，查看个人中心获取结果', 'success');
+              this.loadOverviewData();
+            })
+            .catch((err: any) => {
+              util.hideLoading();
+              util.showToast(err.message || '评估失败');
+            });
+        }
+      },
+    });
+  },
+
+  /** 查看错题本 */
+  onGoWrongBook() {
+    wx.navigateTo({ url: '/pages/puzzles/puzzles?mode=wrong' });
+  },
+
+  /** 查看竞赛 */
+  onGoCompetitions() {
+    wx.navigateTo({ url: '/pages/competitions/list/list' });
+  },
+
   // ===== 导航 =====
-  
+
   onAssessment() {
     wx.navigateTo({ url: '/pages/assessment/assessment' });
   },
@@ -234,4 +376,5 @@ Page({
     });
   },
 });
+
 export {}

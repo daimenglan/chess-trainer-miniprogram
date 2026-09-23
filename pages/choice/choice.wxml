@@ -8,6 +8,94 @@
       <text class="welcome-user">{{username}}，欢迎回来</text>
     </view>
 
+    <!-- ===== 训练中心概览 ===== -->
+    <view class="training-center-section" wx:if="{{trainingCenter || trainingCenterLoading}}">
+      <view class="section-header">
+        <text class="section-title">🏋️ 训练中心</text>
+        <view class="section-link" catchtap="onTrainingPlan">查看计划 →</view>
+      </view>
+
+      <!-- 加载中 -->
+      <view wx:if="{{trainingCenterLoading}}" class="loading-mini">加载中...</view>
+
+      <view wx:if="{{trainingCenter && !trainingCenterLoading}}" class="tc-grid">
+        <view class="tc-card" catchtap="onTrainingPlan">
+          <text class="tc-icon">📈</text>
+          <view class="tc-body">
+            <text class="tc-value">Lv.{{trainingCenter.level}}</text>
+            <text class="tc-label">当前等级</text>
+          </view>
+        </view>
+        <view class="tc-card" catchtap="onDynamicAssessment">
+          <text class="tc-icon">🎯</text>
+          <view class="tc-body">
+            <text class="tc-value">{{trainingCenter.streak}}天</text>
+            <text class="tc-label">连续打卡</text>
+          </view>
+        </view>
+        <view class="tc-card" catchtap="onGoWrongBook">
+          <text class="tc-icon">❌</text>
+          <view class="tc-body">
+            <text class="tc-value">{{mistakeSummary?.unresolved || 0}}</text>
+            <text class="tc-label">待解决错题</text>
+          </view>
+        </view>
+        <view class="tc-card" catchtap="onDynamicAssessment">
+          <text class="tc-icon">⚡</text>
+          <view class="tc-body">
+            <text class="tc-value">动态评估</text>
+            <text class="tc-label">重新测级</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- ===== 周计划进度 ===== -->
+    <view class="weekly-plan-section" wx:if="{{weeklyPlan || weeklyPlanLoading}}">
+      <view class="section-header">
+        <text class="section-title">📅 本周计划</text>
+        <text class="section-sub">{{weeklyPlan?.weekStart}} - {{weeklyPlan?.weekEnd}}</text>
+      </view>
+
+      <view wx:if="{{weeklyPlanLoading}}" class="loading-mini">加载中...</view>
+
+      <view wx:if="{{weeklyPlan && !weeklyPlanLoading}}" class="weekly-plan-card">
+        <view class="wp-progress">
+          <view class="wp-progress-bar" style="width: {{weeklyPlan.overallPct}}%"></view>
+        </view>
+        <text class="wp-progress-text">本周完成 {{weeklyPlan.overallPct}}%</text>
+        <view class="wp-items">
+          <view class="wp-item" wx:for="{{weeklyPlan.items}}" wx:key="id">
+            <text class="wp-item-name">{{item.title}}</text>
+            <view class="wp-item-bar">
+              <view class="wp-item-fill" style="width: {{item.completedPct}}%"></view>
+            </view>
+            <text class="wp-item-pct">{{item.completed}}/{{item.total}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- ===== 竞赛状态 ===== -->
+    <view class="competitions-section" wx:if="{{activeCompetitions.length > 0 || competitionsLoading}}">
+      <view class="section-header">
+        <text class="section-title">🏆 热门竞赛</text>
+        <view class="section-link" catchtap="onGoCompetitions">查看全部 →</view>
+      </view>
+
+      <view wx:if="{{competitionsLoading}}" class="loading-mini">加载中...</view>
+
+      <view wx:if="{{activeCompetitions.length > 0}}" class="comp-list">
+        <view class="comp-item" wx:for="{{activeCompetitions}}" wx:key="id">
+          <view class="comp-info">
+            <text class="comp-name">{{item.name}}</text>
+            <text class="comp-meta">报名 {{item.registeredCount || 0}} 人 · {{item.level || ''}}</text>
+          </view>
+          <view class="comp-action" catchtap="onGoCompetitions">报名 →</view>
+        </view>
+      </view>
+    </view>
+
     <!-- ===== 顶部三大功能卡片 ===== -->
     <view class="feature-cards">
 

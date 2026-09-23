@@ -2,8 +2,10 @@
  * 在线对弈页（PvP 人人对弈）
  * 四态：idle → matching → playing → finished
  * 通过 WebSocket 与服务端通信，走子由服务端权威验证后广播同步。
+ * 新增：观战模式、历史对局、回放功能
  */
 const app = getApp();
+const api = require('../../utils/api');
 const Chess = require('../../utils/chessjs');
 const util = require('../../utils/util');
 const wsClient = require('../../utils/ws').default;
@@ -37,7 +39,7 @@ Page({
 
   data: {
     __theme__: (typeof getApp === "function" ? (getApp().globalData?.settings?.uiTheme || "dark") : "dark"),
-    status: 'idle',          // idle | matching | tabling | playing | finished
+    status: 'idle',          // idle | matching | tabling | playing | finished | spectating | replay
     waitingSeconds: 0,
     fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     isCheck: false,
@@ -76,6 +78,16 @@ Page({
     inviteData: {} as any,
     pendingChallenge: false,
     currentTimeLabel: '不限时',
+    // 观战/回放
+    isSpectating: false,
+    isReplay: false,
+    replayIndex: 0,
+    replayMoves: [] as any[],
+    replayTotal: 0,
+    // 历史对局
+    gameHistory: [] as any[],
+    historyLoading: false,
+    showHistory: false,
   },
 
   // 内部状态
@@ -88,7 +100,6 @@ Page({
   _pendingMatchJoin: false as boolean,
 
   onLoad() {
-    // 栈深=1 表示本页由外部入口（分享卡片/小程序码）直接打开，栈深>1 才是 navigateTo 压栈进来的
     const pages = getCurrentPages();
     const prev: any = pages.length > 1 ? pages[pages.length - 2] : null;
     const launch: any = typeof wx.getLaunchOptionsSync === 'function' ? wx.getLaunchOptionsSync() : {};
@@ -108,8 +119,8 @@ Page({
   onShow() {
     this._syncTheme();
     this._setupWs();
-    // 页面显示时请求棋桌列表
     this.onRequestTables();
+    this.loadGameHistory();
   },
 
   onHide() {
@@ -119,7 +130,6 @@ Page({
   onUnload() {
     this._cleanupWs();
     if (this._pendingTimer) { clearInterval(this._pendingTimer); this._pendingTimer = null; }
-    // 页面被销毁时自动撤下棋桌
     if (this.data.status === 'tabling') {
       wsClient.send('pvp:table_close');
     }
@@ -130,19 +140,16 @@ Page({
     const unsubs: (() => void)[] = [];
     const ws = wsClient;
 
-    // 自动连接
     if (ws.status === 'idle' || ws.status === 'disconnected') {
       ws.connect();
     }
 
-    // 监听连接状态变化，连上后如果 pending 就自动发 match:join
     unsubs.push(ws.on('__status', (status: string) => {
       this.setData({ wsConnected: status === 'connected' });
       if (status === 'connected' && this._pendingMatchJoin) {
         this._pendingMatchJoin = false;
         ws.send('match:join');
       } else if (status === 'disconnected' && this._pendingMatchJoin) {
-        // 连接失败，恢复空闲状态
         this._pendingMatchJoin = false;
         if (this._pendingTimer) { clearInterval(this._pendingTimer); this._pendingTimer = null; }
         this.setData({ status: 'idle' });
@@ -172,7 +179,7 @@ Page({
     // 邀请对弈事件
     unsubs.push(ws.on('pvp:invite_received', (p: any) => this._onInviteReceived(p)));
     unsubs.push(ws.on('pvp:invite_accepted', (p: any) => this._onInviteAccepted(p)));
-    unsubs.push(ws.on('pvp:invite_declined', (p: any) => this._onInviteDeclined(p)));
+    unsubs.push(ws.on('pvp:invite_declined', () => this._onInviteDeclined()));
     unsubs.push(ws.on('pvp:invite_cancelled', (p: any) => this._onInviteCancelled(p)));
 
     this._unsubs = unsubs;
@@ -198,7 +205,6 @@ Page({
       wsClient.send('match:join');
       this._pendingMatchJoin = false;
     } else {
-      // 尚未连上，设置标志，等 __status 事件触发后自动发送
       this._pendingMatchJoin = true;
       wsClient.connect();
     }
@@ -222,7 +228,6 @@ Page({
 
   // ===== 棋桌模式 =====
 
-  /** 摆下棋桌（让用户选择时间后发送） */
   onOpenTable() {
     const timeLabels = TABLE_TIME_PRESETS.map((p: any) => p.label);
     wx.showActionSheet({
@@ -240,14 +245,12 @@ Page({
     });
   },
 
-  /** 撤下棋桌 */
   onCloseTable() {
     wsClient.send('pvp:table_close');
     this.setData({ status: 'idle', activeTables: [] });
     this._showToast('棋桌已撤下', 'info');
   },
 
-  /** 挑战他人棋桌 */
   onChallengeTable(e: any) {
     const tableId = e.currentTarget.dataset.tableid;
     if (!tableId || this.data.pendingChallenge) return;
@@ -256,15 +259,21 @@ Page({
     this._showToast('已发送挑战，等待对方回应...', 'info');
   },
 
-  /** 请求棋桌列表 */
+  /** 观战他人棋桌 */
+  onSpectateTable(e: any) {
+    const tableId = e.currentTarget.dataset.tableid;
+    if (!tableId) return;
+    this.setData({ pendingChallenge: true });
+    wsClient.send('pvp:table_spectate', { tableId });
+    this._showToast('进入观战模式...', 'info');
+  },
+
   onRequestTables() {
     wsClient.send('pvp:get_tables');
   },
 
-  /** 处理棋桌列表更新 */
   _onTablesUpdated(payload: any) {
     const tables = payload.tables || [];
-    // 过滤掉 playing 类型的棋桌（只保留 waiting 的）
     const waitingTables = tables.filter((t: any) => t.kind === 'waiting');
     this.setData({ activeTables: waitingTables });
   },
@@ -283,11 +292,9 @@ Page({
         timeControl: invite.timeControl,
       },
     });
-    // 震动反馈
     wx.vibrateShort?.({ type: 'medium' }).catch(() => {});
   },
 
-  /** 接受邀请 */
   onInviteAccept() {
     const inviteId = this.data.inviteData?.inviteId;
     if (!inviteId) return;
@@ -296,7 +303,6 @@ Page({
     this._showToast('已接受邀请，进入对局...', 'info');
   },
 
-  /** 拒绝邀请 */
   onInviteDecline() {
     const inviteId = this.data.inviteData?.inviteId;
     this.setData({ showInviteDialog: false, inviteData: {} });
@@ -305,26 +311,21 @@ Page({
     }
   },
 
-  /** 邀请已被接受（发起方收到） */
   _onInviteAccepted(payload: any) {
     this.setData({ pendingChallenge: false });
-    // 后端会紧接着发送 match:found，由 _onMatchFound 处理进入对局
     this._showToast('对方接受了邀请！', 'info');
   },
 
-  /** 邀请被拒绝 */
-  _onInviteDeclined(payload: any) {
+  _onInviteDeclined(payload?: any) {
     this.setData({ pendingChallenge: false });
     this._showToast('对方拒绝了邀请', 'warn');
   },
 
-  /** 邀请被取消 */
   _onInviteCancelled(payload: any) {
     this.setData({ showInviteDialog: false, inviteData: {} });
     this._showToast('对方取消了邀请', 'warn');
   },
 
-  /** 格式化棋桌时间的展示文本（兼容 WXML 不支持可选链） */
   formatTableTime(item: any): string {
     const seconds = item?.timeControl?.initialTime;
     if (!seconds || seconds <= 0) return '不限时';
@@ -333,18 +334,19 @@ Page({
     return s > 0 ? `${m}分${s}秒` : `${m}分钟`;
   },
 
-  /** 获取棋手名首字符（兼容 WXML 不支持可选链） */
   getHostInitial(item: any): string {
     const name = item?.host?.username;
     return (name || '?').substring(0, 1);
   },
 
-  /** 获取棋手名（兼容 WXML 不支持可选链） */
   getHostName(item: any): string {
     return item?.host?.username || '未知棋手';
   },
 
-  /** 格式化等待时长 */
+  getSpectatorCount(item: any): number {
+    return item?.spectatorCount || 0;
+  },
+
   formatWaitingTime(createdAt: number): string {
     if (!createdAt) return '';
     const elapsed = Math.floor((Date.now() - createdAt) / 1000);
@@ -357,7 +359,6 @@ Page({
     const match = payload.match;
     if (!match) return;
     this._matchId = match.matchId;
-    // userId 优先使用 wsClient 中从 JWT 解码的值，再 fallback 到 app.globalData.user
     const userId = wsClient.userId || app.globalData.user?.userId;
     const isWhite = match.whitePlayer?.userId === userId;
     const myColor = isWhite ? 'w' : 'b';
@@ -382,7 +383,6 @@ Page({
       lastMoveFrom: '',
       lastMoveTo: '',
       spectatorCount: 0,
-      // 清除棋桌状态
       showInviteDialog: false,
       inviteData: {},
       pendingChallenge: false,
@@ -398,19 +398,16 @@ Page({
     const chess = this._chess;
     if (!chess) return;
 
-    // 取消选中
     if (this.data.selectedSquare === square) {
       this.setData({ selectedSquare: '', legalMoves: [] });
       return;
     }
 
-    // 走子
     if (this.data.selectedSquare && this.data.legalMoves.includes(square)) {
       this._tryMove(this.data.selectedSquare, square);
       return;
     }
 
-    // 选中己方棋子
     const piece = chess.get(square);
     if (piece && piece.color === this.data.myColor) {
       const moves = chess.moves({ square, verbose: true });
@@ -424,7 +421,6 @@ Page({
   _tryMove(from: string, to: string, promotion = 'q') {
     const chess = this._chess;
     const piece = chess.get(from);
-    // 检查升变
     if (piece && piece.type === 'p') {
       const targetRank = to[1];
       if ((piece.color === 'w' && targetRank === '8') || (piece.color === 'b' && targetRank === '1')) {
@@ -449,7 +445,6 @@ Page({
 
   _doMove(from: string, to: string, promotion: string) {
     const chess = this._chess;
-    // 本地预演（只用于清除选中状态，不走回包）
     try {
       chess.move({ from, to, promotion });
     } catch { /* 服务端验证 */ }
@@ -474,10 +469,8 @@ Page({
       fen: payload.fen || chess.fen(),
       isMyTurn: chess.turn() === this.data.myColor,
       isCheck: chess.isCheck(),
-      // 走子后清除选中
       selectedSquare: '',
       legalMoves: [],
-      // 记录最后一步走子，用于棋盘高亮
       lastMoveFrom: payload.uci.substring(0, 2),
       lastMoveTo: payload.uci.substring(2, 4),
     });
@@ -487,7 +480,6 @@ Page({
     const match = payload.match;
     if (!match) return;
     this._chess = new Chess.Chess(match.currentFen || undefined);
-    // 尝试从同步数据中获取最后一步走子
     const lastMoveUci = match.lastMove || match.lastMoveUci || '';
     const lastFrom = lastMoveUci ? lastMoveUci.substring(0, 2) : '';
     const lastTo = lastMoveUci ? lastMoveUci.substring(2, 4) : '';
@@ -672,9 +664,122 @@ Page({
     util.navigateBackSafe('/pages/choice/choice');
   },
 
-  /** 阻止弹窗内点击穿透到遮罩层 */
-  stopPropagation() {
-    // 空函数，catchtap 绑此方法仅用于阻止事件冒泡
+  // ===== 历史对局 =====
+
+  /** 加载历史对局 */
+  loadGameHistory() {
+    this.setData({ historyLoading: true });
+    api.loadGames()
+      .then((res: any) => {
+        const games = res?.data?.games || res?.data || [];
+        const formatted = (Array.isArray(games) ? games : []).map((g: any) => ({
+          ...g,
+          dateFormatted: g.date ? util.formatDate(g.date) : '',
+          whiteName: this.isPlayer(g.white) ? '你' : (g.white === 'AI' || g.white === 'ai' ? 'AI' : (g.white || '白方')),
+          blackName: this.isPlayer(g.black) ? '你' : (g.black === 'AI' || g.black === 'ai' ? 'AI' : (g.black || '黑方')),
+          resultLabel: this.getResultLabel(g.result),
+        }));
+        this.setData({
+          gameHistory: formatted,
+          historyLoading: false,
+        });
+      })
+      .catch(() => {
+        this.setData({ historyLoading: false });
+      });
+  },
+
+  /** 切换历史面板 */
+  onToggleHistory() {
+    this.setData({ showHistory: !this.data.showHistory });
+  },
+
+  /** 回放历史对局 */
+  onReplayGame(e: any) {
+    const idx = e.currentTarget.dataset.idx;
+    const game = this.data.gameHistory[idx];
+    if (!game) return;
+
+    // 解析 PGN 或走法历史
+    const moves = game.moves || game.pgn ? this.parsePgnMoves(game.pgn || game.moves) : [];
+    this._chess = new Chess.Chess(game.fen || undefined);
+
+    this.setData({
+      status: 'replay',
+      isReplay: true,
+      replayIndex: 0,
+      replayMoves: moves,
+      replayTotal: moves.length,
+      fen: game.fen || this._chess.fen(),
+      opponentName: game.whiteName || '白方',
+      myName: game.blackName || '黑方',
+      showGameOver: false,
+      showHistory: false,
+    });
+  },
+
+  /** 解析 PGN 走法 */
+  parsePgnMoves(pgn: string): string[] {
+    if (!pgn) return [];
+    try {
+      const chess = new Chess.Chess();
+      chess.loadPgn(pgn);
+      return chess.history();
+    } catch {
+      return [];
+    }
+  },
+
+  /** 回放：上一步 */
+  replayPrev() {
+    if (this.data.replayIndex <= 0) return;
+    const idx = this.data.replayIndex - 1;
+    this._chess.undo();
+    this.setData({
+      replayIndex: idx,
+      fen: this._chess.fen(),
+      isMyTurn: this._chess.turn() === 'w',
+    });
+  },
+
+  /** 回放：下一步 */
+  replayNext() {
+    if (this.data.replayIndex >= this.data.replayTotal) return;
+    const move = this.data.replayMoves[this.data.replayIndex];
+    if (!move) return;
+    try {
+      this._chess.move(move);
+    } catch { /* 忽略无效走法 */ }
+    this.setData({
+      replayIndex: this.data.replayIndex + 1,
+      fen: this._chess.fen(),
+      isMyTurn: this._chess.turn() === 'w',
+      isCheck: this._chess.isCheck(),
+    });
+  },
+
+  /** 退出回放 */
+  exitReplay() {
+    this.setData({
+      status: 'idle',
+      isReplay: false,
+      replayIndex: 0,
+      replayMoves: [],
+      replayTotal: 0,
+    });
+  },
+
+  /** 获取对局结果标签 */
+  getResultLabel(result: string): string {
+    if (result === '1-0') return '白胜';
+    if (result === '0-1') return '黑胜';
+    if (result === '1/2-1/2') return '和棋';
+    return result || '*';
+  },
+
+  /** 判断是否为玩家 */
+  isPlayer(type: string): boolean {
+    return type === 'player' || type === 'human' || type === '我';
   },
 
   // ===== 工具 =====
@@ -691,6 +796,10 @@ Page({
       this.setData({ statusMessage: '' });
     }, 3000);
   },
+
+  stopPropagation() {
+    // 空函数，catchtap 绑此方法仅用于阻止事件冒泡
+  },
 });
 
-export {};
+export {}

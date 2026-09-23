@@ -37,6 +37,12 @@
         <text>{{loading ? '处理中...' : '登录'}}</text>
       </view>
 
+      <!-- Lichess OAuth 登录 -->
+      <view class="lichess-login-btn {{loading ? 'btn-loading' : ''}}" catchtap="onLichessLogin">
+        <text class="lichess-icon">♟</text>
+        <text>使用 Lichess 账号登录</text>
+      </view>
+
     </view>
 
     <!-- ===== 注册模式 ===== -->
@@ -49,11 +55,19 @@
              bindinput="onPasswordInput" />
       <input class="form-input" placeholder="确认密码"
              type="password" value="{{confirmPassword}}" bindinput="onConfirmInput" />
+      <input class="form-input" placeholder="推荐码（可选）" type="text" value="{{refCode}}"
+             maxlength="20" bindinput="onRefCodeInput" />
 
       <view wx:if="{{error}}" class="error-msg">{{error}}</view>
 
       <view class="submit-btn {{loading ? 'btn-loading' : ''}}" catchtap="onSubmit">
         <text>{{loading ? '处理中...' : '注册'}}</text>
+      </view>
+
+      <!-- Lichess OAuth 注册 -->
+      <view class="lichess-login-btn {{loading ? 'btn-loading' : ''}}" catchtap="onLichessLogin">
+        <text class="lichess-icon">♟</text>
+        <text>使用 Lichess 账号注册</text>
       </view>
 
     </view>

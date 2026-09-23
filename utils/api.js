@@ -82,8 +82,6 @@ exports.getAdminStats = getAdminStats;
 exports.getAdminLogs = getAdminLogs;
 exports.getAdminLogStats = getAdminLogStats;
 exports.getAdminUsersDetail = getAdminUsersDetail;
-
-// ===== 从网页版补充的 API 导出 =====
 exports.loadGame = loadGame;
 exports.saveInProgressGame = saveInProgressGame;
 exports.getInProgressGame = getInProgressGame;
@@ -111,6 +109,9 @@ exports.getUserPuzzleDetail = getUserPuzzleDetail;
 exports.solveUserPuzzle = solveUserPuzzle;
 exports.deleteUserPuzzle = deleteUserPuzzle;
 exports.batchDeleteUserPuzzles = batchDeleteUserPuzzles;
+exports.getAdminPuzzlesList = getAdminPuzzlesList;
+exports.updateAdminPuzzle = updateAdminPuzzle;
+exports.deleteAdminPuzzle = deleteAdminPuzzle;
 exports.getCurrentWeeklyTheme = getCurrentWeeklyTheme;
 exports.getWeeklyThemePuzzles = getWeeklyThemePuzzles;
 exports.getUpgradePlan = getUpgradePlan;
@@ -187,6 +188,7 @@ exports.getAdminFeedback = getAdminFeedback;
 exports.getAdminFeedbackReplies = getAdminFeedbackReplies;
 exports.replyFeedback = replyFeedback;
 exports.getFeedbackStats = getFeedbackStats;
+exports.getAdminFeedbackList = getAdminFeedbackList;
 exports.getPendingSurvey = getPendingSurvey;
 exports.submitSurveyResponse = submitSurveyResponse;
 exports.skipSurvey = skipSurvey;
@@ -198,6 +200,7 @@ exports.deleteSurvey = deleteSurvey;
 exports.getSurveyStats = getSurveyStats;
 exports.getSurveyResponses = getSurveyResponses;
 exports.aiGenerateSurvey = aiGenerateSurvey;
+exports.deleteAdminSurvey = deleteAdminSurvey;
 exports.sendMessage = sendMessage;
 exports.getMessageSessions = getMessageSessions;
 exports.getConversation = getConversation;
@@ -237,6 +240,8 @@ exports.getAdminTeacherApplicationCounts = getAdminTeacherApplicationCounts;
 exports.reviewAdminTeacherApplication = reviewAdminTeacherApplication;
 exports.getAdminTeachers = getAdminTeachers;
 exports.revokeAdminTeacher = revokeAdminTeacher;
+exports.approveTeacher = approveTeacher;
+exports.rejectTeacher = rejectTeacher;
 exports.getDragonCoinBalance = getDragonCoinBalance;
 exports.getDragonCoinLedger = getDragonCoinLedger;
 exports.getDragonCoinConfigs = getDragonCoinConfigs;
@@ -271,6 +276,9 @@ exports.getAdminSettings = getAdminSettings;
 exports.updateAdminSettings = updateAdminSettings;
 exports.getAdminKnowledgeStatus = getAdminKnowledgeStatus;
 exports.triggerAdminKnowledgeLearn = triggerAdminKnowledgeLearn;
+exports.getAdminKnowledgeList = getAdminKnowledgeList;
+exports.updateKnowledge = updateKnowledge;
+exports.deleteKnowledge = deleteKnowledge;
 exports.changeAdminPassword = changeAdminPassword;
 exports.getAdminMembershipLevels = getAdminMembershipLevels;
 exports.getAdminMembershipBenefits = getAdminMembershipBenefits;
@@ -324,6 +332,8 @@ exports.setDefaultLLMProvider = setDefaultLLMProvider;
 exports.testLLMConnection = testLLMConnection;
 exports.getAdminMenuVisibility = getAdminMenuVisibility;
 exports.updateAdminMenuVisibility = updateAdminMenuVisibility;
+exports.getAdminMenuList = getAdminMenuList;
+exports.deleteAdminMenu = deleteAdminMenu;
 exports.getSmtpConfig = getSmtpConfig;
 exports.saveSmtpConfig = saveSmtpConfig;
 exports.deleteSmtpConfig = deleteSmtpConfig;
@@ -487,9 +497,6 @@ function parseSSEChunk(chunk) {
 function login(username, password) {
     return request('POST', '/api/auth/login', { username, password });
 }
-function register(username, password, email) {
-    return request('POST', '/api/auth/register', { username, password, email });
-}
 /** 忘记密码：发送验证码到邮箱 */
 function forgotPassword(email) {
     return request('POST', '/api/auth/forgot-password', { email });
@@ -500,6 +507,29 @@ function resetPassword(email, code, newPassword) {
 }
 function getCurrentUser() {
     return request('GET', '/api/auth/me');
+}
+/** Lichess OAuth 登录：获取授权 URL（前端跳转用） */
+function lichessLogin() {
+    return request('GET', '/api/lichess/login');
+}
+/** Lichess OAuth 回调处理（前端从 URL hash 提取 token 后调用） */
+function lichessCallback(code, state) {
+    return request('POST', '/api/lichess/callback', { code, state });
+}
+/** 检查 Lichess 绑定状态 */
+function getLichessBinding() {
+    return request('GET', '/api/lichess/me');
+}
+/** 解除 Lichess 绑定 */
+function unbindLichess() {
+    return request('POST', '/api/lichess/unbind');
+}
+/**
+ * 注册（支持推荐码）
+ * @param refCode 推荐码（可选）
+ */
+function register(username, password, email, refCode) {
+    return request('POST', '/api/auth/register', { username, password, email, refCode });
 }
 // ---- 对局 ----
 function requestAIMove(fen, difficulty = 5) {
@@ -974,308 +1004,901 @@ function getAdminLogStats(params = {}) {
 function getAdminUsersDetail(params = {}) {
     return request('GET', '/api/admin/users/detail', params);
 }
-// ===== 从网页版补充的 API 函数实现 =====
-function loadGame(gameId) { return request('GET', '/api/games/' + gameId); }
-function saveInProgressGame(data) { return request('POST', '/api/games/save-in-progress', data); }
-function getInProgressGame() { return request('GET', '/api/games/in-progress'); }
-function deleteInProgressGame(gameId) { return request('DELETE', '/api/games/' + gameId); }
-function completeInProgressGame(gameId, result, pgn, timeControl) { return request('PUT', '/api/games/' + gameId + '/complete', { result, pgn, timeControl }); }
-function getRecordAnalyses(ids) { return request('POST', '/api/records/analyses', { ids }); }
-function getRecordDetail(id) { return request('GET', '/api/records/' + id); }
-function getRecordDataSources() { return request('GET', '/api/admin/records/sources'); }
-function addRecordDataSource(input) { return request('POST', '/api/admin/records/sources', input); }
-function deleteRecordDataSource(id) { return request('DELETE', '/api/admin/records/sources/' + id); }
-function triggerRecordAutoUpdate() { return request('POST', '/api/admin/records/auto-update'); }
-function triggerLearning() { return request('POST', '/api/knowledge/learn'); }
-function getKnowledgeStatus() { return request('GET', '/api/knowledge/status'); }
-function deepReviewGameStream(moveHistory, callbacks, depth, movetime) {
-    depth = depth || 12; movetime = movetime || 250;
-    var sse = require('./sse');
-    return sse.createSSERequest('/api/analyze/deep-review', { moveHistory: moveHistory, depth: depth, movetime: movetime }, {
-        onEvent: function(evt) {
-            if (evt.type === 'engine') { callbacks.onEngine && callbacks.onEngine({ data: evt.data, progress: evt.progress || 0 }); }
-            else if (evt.type === 'llm') { callbacks.onLLM && callbacks.onLLM(evt.data); }
-            else if (evt.type === 'summary') { callbacks.onSummary && callbacks.onSummary(evt.data); }
-            else if (evt.type === 'done') { callbacks.onDone && callbacks.onDone(); }
-            else if (evt.type === 'error') { callbacks.onError && callbacks.onError(new Error(evt.message)); }
+// ═══════════════════════════════════════════════════════════════
+// 以下为从网页版补充的 API 函数
+// ═══════════════════════════════════════════════════════════════
+// ---- 对局扩展 ----
+function loadGame(gameId) {
+    return request('GET', `/api/games/${gameId}`);
+}
+function saveInProgressGame(data) {
+    return request('POST', '/api/games/save-in-progress', data);
+}
+function getInProgressGame() {
+    return request('GET', '/api/games/in-progress');
+}
+function deleteInProgressGame(gameId) {
+    return request('DELETE', `/api/games/${gameId}`);
+}
+function completeInProgressGame(gameId, result, pgn, timeControl) {
+    return request('PUT', `/api/games/${gameId}/complete`, { result, pgn, timeControl });
+}
+// ---- 棋谱扩展 ----
+function getRecordAnalyses(ids) {
+    return request('POST', '/api/records/analyses', { ids });
+}
+function getRecordDetail(id) {
+    return request('GET', `/api/records/${id}`);
+}
+function getRecordDataSources() {
+    return request('GET', '/api/admin/records/sources');
+}
+function addRecordDataSource(input) {
+    return request('POST', '/api/admin/records/sources', input);
+}
+function deleteRecordDataSource(id) {
+    return request('DELETE', `/api/admin/records/sources/${id}`);
+}
+function triggerRecordAutoUpdate() {
+    return request('POST', '/api/admin/records/auto-update');
+}
+// ---- 知识库 ----
+function triggerLearning() {
+    return request('POST', '/api/knowledge/learn');
+}
+function getKnowledgeStatus() {
+    return request('GET', '/api/knowledge/status');
+}
+// ---- 深度复盘 ----
+function deepReviewGameStream(moveHistory, callbacks, depth = 12, movetime = 250) {
+    const sse = require('./sse');
+    return sse.createSSERequest('/api/analyze/deep-review', {
+        moveHistory, depth, movetime,
+    }, {
+        onEvent: (evt) => {
+            if (evt.type === 'engine') {
+                callbacks.onEngine && callbacks.onEngine({ ...evt.data, progress: evt.progress || 0 });
+            }
+            else if (evt.type === 'llm') {
+                callbacks.onLLM && callbacks.onLLM(evt.data);
+            }
+            else if (evt.type === 'summary') {
+                callbacks.onSummary && callbacks.onSummary(evt.data);
+            }
+            else if (evt.type === 'done') {
+                callbacks.onDone && callbacks.onDone();
+            }
+            else if (evt.type === 'error') {
+                callbacks.onError && callbacks.onError(new Error(evt.message));
+            }
         },
-        onError: function(err) { callbacks.onError && callbacks.onError(err); },
-        onDone: function() { callbacks.onDone && callbacks.onDone(); },
+        onError: (err) => callbacks.onError && callbacks.onError(err),
+        onDone: () => callbacks.onDone && callbacks.onDone(),
     });
 }
 function loadDeepReview(gameId, recordId) {
-    var params = {};
-    if (gameId) params.gameId = gameId;
-    if (recordId) params.recordId = recordId;
+    const params = {};
+    if (gameId)
+        params.gameId = gameId;
+    if (recordId)
+        params.recordId = recordId;
     return request('GET', '/api/analyze/deep-review/load', params);
 }
-function saveDeepReview(gameId, recordId, moveReviews, gameSummary) { return request('POST', '/api/analyze/deep-review/save', { gameId: gameId, recordId: recordId, moveReviews: moveReviews, gameSummary: gameSummary }); }
-function deleteDeepReview(gameId, recordId) { return request('DELETE', '/api/analyze/deep-review', { gameId: gameId, recordId: recordId }); }
-function getConceptHint(fen, depth) { return request('POST', '/api/analyze/concept-hint', { fen: fen, depth: depth }); }
-function createUserPuzzle(data) { return request('POST', '/api/user-puzzles', data); }
-function batchCreateUserPuzzles(puzzles) { return request('POST', '/api/user-puzzles/batch', { puzzles: puzzles }); }
-function getUserPuzzles(filters) { return request('GET', '/api/user-puzzles', filters); }
-function getDueReviews(limit) { return request('GET', '/api/user-puzzles/due', { limit: limit }); }
-function getUserPuzzleStats() { return request('GET', '/api/user-puzzles/stats'); }
-function getUserPuzzleDetail(id) { return request('GET', '/api/user-puzzles/' + id); }
-function solveUserPuzzle(id, correct) { return request('POST', '/api/user-puzzles/' + id + '/solve', { correct: correct }); }
-function deleteUserPuzzle(id) { return request('DELETE', '/api/user-puzzles/' + id); }
-function batchDeleteUserPuzzles(ids) { return request('POST', '/api/user-puzzles/batch-delete', { ids: ids }); }
-function getCurrentWeeklyTheme() { return request('GET', '/api/weekly-themes/current'); }
-function getWeeklyThemePuzzles(themeKey, limit) { return request('GET', '/api/weekly-themes/current/puzzles', { themeKey: themeKey, limit: limit }); }
-function getUpgradePlan() { return request('GET', '/api/profile/upgrade-plan'); }
-function getTrainingDashboard() { return request('GET', '/api/profile/training-dashboard'); }
-function saveGradeSettings(currentGrade, targetGrade) { return request('POST', '/api/profile/upgrade-plan/settings', { currentGrade: currentGrade, targetGrade: targetGrade }); }
-function saveMistakesFromReview(data) { return request('POST', '/api/profile/mistakes/save', data); }
-function getMistakeSummary() { return request('GET', '/api/profile/mistakes/active'); }
-function getMistakeMatchingPuzzles(limit) { return request('GET', '/api/profile/mistakes/puzzles', { limit: limit }); }
-function getTrainingCenterData() { return request('GET', '/api/profile/training-center'); }
-function triggerDynamicAssessment() { return request('POST', '/api/profile/dynamic-assessment'); }
-function getWeeklyPlan(refresh) { return request('GET', '/api/profile/weekly-plan', { refresh: refresh ? 1 : undefined }); }
-function submitWeeklyEvaluation(data) { return request('POST', '/api/profile/weekly-evaluation', data); }
-function getWeeklyEvaluations() { return request('GET', '/api/profile/weekly-evaluations'); }
-function isDistributionEnabled() { return request('GET', '/api/settings/distribution-enabled'); }
-function isVideoGenerationEnabled() { return request('GET', '/api/settings/video-generation-enabled'); }
-function isAIAnalysisReportEnabled() { return request('GET', '/api/settings/ai-analysis-report-enabled'); }
-function getMembershipToggle() { return request('GET', '/api/admin/settings/membership-enabled'); }
-function setMembershipToggle(enabled) { return request('PUT', '/api/admin/settings/membership-enabled', { enabled: enabled }); }
-function getAdminVideoGenerationToggle() { return request('GET', '/api/admin/settings/video-generation-enabled'); }
-function setAdminVideoGenerationToggle(enabled) { return request('PUT', '/api/admin/settings/video-generation-enabled', { enabled: enabled }); }
-function getAdminAIAnalysisToggle() { return request('GET', '/api/admin/settings/ai-analysis-report-enabled'); }
-function setAdminAIAnalysisToggle(enabled) { return request('PUT', '/api/admin/settings/ai-analysis-report-enabled', { enabled: enabled }); }
-function getAdminDistributionToggle() { return request('GET', '/api/admin/settings/distribution-enabled'); }
-function setAdminDistributionToggle(enabled) { return request('PUT', '/api/admin/settings/distribution-enabled', { enabled: enabled }); }
-function generateGameVideo(ids, config) { return request('POST', '/api/video/generate', Object.assign({}, ids, { config: config })); }
-function getVideoStatus(taskId) { return request('GET', '/api/video/status/' + taskId); }
-function getVideoDownloadUrl(taskId) { return getBaseUrl() + '/api/video/download/' + taskId; }
-function getVideoVoices() { return request('GET', '/api/video/voices'); }
-function resumeVideoGeneration(taskId) { return request('POST', '/api/video/resume/' + taskId); }
-function getCompletedVideoTasks() { return request('GET', '/api/video/completed'); }
-function getEnabledAiBots() { return request('GET', '/api/ai-bots/enabled'); }
-function startAiBotMatch(botId, userSide, timeControl) { return request('POST', '/api/ai-bots/start-match', { botId: botId, userSide: userSide, timeControl: timeControl }); }
-function getMyAiBotGames() { return request('GET', '/api/ai-bots/my-games'); }
-function getAdminAiBots() { return request('GET', '/api/admin/ai-bots'); }
-function getAdminAiBot(id) { return request('GET', '/api/admin/ai-bots/' + id); }
-function createAdminAiBot(data) { return request('POST', '/api/admin/ai-bots', data); }
-function updateAdminAiBot(id, data) { return request('PUT', '/api/admin/ai-bots/' + id, data); }
-function deleteAdminAiBot(id) { return request('DELETE', '/api/admin/ai-bots/' + id); }
-function toggleAdminAiBot(id) { return request('PATCH', '/api/admin/ai-bots/' + id + '/toggle'); }
-function generateAdminAiBots(request) { return request('POST', '/api/admin/ai-bots/generate', request); }
-function batchOnlineAiBots(count) { return request('POST', '/api/admin/ai-bots/batch-online', { count: count }); }
-function batchOfflineAiBots(count) { return request('POST', '/api/admin/ai-bots/batch-offline', { count: count }); }
-function batchDeleteAiBots(count) { return request('POST', '/api/admin/ai-bots/batch-delete', { count: count }); }
-function getMyDistributionProfile() { return request('GET', '/api/distribution/my-profile'); }
-function activateDistributor() { return request('POST', '/api/distribution/activate'); }
-function getMyReferralInfo() { return request('GET', '/api/distribution/referral-info'); }
-function regenerateReferralCode() { return request('POST', '/api/distribution/referral-code/regenerate'); }
-function getMyCommissions(page, limit, status) { return request('GET', '/api/distribution/commissions', { page: page, limit: limit, status: status }); }
-function getMyCommissionSummary() { return request('GET', '/api/distribution/commissions/summary'); }
-function getMyTeam(page, limit) { return request('GET', '/api/distribution/team', { page: page, limit: limit }); }
-function createWithdrawalRequest(amount, paymentType, accountInfo) { return request('POST', '/api/distribution/withdrawals', { amount: amount, paymentType: paymentType, accountInfo: accountInfo }); }
-function getMyWithdrawals(page, limit, status) { return request('GET', '/api/distribution/withdrawals', { page: page, limit: limit, status: status }); }
-function getDistributionSettings() { return request('GET', '/api/admin/distribution/settings'); }
-function updateDistributionSettings(settings) { return request('PUT', '/api/admin/distribution/settings', settings); }
-function getDistributionStats() { return request('GET', '/api/admin/distribution/stats'); }
-function getDistributors(page, limit, search, status) {
-    var params = { page: page, limit: limit };
-    if (search) params.search = search;
-    if (status !== undefined) params.status = status;
+function saveDeepReview(gameId, recordId, moveReviews, gameSummary) {
+    return request('POST', '/api/analyze/deep-review/save', {
+        gameId, recordId, moveReviews, gameSummary,
+    });
+}
+function deleteDeepReview(gameId, recordId) {
+    return request('DELETE', '/api/analyze/deep-review', { gameId, recordId });
+}
+// ---- 概念提示 ----
+function getConceptHint(fen, depth) {
+    return request('POST', '/api/analyze/concept-hint', { fen, depth });
+}
+// ---- 用户自建习题 ----
+function createUserPuzzle(data) {
+    return request('POST', '/api/user-puzzles', data);
+}
+function batchCreateUserPuzzles(puzzles) {
+    return request('POST', '/api/user-puzzles/batch', { puzzles });
+}
+function getUserPuzzles(filters) {
+    return request('GET', '/api/user-puzzles', filters);
+}
+function getDueReviews(limit) {
+    return request('GET', '/api/user-puzzles/due', { limit });
+}
+function getUserPuzzleStats() {
+    return request('GET', '/api/user-puzzles/stats');
+}
+function getUserPuzzleDetail(id) {
+    return request('GET', `/api/user-puzzles/${id}`);
+}
+function solveUserPuzzle(id, correct) {
+    return request('POST', `/api/user-puzzles/${id}/solve`, { correct });
+}
+function deleteUserPuzzle(id) {
+    return request('DELETE', `/api/user-puzzles/${id}`);
+}
+function batchDeleteUserPuzzles(ids) {
+    return request('POST', '/api/user-puzzles/batch-delete', { ids });
+}
+// ---- 每周主题 ----
+function getCurrentWeeklyTheme() {
+    return request('GET', '/api/weekly-themes/current');
+}
+function getWeeklyThemePuzzles(themeKey, limit) {
+    return request('GET', '/api/weekly-themes/current/puzzles', { themeKey, limit });
+}
+// ---- 训练扩展 ----
+function getUpgradePlan() {
+    return request('GET', '/api/profile/upgrade-plan');
+}
+function getTrainingDashboard() {
+    return request('GET', '/api/profile/training-dashboard');
+}
+function saveGradeSettings(currentGrade, targetGrade) {
+    return request('POST', '/api/profile/upgrade-plan/settings', { currentGrade, targetGrade });
+}
+function saveMistakesFromReview(data) {
+    return request('POST', '/api/profile/mistakes/save', data);
+}
+function getMistakeSummary() {
+    return request('GET', '/api/profile/mistakes/active');
+}
+function getMistakeMatchingPuzzles(limit) {
+    return request('GET', '/api/profile/mistakes/puzzles', { limit });
+}
+function getTrainingCenterData() {
+    return request('GET', '/api/profile/training-center');
+}
+function triggerDynamicAssessment() {
+    return request('POST', '/api/profile/dynamic-assessment');
+}
+function getWeeklyPlan(refresh) {
+    return request('GET', '/api/profile/weekly-plan', { refresh: refresh ? 1 : undefined });
+}
+function submitWeeklyEvaluation(data) {
+    return request('POST', '/api/profile/weekly-evaluation', data);
+}
+function getWeeklyEvaluations() {
+    return request('GET', '/api/profile/weekly-evaluations');
+}
+// ---- 全局开关 ----
+function isDistributionEnabled() {
+    return request('GET', '/api/settings/distribution-enabled');
+}
+function isVideoGenerationEnabled() {
+    return request('GET', '/api/settings/video-generation-enabled');
+}
+function isAIAnalysisReportEnabled() {
+    return request('GET', '/api/settings/ai-analysis-report-enabled');
+}
+function getMembershipToggle() {
+    return request('GET', '/api/admin/settings/membership-enabled');
+}
+function setMembershipToggle(enabled) {
+    return request('PUT', '/api/admin/settings/membership-enabled', { enabled });
+}
+function getAdminVideoGenerationToggle() {
+    return request('GET', '/api/admin/settings/video-generation-enabled');
+}
+function setAdminVideoGenerationToggle(enabled) {
+    return request('PUT', '/api/admin/settings/video-generation-enabled', { enabled });
+}
+function getAdminAIAnalysisToggle() {
+    return request('GET', '/api/admin/settings/ai-analysis-report-enabled');
+}
+function setAdminAIAnalysisToggle(enabled) {
+    return request('PUT', '/api/admin/settings/ai-analysis-report-enabled', { enabled });
+}
+function getAdminDistributionToggle() {
+    return request('GET', '/api/admin/settings/distribution-enabled');
+}
+function setAdminDistributionToggle(enabled) {
+    return request('PUT', '/api/admin/settings/distribution-enabled', { enabled });
+}
+// ---- 视频生成 ----
+function generateGameVideo(ids, config) {
+    return request('POST', '/api/video/generate', { ...ids, config });
+}
+function getVideoStatus(taskId) {
+    return request('GET', `/api/video/status/${taskId}`);
+}
+function getVideoDownloadUrl(taskId) {
+    return `${getBaseUrl()}/api/video/download/${taskId}`;
+}
+function getVideoVoices() {
+    return request('GET', '/api/video/voices');
+}
+function resumeVideoGeneration(taskId) {
+    return request('POST', `/api/video/resume/${taskId}`);
+}
+function getCompletedVideoTasks() {
+    return request('GET', '/api/video/completed');
+}
+// ---- AI 棋手 ----
+function getEnabledAiBots() {
+    return request('GET', '/api/ai-bots/enabled');
+}
+function startAiBotMatch(botId, userSide, timeControl) {
+    return request('POST', '/api/ai-bots/start-match', { botId, userSide, timeControl });
+}
+function getMyAiBotGames() {
+    return request('GET', '/api/ai-bots/my-games');
+}
+function getAdminAiBots() {
+    return request('GET', '/api/admin/ai-bots');
+}
+function getAdminAiBot(id) {
+    return request('GET', `/api/admin/ai-bots/${id}`);
+}
+function createAdminAiBot(data) {
+    return request('POST', '/api/admin/ai-bots', data);
+}
+function updateAdminAiBot(id, data) {
+    return request('PUT', `/api/admin/ai-bots/${id}`, data);
+}
+function deleteAdminAiBot(id) {
+    return request('DELETE', `/api/admin/ai-bots/${id}`);
+}
+function toggleAdminAiBot(id) {
+    return request('PATCH', `/api/admin/ai-bots/${id}/toggle`);
+}
+function generateAdminAiBots(request) {
+    return request('POST', '/api/admin/ai-bots/generate', request);
+}
+function batchOnlineAiBots(count) {
+    return request('POST', '/api/admin/ai-bots/batch-online', { count });
+}
+function batchOfflineAiBots(count) {
+    return request('POST', '/api/admin/ai-bots/batch-offline', { count });
+}
+function batchDeleteAiBots(count) {
+    return request('POST', '/api/admin/ai-bots/batch-delete', { count });
+}
+// ---- 分销（用户端） ----
+function getMyDistributionProfile() {
+    return request('GET', '/api/distribution/my-profile');
+}
+function activateDistributor() {
+    return request('POST', '/api/distribution/activate');
+}
+function getMyReferralInfo() {
+    return request('GET', '/api/distribution/referral-info');
+}
+function regenerateReferralCode() {
+    return request('POST', '/api/distribution/referral-code/regenerate');
+}
+function getMyCommissions(page = 1, limit = 20, status) {
+    return request('GET', '/api/distribution/commissions', { page, limit, status });
+}
+function getMyCommissionSummary() {
+    return request('GET', '/api/distribution/commissions/summary');
+}
+function getMyTeam(page = 1, limit = 20) {
+    return request('GET', '/api/distribution/team', { page, limit });
+}
+function createWithdrawalRequest(amount, paymentType, accountInfo) {
+    return request('POST', '/api/distribution/withdrawals', { amount, paymentType, accountInfo });
+}
+function getMyWithdrawals(page = 1, limit = 20, status) {
+    return request('GET', '/api/distribution/withdrawals', { page, limit, status });
+}
+// ---- 分销（管理端） ----
+function getDistributionSettings() {
+    return request('GET', '/api/admin/distribution/settings');
+}
+function updateDistributionSettings(settings) {
+    return request('PUT', '/api/admin/distribution/settings', settings);
+}
+function getDistributionStats() {
+    return request('GET', '/api/admin/distribution/stats');
+}
+function getDistributors(page = 1, limit = 20, search, status) {
+    const params = { page, limit };
+    if (search)
+        params.search = search;
+    if (status !== undefined)
+        params.status = status;
     return request('GET', '/api/admin/distribution/distributors', params);
 }
-function getDistributorDetail(userId) { return request('GET', '/api/admin/distribution/distributors/' + userId); }
-function toggleDistributorStatus(userId, status, reason) { return request('PUT', '/api/admin/distribution/distributors/' + userId + '/status', { status: status, reason: reason }); }
-function getCommissionRules() { return request('GET', '/api/admin/distribution/commission-rules'); }
-function createCommissionRule(rule) { return request('POST', '/api/admin/distribution/commission-rules', rule); }
-function updateCommissionRule(id, rule) { return request('PUT', '/api/admin/distribution/commission-rules/' + id, rule); }
-function deleteCommissionRule(id) { return request('DELETE', '/api/admin/distribution/commission-rules/' + id); }
-function getAdminCommissionRecords(page, limit, status, levelId) {
-    var params = { page: page, limit: limit };
-    if (status) params.status = status;
-    if (levelId) params.levelId = levelId;
+function getDistributorDetail(userId) {
+    return request('GET', `/api/admin/distribution/distributors/${userId}`);
+}
+function toggleDistributorStatus(userId, status, reason) {
+    return request('PUT', `/api/admin/distribution/distributors/${userId}/status`, { status, reason });
+}
+function getCommissionRules() {
+    return request('GET', '/api/admin/distribution/commission-rules');
+}
+function createCommissionRule(rule) {
+    return request('POST', '/api/admin/distribution/commission-rules', rule);
+}
+function updateCommissionRule(id, rule) {
+    return request('PUT', `/api/admin/distribution/commission-rules/${id}`, rule);
+}
+function deleteCommissionRule(id) {
+    return request('DELETE', `/api/admin/distribution/commission-rules/${id}`);
+}
+function getAdminCommissionRecords(page = 1, limit = 20, status, levelId) {
+    const params = { page, limit };
+    if (status)
+        params.status = status;
+    if (levelId)
+        params.levelId = levelId;
     return request('GET', '/api/admin/distribution/commissions', params);
 }
-function settleCommissionManually(orderId) { return request('POST', '/api/admin/distribution/commissions/settle', { orderId: orderId }); }
-function getAdminWithdrawals(page, limit, status) {
-    var params = { page: page, limit: limit };
-    if (status) params.status = status;
+function settleCommissionManually(orderId) {
+    return request('POST', '/api/admin/distribution/commissions/settle', { orderId });
+}
+function getAdminWithdrawals(page = 1, limit = 20, status) {
+    const params = { page, limit };
+    if (status)
+        params.status = status;
     return request('GET', '/api/admin/distribution/withdrawals', params);
 }
-function approveWithdrawal(id, note) { return request('POST', '/api/admin/distribution/withdrawals/' + id + '/approve', { note: note }); }
-function rejectWithdrawal(id, reason) { return request('POST', '/api/admin/distribution/withdrawals/' + id + '/reject', { reason: reason }); }
-function completeWithdrawal(id) { return request('POST', '/api/admin/distribution/withdrawals/' + id + '/complete'); }
-function submitFeedback(data) { return request('POST', '/api/feedback', data); }
-function getMyFeedback(page, limit) { return request('GET', '/api/feedback', { page: page, limit: limit }); }
-function getFeedbackDetail(id) { return request('GET', '/api/feedback/' + id); }
-function replyToFeedback(id, content) { return request('POST', '/api/feedback/' + id + '/reply', { content: content }); }
-function getAdminFeedback(page, limit, status, type) {
-    var params = { page: page, limit: limit };
-    if (status) params.status = status;
-    if (type) params.type = type;
+function approveWithdrawal(id, note) {
+    return request('POST', `/api/admin/distribution/withdrawals/${id}/approve`, { note });
+}
+function rejectWithdrawal(id, reason) {
+    return request('POST', `/api/admin/distribution/withdrawals/${id}/reject`, { reason });
+}
+function completeWithdrawal(id) {
+    return request('POST', `/api/admin/distribution/withdrawals/${id}/complete`);
+}
+// ---- 意见反馈 ----
+function submitFeedback(data) {
+    return request('POST', '/api/feedback', data);
+}
+function getMyFeedback(page = 1, limit = 20) {
+    return request('GET', '/api/feedback', { page, limit });
+}
+function getFeedbackDetail(id) {
+    return request('GET', `/api/feedback/${id}`);
+}
+function replyToFeedback(id, content) {
+    return request('POST', `/api/feedback/${id}/reply`, { content });
+}
+function getAdminFeedback(page = 1, limit = 20, status, type) {
+    const params = { page, limit };
+    if (status)
+        params.status = status;
+    if (type)
+        params.type = type;
     return request('GET', '/api/admin/feedback', params);
 }
-function getAdminFeedbackReplies(id) { return request('GET', '/api/admin/feedback/' + id + '/replies'); }
-function replyFeedback(id, reply, status) { return request('POST', '/api/admin/feedback/' + id + '/reply', { reply: reply, status: status }); }
-function getFeedbackStats() { return request('GET', '/api/admin/feedback/stats'); }
-function getPendingSurvey() { return request('GET', '/api/surveys/pending'); }
-function submitSurveyResponse(surveyId, answers) { return request('POST', '/api/surveys/' + surveyId + '/respond', { answers: answers }); }
-function skipSurvey(surveyId, skipType) { return request('POST', '/api/surveys/' + surveyId + '/skip', { skipType: skipType }); }
-function getAdminSurveys(page, limit, status) {
-    var params = { page: page, limit: limit };
-    if (status) params.status = status;
+function getAdminFeedbackReplies(id) {
+    return request('GET', `/api/admin/feedback/${id}/replies`);
+}
+function replyFeedback(id, reply, status) {
+    return request('POST', `/api/admin/feedback/${id}/reply`, { reply, status });
+}
+function getFeedbackStats() {
+    return request('GET', '/api/admin/feedback/stats');
+}
+function getAdminFeedbackList() {
+    return request('GET', '/api/admin/feedback/list');
+}
+// ---- 问卷调查 ----
+function getPendingSurvey() {
+    return request('GET', '/api/surveys/pending');
+}
+function submitSurveyResponse(surveyId, answers) {
+    return request('POST', `/api/surveys/${surveyId}/respond`, { answers });
+}
+function skipSurvey(surveyId, skipType) {
+    return request('POST', `/api/surveys/${surveyId}/skip`, { skipType });
+}
+function getAdminSurveys(page = 1, limit = 20, status) {
+    const params = { page, limit };
+    if (status)
+        params.status = status;
     return request('GET', '/api/admin/surveys', params);
 }
-function getAdminSurveyDetail(id) { return request('GET', '/api/admin/surveys/' + id); }
-function createSurvey(data) { return request('POST', '/api/admin/surveys', data); }
-function updateSurvey(id, data) { return request('PUT', '/api/admin/surveys/' + id, data); }
-function deleteSurvey(id) { return request('DELETE', '/api/admin/surveys/' + id); }
-function getSurveyStats(id) { return request('GET', '/api/admin/surveys/' + id + '/stats'); }
-function getSurveyResponses(id, page, limit) { return request('GET', '/api/admin/surveys/' + id + '/responses', { page: page, limit: limit }); }
-function aiGenerateSurvey(purpose, requirements, questionCount) { return request('POST', '/api/admin/surveys/ai-generate', { purpose: purpose, requirements: requirements, questionCount: questionCount }); }
-function sendMessage(data) { return request('POST', '/api/messages', data); }
-function getMessageSessions() { return request('GET', '/api/messages'); }
-function getConversation(userId) { return request('GET', '/api/messages/' + userId); }
-function getUnreadCount() { return request('GET', '/api/messages/unread-count'); }
-function sendFriendRequest(toUserId, message) { return request('POST', '/api/friends/request', { toUserId: toUserId, message: message }); }
-function acceptFriendRequest(requestId) { return request('POST', '/api/friends/accept/' + requestId); }
-function rejectFriendRequest(requestId) { return request('POST', '/api/friends/reject/' + requestId); }
-function getFriendList() { return request('GET', '/api/friends'); }
-function getFriendRequests() { return request('GET', '/api/friends/requests'); }
-function removeFriend(userId) { return request('DELETE', '/api/friends/' + userId); }
-function searchUsers(q) { return request('GET', '/api/users/search', { q: q }); }
-function createGroup(name, description, memberIds) { return request('POST', '/api/groups', { name: name, description: description, memberIds: memberIds }); }
-function getUserGroups() { return request('GET', '/api/groups'); }
-function getGroupDetail(groupId) { return request('GET', '/api/groups/' + groupId); }
-function updateGroup(groupId, data) { return request('PUT', '/api/groups/' + groupId, data); }
-function deleteGroup(groupId) { return request('DELETE', '/api/groups/' + groupId); }
-function addGroupMembers(groupId, memberIds) { return request('POST', '/api/groups/' + groupId + '/members', { memberIds: memberIds }); }
-function removeGroupMember(groupId, userId) { return request('DELETE', '/api/groups/' + groupId + '/members/' + userId); }
-function updateMemberRole(groupId, userId, role) { return request('PUT', '/api/groups/' + groupId + '/members/' + userId, { role: role }); }
-function getGroupMessages(groupId, page, limit) { return request('GET', '/api/groups/' + groupId + '/messages', { page: page, limit: limit }); }
-function sendGroupMessage(groupId, content, type) { return request('POST', '/api/groups/' + groupId + '/messages', { groupId: groupId, content: content, type: type }); }
-function getQuickPhrases() { return request('GET', '/api/quick-phrases'); }
-function getEmojis() { return request('GET', '/api/emojis'); }
-function getTeacherStatus() { return request('GET', '/api/teacher/status'); }
-function applyTeacher(data) { return request('POST', '/api/teacher/apply', data); }
-function listCoursewares() { return request('GET', '/api/coursewares'); }
-function createCourseware(data) { return request('POST', '/api/coursewares', data); }
-function getCoursewareDetail(id) { return request('GET', '/api/coursewares/' + id); }
-function updateCourseware(id, data) { return request('PUT', '/api/coursewares/' + id, data); }
-function deleteCourseware(id) { return request('DELETE', '/api/coursewares/' + id); }
-function addCoursewareItem(coursewareId, itemId, itemType, note) { return request('POST', '/api/coursewares/' + coursewareId + '/items', { itemId: itemId, itemType: itemType, note: note }); }
-function removeCoursewareItem(coursewareId, itemId) { return request('DELETE', '/api/coursewares/' + coursewareId + '/items/' + itemId); }
-function updateCoursewareItemNote(coursewareId, itemId, note) { return request('PUT', '/api/coursewares/' + coursewareId + '/items/' + itemId, { note: note }); }
-function reorderCoursewareItems(coursewareId, itemIds) { return request('POST', '/api/coursewares/' + coursewareId + '/items/reorder', { itemIds: itemIds }); }
-function getAdminTeacherApplications(page, limit, status) {
-    var params = { page: page, limit: limit };
-    if (status) params.status = status;
+function getAdminSurveyDetail(id) {
+    return request('GET', `/api/admin/surveys/${id}`);
+}
+function createSurvey(data) {
+    return request('POST', '/api/admin/surveys', data);
+}
+function updateSurvey(id, data) {
+    return request('PUT', `/api/admin/surveys/${id}`, data);
+}
+function deleteSurvey(id) {
+    return request('DELETE', `/api/admin/surveys/${id}`);
+}
+function getSurveyStats(id) {
+    return request('GET', `/api/admin/surveys/${id}/stats`);
+}
+function getSurveyResponses(id, page = 1, limit = 20) {
+    return request('GET', `/api/admin/surveys/${id}/responses`, { page, limit });
+}
+function aiGenerateSurvey(purpose, requirements, questionCount) {
+    return request('POST', '/api/admin/surveys/ai-generate', { purpose, requirements, questionCount });
+}
+function deleteAdminSurvey(id) {
+    return request('DELETE', `/api/admin/surveys/${id}`);
+}
+// ---- 即时消息 ----
+function sendMessage(data) {
+    return request('POST', '/api/messages', data);
+}
+function getMessageSessions() {
+    return request('GET', '/api/messages');
+}
+function getConversation(userId) {
+    return request('GET', `/api/messages/${userId}`);
+}
+function getUnreadCount() {
+    return request('GET', '/api/messages/unread-count');
+}
+// ---- 好友系统 ----
+function sendFriendRequest(toUserId, message) {
+    return request('POST', '/api/friends/request', { toUserId, message });
+}
+function acceptFriendRequest(requestId) {
+    return request('POST', `/api/friends/accept/${requestId}`);
+}
+function rejectFriendRequest(requestId) {
+    return request('POST', `/api/friends/reject/${requestId}`);
+}
+function getFriendList() {
+    return request('GET', '/api/friends');
+}
+function getFriendRequests() {
+    return request('GET', '/api/friends/requests');
+}
+function removeFriend(userId) {
+    return request('DELETE', `/api/friends/${userId}`);
+}
+function searchUsers(q) {
+    return request('GET', '/api/users/search', { q });
+}
+// ---- 群组系统 ----
+function createGroup(name, description, memberIds) {
+    return request('POST', '/api/groups', { name, description, memberIds });
+}
+function getUserGroups() {
+    return request('GET', '/api/groups');
+}
+function getGroupDetail(groupId) {
+    return request('GET', `/api/groups/${groupId}`);
+}
+function updateGroup(groupId, data) {
+    return request('PUT', `/api/groups/${groupId}`, data);
+}
+function deleteGroup(groupId) {
+    return request('DELETE', `/api/groups/${groupId}`);
+}
+function addGroupMembers(groupId, memberIds) {
+    return request('POST', `/api/groups/${groupId}/members`, { memberIds });
+}
+function removeGroupMember(groupId, userId) {
+    return request('DELETE', `/api/groups/${groupId}/members/${userId}`);
+}
+function updateMemberRole(groupId, userId, role) {
+    return request('PUT', `/api/groups/${groupId}/members/${userId}`, { role });
+}
+function getGroupMessages(groupId, page = 1, limit = 50) {
+    return request('GET', `/api/groups/${groupId}/messages`, { page, limit });
+}
+function sendGroupMessage(groupId, content, type) {
+    return request('POST', `/api/groups/${groupId}/messages`, { groupId, content, type });
+}
+// ---- 快捷短语与表情 ----
+function getQuickPhrases() {
+    return request('GET', '/api/quick-phrases');
+}
+function getEmojis() {
+    return request('GET', '/api/emojis');
+}
+// ---- 教师与课件 ----
+function getTeacherStatus() {
+    return request('GET', '/api/teacher/status');
+}
+function applyTeacher(data) {
+    return request('POST', '/api/teacher/apply', data);
+}
+function listCoursewares() {
+    return request('GET', '/api/coursewares');
+}
+function createCourseware(data) {
+    return request('POST', '/api/coursewares', data);
+}
+function getCoursewareDetail(id) {
+    return request('GET', `/api/coursewares/${id}`);
+}
+function updateCourseware(id, data) {
+    return request('PUT', `/api/coursewares/${id}`, data);
+}
+function deleteCourseware(id) {
+    return request('DELETE', `/api/coursewares/${id}`);
+}
+function addCoursewareItem(coursewareId, itemId, itemType, note) {
+    return request('POST', `/api/coursewares/${coursewareId}/items`, { itemId, itemType, note });
+}
+function removeCoursewareItem(coursewareId, itemId) {
+    return request('DELETE', `/api/coursewares/${coursewareId}/items/${itemId}`);
+}
+function updateCoursewareItemNote(coursewareId, itemId, note) {
+    return request('PUT', `/api/coursewares/${coursewareId}/items/${itemId}`, { note });
+}
+function reorderCoursewareItems(coursewareId, itemIds) {
+    return request('POST', `/api/coursewares/${coursewareId}/items/reorder`, { itemIds });
+}
+function getAdminTeacherApplications(page = 1, limit = 20, status) {
+    const params = { page, limit };
+    if (status)
+        params.status = status;
     return request('GET', '/api/admin/teachers/applications', params);
 }
-function getAdminTeacherApplicationCounts() { return request('GET', '/api/admin/teachers/application-counts'); }
-function reviewAdminTeacherApplication(applicationId, status, note) { return request('POST', '/api/admin/teachers/applications/' + applicationId + '/review', { status: status, note: note }); }
-function getAdminTeachers(page, limit) { return request('GET', '/api/admin/teachers', { page: page, limit: limit }); }
-function revokeAdminTeacher(userId) { return request('POST', '/api/admin/teachers/' + userId + '/revoke'); }
-function getDragonCoinBalance() { return request('GET', '/api/dragon-coin/balance'); }
-function getDragonCoinLedger(page, limit) { return request('GET', '/api/dragon-coin/ledger', { page: page, limit: limit }); }
-function getDragonCoinConfigs() { return request('GET', '/api/dragon-coin/configs'); }
-function getDragonCoinExchanges(page, limit) { return request('GET', '/api/dragon-coin/exchanges', { page: page, limit: limit }); }
-function exchangeDragonCoin(configId, amount) { return request('POST', '/api/dragon-coin/exchange', { configId: configId, amount: amount }); }
-function getDragonCoinExchangeRecords(page, limit) { return request('GET', '/api/dragon-coin/exchange-records', { page: page, limit: limit }); }
-function getAdminDragonCoinConfigs() { return request('GET', '/api/admin/dragon-coin/configs'); }
-function createDragonCoinConfig(data) { return request('POST', '/api/admin/dragon-coin/configs', data); }
-function updateDragonCoinConfig(id, data) { return request('PUT', '/api/admin/dragon-coin/configs/' + id, data); }
-function deleteDragonCoinConfig(id) { return request('DELETE', '/api/admin/dragon-coin/configs/' + id); }
-function getAdminDragonCoinExchanges(page, limit) { return request('GET', '/api/admin/dragon-coin/exchanges', { page: page, limit: limit }); }
-function createDragonCoinExchange(data) { return request('POST', '/api/admin/dragon-coin/exchanges', data); }
-function updateDragonCoinExchange(id, data) { return request('PUT', '/api/admin/dragon-coin/exchanges/' + id, data); }
-function deleteDragonCoinExchange(id) { return request('DELETE', '/api/admin/dragon-coin/exchanges/' + id); }
-function getAdminDragonCoinExchangeRecords(page, limit) { return request('GET', '/api/admin/dragon-coin/exchange-records', { page: page, limit: limit }); }
-function getAdminDragonCoinUserBalance(userId) { return request('GET', '/api/admin/dragon-coin/users/' + userId + '/balance'); }
-function adjustDragonCoinBalance(userId, amount, reason) { return request('POST', '/api/admin/dragon-coin/users/' + userId + '/balance/adjust', { amount: amount, reason: reason }); }
-function getAdminDragonCoinStats() { return request('GET', '/api/admin/dragon-coin/stats'); }
-function getAdminDayStats(date) { return request('GET', '/api/admin/dashboard/day-stats', { date: date }); }
-function getAdminUsers(page, limit, search, levelId, sortField, sortOrder) { return request('GET', '/api/admin/users', { page: page, limit: limit, search: search, levelId: levelId, sortField: sortField, sortOrder: sortOrder }); }
-function getAdminUserDetail(userId) { return request('GET', '/api/admin/users/' + userId); }
-function updateAdminUserRole(userId, role) { return request('PUT', '/api/admin/users/' + userId, { role: role }); }
-function updateAdminUserTeacherStatus(userId, status) { return request('PUT', '/api/admin/users/' + userId, { teacherStatus: status }); }
-function adminResetPassword(userId, adminPassword, newPassword) { return request('POST', '/api/admin/users/' + userId + '/reset-password', { adminPassword: adminPassword, newPassword: newPassword }); }
-function getAdminUserActivity(userId, days, dateFrom, dateTo) { return request('GET', '/api/admin/users/' + userId + '/activity', { days: days, dateFrom: dateFrom, dateTo: dateTo }); }
-function getAdminUserActivityModules(userId, dateFrom, dateTo) { return request('GET', '/api/admin/users/' + userId + '/activity-modules', { dateFrom: dateFrom, dateTo: dateTo }); }
-function getAdminGames(page, limit, filters) { return request('GET', '/api/admin/games', Object.assign({ page: page, limit: limit }, filters)); }
-function getAdminGameDetail(gameId) { return request('GET', '/api/admin/games/' + gameId); }
-function getAdminModuleStats() { return request('GET', '/api/admin/stats/modules'); }
-function getAdminExtendedStats(days) { return request('GET', '/api/admin/stats/extended', { days: days }); }
-function getAdminSettings() { return request('GET', '/api/admin/settings'); }
-function updateAdminSettings(settings) { return request('PUT', '/api/admin/settings', { settings: settings }); }
-function getAdminKnowledgeStatus() { return request('GET', '/api/admin/knowledge'); }
-function triggerAdminKnowledgeLearn() { return request('POST', '/api/admin/knowledge/learn'); }
-function changeAdminPassword(oldPassword, newPassword) { return request('POST', '/api/admin/change-password', { oldPassword: oldPassword, newPassword: newPassword }); }
-function getAdminMembershipLevels() { return request('GET', '/api/admin/membership/levels'); }
-function getAdminMembershipBenefits() { return request('GET', '/api/admin/membership/benefits'); }
-function createAdminMembershipLevel(payload) { return request('POST', '/api/admin/membership/levels', payload); }
-function updateAdminMembershipLevel(levelId, payload) { return request('PUT', '/api/admin/membership/levels/' + levelId, payload); }
-function deleteAdminMembershipLevel(levelId) { return request('DELETE', '/api/admin/membership/levels/' + levelId); }
-function getAdminMembershipUsers(page, limit, params) { return request('GET', '/api/admin/membership/users', Object.assign({ page: page, limit: limit }, params)); }
-function getAdminUserMembership(userId) { return request('GET', '/api/admin/membership/users/' + userId + '/detail'); }
-function adminGrantMembership(userId, levelId, days, reason) { return request('POST', '/api/admin/membership/users/' + userId + '/grant', { levelId: levelId, days: days, reason: reason }); }
-function adminExtendMembership(userId, days, reason) { return request('POST', '/api/admin/membership/users/' + userId + '/extend', { days: days, reason: reason }); }
-function adminExpireMembership(userId, reason) { return request('POST', '/api/admin/membership/users/' + userId + '/expire', { reason: reason }); }
-function getAdminMembershipOrders(page, limit, filters) { return request('GET', '/api/admin/membership/orders', Object.assign({ page: page, limit: limit }, filters)); }
-function adminRefundMembershipOrder(orderId, reason) { return request('POST', '/api/admin/membership/orders/' + orderId + '/refund', { reason: reason }); }
-function generateMembershipCodes(options) { return request('POST', '/api/admin/membership/codes', options); }
-function getMembershipCodes(page, limit, filters) { return request('GET', '/api/admin/membership/codes', Object.assign({ page: page, limit: limit }, filters)); }
-function disableMembershipCode(codeId) { return request('PATCH', '/api/admin/membership/codes/' + codeId + '/disable'); }
-function getAdminMembershipStats() { return request('GET', '/api/admin/membership/stats'); }
-function getAdminMembershipLogs(page, limit) { return request('GET', '/api/admin/membership/logs', { page: page, limit: limit }); }
-function getChessGameRecords(params) { return request('GET', '/api/admin/chess-games/records', params); }
-function getChessGameRecordDetail(id) { return request('GET', '/api/admin/chess-games/records/' + id); }
-function deleteChessGameRecord(id) { return request('DELETE', '/api/admin/chess-games/records/' + id); }
-function batchDeleteChessGameRecords(ids) { return request('POST', '/api/admin/chess-games/records/batch-delete', { ids: ids }); }
-function updateChessGameTags(id, tags) { return request('PUT', '/api/admin/chess-games/records/' + id + '/tags', { tags: tags }); }
-function searchChessGamesExternal(query, source, maxResults) { return request('POST', '/api/admin/chess-games/records/search', { query: query, source: source, maxResults: maxResults }); }
-function importChessGameFromUrl(url) { return request('POST', '/api/admin/chess-games/records/import-url', { url: url }); }
-function searchAndImportChessGame(query, source, maxResults) { return request('POST', '/api/admin/chess-games/records/search-and-import', { query: query, source: source, maxResults: maxResults }); }
-function importChessGamePgn(pgnText) { return request('POST', '/api/admin/chess-games/records/import-pgn', { pgnText: pgnText }); }
-function getChessDataService() { return request('GET', '/api/admin/chess-games/data-sources'); }
-function createChessGameDataSource(input) { return request('POST', '/api/admin/chess-games/data-sources', input); }
-function updateChessGameDataSource(id, input) { return request('PATCH', '/api/admin/chess-games/data-sources/' + id, input); }
-function deleteChessGameDataSource(id) { return request('DELETE', '/api/admin/chess-games/data-sources/' + id); }
-function testChessGameDataSource(id) { return request('POST', '/api/admin/chess-games/data-sources/' + id + '/test'); }
-function importFromChessGameDataSource(id) { return request('POST', '/api/admin/chess-games/data-sources/' + id + '/import'); }
-function triggerChessGameAutoUpdate() { return request('POST', '/api/admin/chess-games/auto-update'); }
-function getChessGameLibraryStats() { return request('GET', '/api/admin/chess-games/stats'); }
-function getChessGameAnalysis(recordId) { return request('GET', '/api/admin/chess-games/records/' + recordId + '/analysis'); }
-function getChessGameAnalyses(ids) { return request('POST', '/api/admin/chess-games/records/analysis/batch', { ids: ids }); }
-function analyzeChessGame(recordId, options) { return request('POST', '/api/admin/chess-games/records/' + recordId + '/analyze', options || {}); }
-function analyzeAllChessGames(options) { return request('POST', '/api/admin/chess-games/analyze-all', options || {}); }
-function getChessGameBatchAnalysisStatus() { return request('GET', '/api/admin/chess-games/analysis-status'); }
-function cancelChessGameAnalysis(recordId) { return request('POST', '/api/admin/chess-games/records/' + recordId + '/analyze/cancel'); }
-function cancelAllChessGameAnalyses() { return request('POST', '/api/admin/chess-games/analyze/cancel-all'); }
-function resetAllChessGameAnalyses() { return request('POST', '/api/admin/chess-games/analyze/reset'); }
-function deleteChessGameAnalysis(recordId) { return request('DELETE', '/api/admin/chess-games/records/' + recordId + '/analysis'); }
-function getLLMProviders() { return request('GET', '/api/admin/llm-providers'); }
-function getLLMProvider(id) { return request('GET', '/api/admin/llm-providers/' + id); }
-function createLLMProvider(data) { return request('POST', '/api/admin/llm-providers', data); }
-function updateLLMProvider(id, data) { return request('PUT', '/api/admin/llm-providers/' + id, data); }
-function deleteLLMProvider(id) { return request('DELETE', '/api/admin/llm-providers/' + id); }
-function setDefaultLLMProvider(id) { return request('POST', '/api/admin/llm-providers/' + id + '/default'); }
-function testLLMConnection(id) { return request('POST', '/api/admin/llm-providers/' + id + '/test'); }
-function getAdminMenuVisibility() { return request('GET', '/api/admin/menus'); }
-function updateAdminMenuVisibility(menus) { return request('PUT', '/api/admin/menus', { menus: menus }); }
-function getSmtpConfig() { return request('GET', '/api/admin/settings/smtp'); }
-function saveSmtpConfig(config) { return request('PUT', '/api/admin/settings/smtp', config); }
-function deleteSmtpConfig() { return request('DELETE', '/api/admin/settings/smtp'); }
-function testSmtpConnection(config) { return request('POST', '/api/admin/settings/smtp/test', config); }
-function getCompetitions(params) { return request('GET', '/api/competitions', params); }
-function getCompetitionDetail(id) { return request('GET', '/api/competitions/' + id); }
-function joinCompetition(id, data) { return request('POST', '/api/competitions/' + id + '/join', data); }
-function getCompetitionRounds(competitionId) { return request('GET', '/api/competitions/' + competitionId + '/rounds'); }
-function getCompetitionStandings(competitionId, params) { return request('GET', '/api/competitions/' + competitionId + '/standings', params); }
-function getCompetitionNotifications(competitionId) { return request('GET', '/api/competitions/' + competitionId + '/notifications'); }
-function getCompetitionMatch(matchId) { return request('GET', '/api/competitions/matches/' + matchId); }
-function submitCompetitionMove(matchId, move) { return request('POST', '/api/competitions/matches/' + matchId + '/move', { move: move }); }
-function getCompetitionAdminCompetitions(params) { return request('GET', '/api/admin/competitions', params); }
-function createCompetition(data) { return request('POST', '/api/admin/competitions', data); }
-function updateCompetition(id, data) { return request('PUT', '/api/admin/competitions/' + id, data); }
-function deleteCompetition(id) { return request('DELETE', '/api/admin/competitions/' + id); }
-function getCompetitionManageDetail(id) { return request('GET', '/api/admin/competitions/' + id); }
-function getCompetitionRegistrationPopup() { return request('GET', '/api/competitions/registration-popup'); }
+function getAdminTeacherApplicationCounts() {
+    return request('GET', '/api/admin/teachers/application-counts');
+}
+function reviewAdminTeacherApplication(applicationId, status, note) {
+    return request('POST', `/api/admin/teachers/applications/${applicationId}/review`, { status, note });
+}
+function getAdminTeachers(page = 1, limit = 20) {
+    return request('GET', '/api/admin/teachers', { page, limit });
+}
+function revokeAdminTeacher(userId) {
+    return request('POST', `/api/admin/teachers/${userId}/revoke`);
+}
+function approveTeacher(id) {
+    return request('PATCH', `/api/admin/teachers/${id}/approve`);
+}
+function rejectTeacher(id) {
+    return request('PATCH', `/api/admin/teachers/${id}/reject`);
+}
+// ---- 龙币（用户端） ----
+function getDragonCoinBalance() {
+    return request('GET', '/api/dragon-coin/balance');
+}
+function getDragonCoinLedger(page = 1, limit = 20) {
+    return request('GET', '/api/dragon-coin/ledger', { page, limit });
+}
+function getDragonCoinConfigs() {
+    return request('GET', '/api/dragon-coin/configs');
+}
+function getDragonCoinExchanges(page = 1, limit = 20) {
+    return request('GET', '/api/dragon-coin/exchanges', { page, limit });
+}
+function exchangeDragonCoin(configId, amount) {
+    return request('POST', '/api/dragon-coin/exchange', { configId, amount });
+}
+function getDragonCoinExchangeRecords(page = 1, limit = 20) {
+    return request('GET', '/api/dragon-coin/exchange-records', { page, limit });
+}
+// ---- 龙币（管理端） ----
+function getAdminDragonCoinConfigs() {
+    return request('GET', '/api/admin/dragon-coin/configs');
+}
+function createDragonCoinConfig(data) {
+    return request('POST', '/api/admin/dragon-coin/configs', data);
+}
+function updateDragonCoinConfig(id, data) {
+    return request('PUT', `/api/admin/dragon-coin/configs/${id}`, data);
+}
+function deleteDragonCoinConfig(id) {
+    return request('DELETE', `/api/admin/dragon-coin/configs/${id}`);
+}
+function getAdminDragonCoinExchanges(page = 1, limit = 20) {
+    return request('GET', '/api/admin/dragon-coin/exchanges', { page, limit });
+}
+function createDragonCoinExchange(data) {
+    return request('POST', '/api/admin/dragon-coin/exchanges', data);
+}
+function updateDragonCoinExchange(id, data) {
+    return request('PUT', `/api/admin/dragon-coin/exchanges/${id}`, data);
+}
+function deleteDragonCoinExchange(id) {
+    return request('DELETE', `/api/admin/dragon-coin/exchanges/${id}`);
+}
+function getAdminDragonCoinExchangeRecords(page = 1, limit = 20) {
+    return request('GET', '/api/admin/dragon-coin/exchange-records', { page, limit });
+}
+function getAdminDragonCoinUserBalance(userId) {
+    return request('GET', `/api/admin/dragon-coin/users/${userId}/balance`);
+}
+function adjustDragonCoinBalance(userId, amount, reason) {
+    return request('POST', `/api/admin/dragon-coin/users/${userId}/balance/adjust`, { amount, reason });
+}
+function getAdminDragonCoinStats() {
+    return request('GET', '/api/admin/dragon-coin/stats');
+}
+// ---- 管理后台扩展 ----
+function getAdminDayStats(date) {
+    return request('GET', '/api/admin/dashboard/day-stats', { date });
+}
+function getAdminUsers(page = 1, limit = 20, search, levelId, sortField, sortOrder) {
+    return request('GET', '/api/admin/users', { page, limit, search, levelId, sortField, sortOrder });
+}
+function getAdminUserDetail(userId) {
+    return request('GET', `/api/admin/users/${userId}`);
+}
+function updateAdminUserRole(userId, role) {
+    return request('PUT', `/api/admin/users/${userId}`, { role });
+}
+function updateAdminUserTeacherStatus(userId, status) {
+    return request('PUT', `/api/admin/users/${userId}`, { teacherStatus: status });
+}
+function adminResetPassword(userId, adminPassword, newPassword) {
+    return request('POST', `/api/admin/users/${userId}/reset-password`, { adminPassword, newPassword });
+}
+function getAdminUserActivity(userId, days = 7, dateFrom, dateTo) {
+    return request('GET', `/api/admin/users/${userId}/activity`, { days, dateFrom, dateTo });
+}
+function getAdminUserActivityModules(userId, dateFrom, dateTo) {
+    return request('GET', `/api/admin/users/${userId}/activity-modules`, { dateFrom, dateTo });
+}
+function getAdminGames(page = 1, limit = 20, filters) {
+    return request('GET', '/api/admin/games', { page, limit, ...filters });
+}
+function getAdminGameDetail(gameId) {
+    return request('GET', `/api/admin/games/${gameId}`);
+}
+function getAdminModuleStats() {
+    return request('GET', '/api/admin/stats/modules');
+}
+function getAdminExtendedStats(days = 30) {
+    return request('GET', '/api/admin/stats/extended', { days });
+}
+function getAdminSettings() {
+    return request('GET', '/api/admin/settings');
+}
+function updateAdminSettings(settings) {
+    return request('PUT', '/api/admin/settings', { settings });
+}
+function getAdminKnowledgeStatus() {
+    return request('GET', '/api/admin/knowledge');
+}
+function triggerAdminKnowledgeLearn() {
+    return request('POST', '/api/admin/knowledge/learn');
+}
+function getAdminKnowledgeList() {
+    return request('GET', '/api/admin/knowledge/list');
+}
+function updateKnowledge(id, data) {
+    return request('PUT', `/api/admin/knowledge/${id}`, data);
+}
+function deleteKnowledge(id) {
+    return request('DELETE', `/api/admin/knowledge/${id}`);
+}
+function getAdminPuzzlesList() {
+    return request('GET', '/api/admin/puzzles/list');
+}
+function updateAdminPuzzle(id, data) {
+    return request('PUT', `/api/admin/puzzles/${id}`, data);
+}
+function deleteAdminPuzzle(id) {
+    return request('DELETE', `/api/admin/puzzles/${id}`);
+}
+function changeAdminPassword(oldPassword, newPassword) {
+    return request('POST', '/api/admin/change-password', { oldPassword, newPassword });
+}
+// ---- 会员管理（管理端） ----
+function getAdminMembershipLevels() {
+    return request('GET', '/api/admin/membership/levels');
+}
+function getAdminMembershipBenefits() {
+    return request('GET', '/api/admin/membership/benefits');
+}
+function createAdminMembershipLevel(payload) {
+    return request('POST', '/api/admin/membership/levels', payload);
+}
+function updateAdminMembershipLevel(levelId, payload) {
+    return request('PUT', `/api/admin/membership/levels/${levelId}`, payload);
+}
+function deleteAdminMembershipLevel(levelId) {
+    return request('DELETE', `/api/admin/membership/levels/${levelId}`);
+}
+function getAdminMembershipUsers(page = 1, limit = 20, params) {
+    return request('GET', '/api/admin/membership/users', { page, limit, ...params });
+}
+function getAdminUserMembership(userId) {
+    return request('GET', `/api/admin/membership/users/${userId}/detail`);
+}
+function adminGrantMembership(userId, levelId, days, reason) {
+    return request('POST', `/api/admin/membership/users/${userId}/grant`, { levelId, days, reason });
+}
+function adminExtendMembership(userId, days, reason) {
+    return request('POST', `/api/admin/membership/users/${userId}/extend`, { days, reason });
+}
+function adminExpireMembership(userId, reason) {
+    return request('POST', `/api/admin/membership/users/${userId}/expire`, { reason });
+}
+function getAdminMembershipOrders(page = 1, limit = 20, filters) {
+    return request('GET', '/api/admin/membership/orders', { page, limit, ...filters });
+}
+function adminRefundMembershipOrder(orderId, reason) {
+    return request('POST', `/api/admin/membership/orders/${orderId}/refund`, { reason });
+}
+function generateMembershipCodes(options) {
+    return request('POST', '/api/admin/membership/codes', options);
+}
+function getMembershipCodes(page = 1, limit = 20, filters) {
+    return request('GET', '/api/admin/membership/codes', { page, limit, ...filters });
+}
+function disableMembershipCode(codeId) {
+    return request('PATCH', `/api/admin/membership/codes/${codeId}/disable`);
+}
+function getAdminMembershipStats() {
+    return request('GET', '/api/admin/membership/stats');
+}
+function getAdminMembershipLogs(page = 1, limit = 50) {
+    return request('GET', '/api/admin/membership/logs', { page, limit });
+}
+// ---- 棋谱库管理 ----
+function getChessGameRecords(params) {
+    return request('GET', '/api/admin/chess-games/records', params);
+}
+function getChessGameRecordDetail(id) {
+    return request('GET', `/api/admin/chess-games/records/${id}`);
+}
+function deleteChessGameRecord(id) {
+    return request('DELETE', `/api/admin/chess-games/records/${id}`);
+}
+function batchDeleteChessGameRecords(ids) {
+    return request('POST', '/api/admin/chess-games/records/batch-delete', { ids });
+}
+function updateChessGameTags(id, tags) {
+    return request('PUT', `/api/admin/chess-games/records/${id}/tags`, { tags });
+}
+function searchChessGamesExternal(query, source = 'lichess', maxResults = 10) {
+    return request('POST', '/api/admin/chess-games/records/search', { query, source, maxResults });
+}
+function importChessGameFromUrl(url) {
+    return request('POST', '/api/admin/chess-games/records/import-url', { url });
+}
+function searchAndImportChessGame(query, source = 'lichess', maxResults = 10) {
+    return request('POST', '/api/admin/chess-games/records/search-and-import', { query, source, maxResults });
+}
+function importChessGamePgn(pgnText) {
+    return request('POST', '/api/admin/chess-games/records/import-pgn', { pgnText });
+}
+function getChessDataService() {
+    return request('GET', '/api/admin/chess-games/data-sources');
+}
+function createChessGameDataSource(input) {
+    return request('POST', '/api/admin/chess-games/data-sources', input);
+}
+function updateChessGameDataSource(id, input) {
+    return request('PATCH', `/api/admin/chess-games/data-sources/${id}`, input);
+}
+function deleteChessGameDataSource(id) {
+    return request('DELETE', `/api/admin/chess-games/data-sources/${id}`);
+}
+function testChessGameDataSource(id) {
+    return request('POST', `/api/admin/chess-games/data-sources/${id}/test`);
+}
+function importFromChessGameDataSource(id) {
+    return request('POST', `/api/admin/chess-games/data-sources/${id}/import`);
+}
+function triggerChessGameAutoUpdate() {
+    return request('POST', '/api/admin/chess-games/auto-update');
+}
+function getChessGameLibraryStats() {
+    return request('GET', '/api/admin/chess-games/stats');
+}
+// ---- 棋谱分析 ----
+function getChessGameAnalysis(recordId) {
+    return request('GET', `/api/admin/chess-games/records/${recordId}/analysis`);
+}
+function getChessGameAnalyses(ids) {
+    return request('POST', '/api/admin/chess-games/records/analysis/batch', { ids });
+}
+function analyzeChessGame(recordId, options) {
+    return request('POST', `/api/admin/chess-games/records/${recordId}/analyze`, options || {});
+}
+function analyzeAllChessGames(options) {
+    return request('POST', '/api/admin/chess-games/analyze-all', options || {});
+}
+function getChessGameBatchAnalysisStatus() {
+    return request('GET', '/api/admin/chess-games/analysis-status');
+}
+function cancelChessGameAnalysis(recordId) {
+    return request('POST', `/api/admin/chess-games/records/${recordId}/analyze/cancel`);
+}
+function cancelAllChessGameAnalyses() {
+    return request('POST', '/api/admin/chess-games/analyze/cancel-all');
+}
+function resetAllChessGameAnalyses() {
+    return request('POST', '/api/admin/chess-games/analyze/reset');
+}
+function deleteChessGameAnalysis(recordId) {
+    return request('DELETE', `/api/admin/chess-games/records/${recordId}/analysis`);
+}
+// ---- LLM 提供商管理 ----
+function getLLMProviders() {
+    return request('GET', '/api/admin/llm-providers');
+}
+function getLLMProvider(id) {
+    return request('GET', `/api/admin/llm-providers/${id}`);
+}
+function createLLMProvider(data) {
+    return request('POST', '/api/admin/llm-providers', data);
+}
+function updateLLMProvider(id, data) {
+    return request('PUT', `/api/admin/llm-providers/${id}`, data);
+}
+function deleteLLMProvider(id) {
+    return request('DELETE', `/api/admin/llm-providers/${id}`);
+}
+function setDefaultLLMProvider(id) {
+    return request('POST', `/api/admin/llm-providers/${id}/default`);
+}
+function testLLMConnection(id) {
+    return request('POST', `/api/admin/llm-providers/${id}/test`);
+}
+// ---- 菜单可见性 ----
+function getAdminMenuVisibility() {
+    return request('GET', '/api/admin/menus');
+}
+function updateAdminMenuVisibility(menus) {
+    return request('PUT', '/api/admin/menus', { menus });
+}
+function getAdminMenuList() {
+    return request('GET', '/api/admin/menu/list');
+}
+function deleteAdminMenu(id) {
+    return request('DELETE', `/api/admin/menu/${id}`);
+}
+// ---- SMTP ----
+function getSmtpConfig() {
+    return request('GET', '/api/admin/settings/smtp');
+}
+function saveSmtpConfig(config) {
+    return request('PUT', '/api/admin/settings/smtp', config);
+}
+function deleteSmtpConfig() {
+    return request('DELETE', '/api/admin/settings/smtp');
+}
+function testSmtpConnection(config) {
+    return request('POST', '/api/admin/settings/smtp/test', config);
+}
+// ---- 竞赛 ----
+function getCompetitions(params) {
+    return request('GET', '/api/competitions', params);
+}
+function getCompetitionDetail(id) {
+    return request('GET', `/api/competitions/${id}`);
+}
+function joinCompetition(id, data) {
+    return request('POST', `/api/competitions/${id}/join`, data);
+}
+function getCompetitionRounds(competitionId) {
+    return request('GET', `/api/competitions/${competitionId}/rounds`);
+}
+function getCompetitionStandings(competitionId, params) {
+    return request('GET', `/api/competitions/${competitionId}/standings`, params);
+}
+function getCompetitionNotifications(competitionId) {
+    return request('GET', `/api/competitions/${competitionId}/notifications`);
+}
+function getCompetitionMatch(matchId) {
+    return request('GET', `/api/competitions/matches/${matchId}`);
+}
+function submitCompetitionMove(matchId, move) {
+    return request('POST', `/api/competitions/matches/${matchId}/move`, { move });
+}
+function getCompetitionAdminCompetitions(params) {
+    return request('GET', '/api/admin/competitions', params);
+}
+function createCompetition(data) {
+    return request('POST', '/api/admin/competitions', data);
+}
+function updateCompetition(id, data) {
+    return request('PUT', `/api/admin/competitions/${id}`, data);
+}
+function deleteCompetition(id) {
+    return request('DELETE', `/api/admin/competitions/${id}`);
+}
+function getCompetitionManageDetail(id) {
+    return request('GET', `/api/admin/competitions/${id}`);
+}
+// ---- 分销扩展：竞赛通知 ----
+function getCompetitionRegistrationPopup() {
+    return request('GET', '/api/competitions/registration-popup');
+}

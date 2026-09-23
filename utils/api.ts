@@ -177,10 +177,6 @@ function login(username: string, password: string): Promise<any> {
   return request('POST', '/api/auth/login', { username, password });
 }
 
-function register(username: string, password: string, email?: string): Promise<any> {
-  return request('POST', '/api/auth/register', { username, password, email });
-}
-
 /** 忘记密码：发送验证码到邮箱 */
 function forgotPassword(email: string): Promise<any> {
   return request('POST', '/api/auth/forgot-password', { email });
@@ -193,6 +189,34 @@ function resetPassword(email: string, code: string, newPassword: string): Promis
 
 function getCurrentUser(): Promise<any> {
   return request('GET', '/api/auth/me');
+}
+
+/** Lichess OAuth 登录：获取授权 URL（前端跳转用） */
+function lichessLogin(): Promise<any> {
+  return request('GET', '/api/lichess/login');
+}
+
+/** Lichess OAuth 回调处理（前端从 URL hash 提取 token 后调用） */
+function lichessCallback(code: string, state: string): Promise<any> {
+  return request('POST', '/api/lichess/callback', { code, state });
+}
+
+/** 检查 Lichess 绑定状态 */
+function getLichessBinding(): Promise<any> {
+  return request('GET', '/api/lichess/me');
+}
+
+/** 解除 Lichess 绑定 */
+function unbindLichess(): Promise<any> {
+  return request('POST', '/api/lichess/unbind');
+}
+
+/**
+ * 注册（支持推荐码）
+ * @param refCode 推荐码（可选）
+ */
+function register(username: string, password: string, email?: string, refCode?: string): Promise<any> {
+  return request('POST', '/api/auth/register', { username, password, email, refCode });
 }
 
 // ---- 对局 ----

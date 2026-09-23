@@ -42,7 +42,7 @@ Page({
                 this.setData({ __theme__: theme });
             }
         }
-        catch (e) { }
+        catch (e) { /* non-critical */ }
     },
     data: {
         __theme__: (typeof getApp === 'function' ? (getApp().globalData?.settings?.uiTheme || 'dark') : 'dark'),

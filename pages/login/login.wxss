@@ -213,3 +213,29 @@
 .back-link:active {
   opacity: 0.7;
 }
+
+/* ===== Lichess OAuth 登录按钮 ===== */
+.lichess-login-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  margin-top: 20rpx;
+  padding: 16rpx 24rpx;
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-color);
+  border-radius: 12rpx;
+  font-size: 24rpx;
+  color: var(--text-primary);
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.lichess-login-btn:active {
+  transform: scale(0.97);
+  background: var(--bg-card);
+}
+
+.lichess-icon {
+  font-size: 28rpx;
+}

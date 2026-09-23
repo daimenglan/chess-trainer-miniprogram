@@ -24,7 +24,7 @@ Page({
             if (this.data.__theme__ !== theme)
                 this.setData({ __theme__: theme });
         }
-        catch (e) { }
+        catch (e) { /* non-critical */ }
     },
     data: {
         __theme__: (typeof getApp === "function" ? (getApp().globalData?.settings?.uiTheme || "dark") : "dark"),
@@ -32,6 +32,11 @@ Page({
         phase: '', difficulty: '', mode: 'new',
         selectedThemes: [], showThemes: false,
         themeGroups: [],
+        // 搜索
+        showSearch: false,
+        searchQuery: '',
+        searchResults: [],
+        searching: false,
         // 做题
         attemptState: null,
         puzzleInfo: null,
@@ -241,6 +246,54 @@ Page({
         this.setData({ phase: '', difficulty: '', mode: 'new', selectedThemes: [], showThemes: false, themeGroups });
     },
     onToggleFilters() { this.setData({ showFilters: !this.data.showFilters }); },
+    // ===== 搜索 =====
+    onToggleSearch() {
+        this.setData({ showSearch: !this.data.showSearch, searchQuery: '', searchResults: [] });
+    },
+    onSearchInput(e) {
+        this.setData({ searchQuery: e.detail.value });
+    },
+    onSearchPuzzles() {
+        const query = this.data.searchQuery.trim();
+        if (!query) {
+            this.showMessage('请输入搜索关键词', 'error');
+            return;
+        }
+        this.setData({ searching: true });
+        api.searchChessGames(query, 'lichess', 5)
+            .then((res) => {
+            const results = res?.data?.results || res?.data || [];
+            this.setData({ searchResults: results, searching: false });
+            if (results.length === 0) {
+                this.showMessage('未找到相关棋谱', 'info');
+            }
+        })
+            .catch((err) => {
+            this.showMessage(err.message || '搜索失败', 'error');
+            this.setData({ searching: false });
+        });
+    },
+    onImportSearchResult(e) {
+        const idx = e.currentTarget.dataset.idx;
+        const result = this.data.searchResults[idx];
+        if (!result)
+            return;
+        const pgn = result.pgn || result.fen;
+        if (!pgn) {
+            this.showMessage('该结果没有可导入的棋谱数据', 'error');
+            return;
+        }
+        this.setData({ loading: true });
+        api.importChessRecords(pgn)
+            .then((res) => {
+            if (res?.data) {
+                this.showMessage(`导入成功 ${res.data.count} 局`, 'success');
+                this.setData({ searchResults: [], searchQuery: '', showSearch: false });
+            }
+        })
+            .catch((err) => this.showMessage(err.message || '导入失败', 'error'))
+            .finally(() => this.setData({ loading: false }));
+    },
     // ===== 做题 =====
     async onStartPuzzle() {
         this.setData({ loading: true, moveResult: null, message: '' });

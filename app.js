@@ -59,29 +59,29 @@ App({
         }
         // 初始化store
         store_1.store.init(this);
-        // 加载权限配置
+        // 加载权限配置（与网页版共享：分销/会员开关 + 菜单可见性）
         this.loadPermissions();
     },
-
     /** 加载权限配置：与网页版 AdminSettings 一致的全局开关 */
     loadPermissions() {
         const api = require('./utils/api');
         const user = this.globalData.user;
-        const isAdmin = user && user.role === 'admin';
+        const isAdmin = user?.role === 'admin';
         const promises = [
             // 公共接口（所有用户可调用）
-            api.isDistributionEnabled().catch(function() { return { enabled: true }; }),
-            api.isMembershipEnabled().catch(function() { return { enabled: true }; }),
-            api.isVideoGenerationEnabled().catch(function() { return { enabled: false }; }),
-            api.isAIAnalysisReportEnabled().catch(function() { return { enabled: false }; }),
+            api.isDistributionEnabled().catch(() => ({ enabled: true })),
+            api.isMembershipEnabled().catch(() => ({ enabled: true })),
+            api.isVideoGenerationEnabled().catch(() => ({ enabled: false })),
+            api.isAIAnalysisReportEnabled().catch(() => ({ enabled: false })),
         ];
         // 菜单可见性仅对管理员查询（非管理员调用 /api/admin/menus 会 403）
         if (isAdmin) {
-            promises.push(api.getAdminMenuVisibility().catch(function() { return null; }));
-        } else {
+            promises.push(api.getAdminMenuVisibility().catch(() => null));
+        }
+        else {
             promises.push(Promise.resolve(null));
         }
-        Promise.all(promises).then(function(results) {
+        Promise.all(promises).then((results) => {
             this.globalData.permissions = {
                 distributionEnabled: results[0]?.enabled !== false,
                 membershipEnabled: results[1]?.enabled !== false,
@@ -89,8 +89,10 @@ App({
                 aiAnalysisReportEnabled: results[3]?.enabled !== false,
                 menuVisibility: results[4] || null,
             };
+            // 通知所有页面权限已更新
             this.notifyPermissionsChanged();
-        }.bind(this)).catch(function() {
+        }).catch(() => {
+            // 全部失败时使用默认值
             this.globalData.permissions = {
                 distributionEnabled: true,
                 membershipEnabled: true,
@@ -98,9 +100,8 @@ App({
                 aiAnalysisReportEnabled: true,
                 menuVisibility: null,
             };
-        }.bind(this));
+        });
     },
-
     /** 通知所有页面权限配置已更新 */
     notifyPermissionsChanged() {
         const pages = getCurrentPages();

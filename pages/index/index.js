@@ -29,7 +29,7 @@ Page({
                 this.setData({ __theme__: theme });
             }
         }
-        catch (e) { }
+        catch (e) { /* non-critical */ }
     },
     data: {
         __theme__: (typeof getApp === "function" ? (getApp().globalData?.settings?.uiTheme || "dark") : "dark"),
@@ -626,7 +626,7 @@ Page({
                     });
                 }
             }
-            catch (e) { }
+            catch (e) { /* non-critical */ }
         }
         this.setData({
             explorationMode: 'manual',
@@ -656,7 +656,7 @@ Page({
                 steps.push({ fen: chess.fen(), san: move.san, uci: move.from + move.to });
             }
         }
-        catch (e) { }
+        catch (e) { /* non-critical */ }
         this.setData({
             explorationMode: 'auto',
             explorationSteps: steps,
@@ -713,7 +713,7 @@ Page({
                     });
                 }
             }
-            catch (e) { }
+            catch (e) { /* non-critical */ }
         }
         else {
             const piece = chess.get(square);
@@ -930,7 +930,7 @@ Page({
                 this._lightMoves.pop();
             }
         }
-        catch (e) { }
+        catch (e) { /* non-critical */ }
         // 更新最后一步箭头
         const hist = chess.history({ verbose: true });
         const last = hist.length > 0 ? hist[hist.length - 1] : null;

@@ -35,6 +35,28 @@
     <!-- 消息 -->
     <view wx:if="{{message}}" class="msg-bar {{'msg-' + msgType}}">{{message}}</view>
 
+<!-- 搜索栏 -->
+    <view class="search-bar" wx:if="{{showSearch || searchQuery}}">
+      <input class="search-input" placeholder="搜索棋谱/习题..." value="{{searchQuery}}" bindinput="onSearchInput" />
+      <view class="search-btn" catchtap="onSearchPuzzles">搜索</view>
+      <view class="search-close" catchtap="onToggleSearch">✕</view>
+    </view>
+    <view class="search-toggle" wx:if="{{!showSearch}}" catchtap="onToggleSearch">
+      <text>🔍 搜索棋谱</text>
+    </view>
+
+    <!-- 搜索结果 -->
+    <view wx:if="{{searchResults.length > 0}}" class="search-results">
+      <text class="search-results-title">搜索结果</text>
+      <view class="search-result-item" wx:for="{{searchResults}}" wx:key="id" wx:for-index="idx">
+        <view class="search-result-info">
+          <text class="search-result-players">{{item.white}} VS {{item.black}}</text>
+          <text class="search-result-meta">{{item.event || ''}} {{item.year || ''}} {{item.result || ''}}</text>
+        </view>
+        <view class="search-result-action" catchtap="onImportSearchResult" data-idx="{{idx}}">导入</view>
+      </view>
+    </view>
+
 <!-- 筛选面板 -->
     <view wx:if="{{showFilters}}" class="filter-panel glass">
       <view class="filter-header">

@@ -190,6 +190,217 @@
   display: block;
 }
 
+/* ===== 通用区块 ===== */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+  margin-top: 12rpx;
+}
+
+.section-title {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.section-sub {
+  font-size: 18rpx;
+  color: var(--text-muted);
+}
+
+.section-link {
+  font-size: 18rpx;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.loading-mini {
+  font-size: 18rpx;
+  color: var(--text-dim);
+  padding: 16rpx 0;
+  text-align: center;
+}
+
+/* ===== 训练中心 ===== */
+.training-center-section {
+  margin-bottom: 24rpx;
+}
+
+.tc-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12rpx;
+}
+
+.tc-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  padding: 20rpx 12rpx;
+  background: var(--bg-card);
+  border-radius: 16rpx;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.tc-card:active {
+  transform: scale(0.95);
+}
+
+.tc-icon {
+  font-size: 32rpx;
+}
+
+.tc-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rpx;
+}
+
+.tc-value {
+  font-size: 22rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.tc-label {
+  font-size: 16rpx;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ===== 周计划 ===== */
+.weekly-plan-section {
+  margin-bottom: 24rpx;
+}
+
+.weekly-plan-card {
+  background: var(--bg-card);
+  border-radius: 16rpx;
+  padding: 20rpx;
+  border: 1px solid var(--border-color);
+}
+
+.wp-progress {
+  height: 12rpx;
+  background: var(--bg-card-hover);
+  border-radius: 6rpx;
+  overflow: hidden;
+  margin-bottom: 8rpx;
+}
+
+.wp-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #6c63ff, #a855f7);
+  border-radius: 6rpx;
+  transition: width 1s;
+}
+
+.wp-progress-text {
+  font-size: 20rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: 16rpx;
+}
+
+.wp-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.wp-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.wp-item-name {
+  font-size: 18rpx;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.wp-item-bar {
+  height: 8rpx;
+  background: var(--bg-card-hover);
+  border-radius: 4rpx;
+  overflow: hidden;
+}
+
+.wp-item-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  border-radius: 4rpx;
+  transition: width 1s;
+}
+
+.wp-item-pct {
+  font-size: 16rpx;
+  color: var(--text-dim);
+  text-align: right;
+}
+
+/* ===== 竞赛状态 ===== */
+.competitions-section {
+  margin-bottom: 24rpx;
+}
+
+.comp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.comp-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 20rpx;
+  background: var(--bg-card);
+  border-radius: 14rpx;
+  border: 1px solid var(--border-color);
+}
+
+.comp-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.comp-name {
+  font-size: 22rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.comp-meta {
+  font-size: 16rpx;
+  color: var(--text-muted);
+  display: block;
+}
+
+.comp-action {
+  padding: 8rpx 18rpx;
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-radius: 10rpx;
+  font-size: 18rpx;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
 /* ===== 底部 ===== */
 .choice-footer {
   text-align: center;

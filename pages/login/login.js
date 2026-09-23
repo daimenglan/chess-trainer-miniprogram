@@ -16,7 +16,7 @@ Page({
                 this.setData({ __theme__: theme });
             }
         }
-        catch (e) { }
+        catch (e) { /* non-critical */ }
     },
     data: {
         __theme__: (typeof getApp === "function" ? (getApp().globalData?.settings?.uiTheme || "dark") : "dark"),
@@ -27,6 +27,7 @@ Page({
         password: '',
         confirmPassword: '',
         registerEmail: '', // 注册用邮箱，用于找回密码
+        refCode: '', // 推荐码
         loading: false,
         error: '',
         // 忘记密码相关
@@ -56,6 +57,7 @@ Page({
             password: '',
             confirmPassword: '',
             registerEmail: '',
+            refCode: '',
             email: '',
             code: '',
             newPassword: '',
@@ -73,6 +75,7 @@ Page({
             password: '',
             confirmPassword: '',
             registerEmail: '',
+            refCode: '',
             email: '',
             code: '',
             newPassword: '',
@@ -103,6 +106,9 @@ Page({
     },
     onRegisterEmailInput(e) {
         this.setData({ registerEmail: e.detail.value.trim(), error: '' });
+    },
+    onRefCodeInput(e) {
+        this.setData({ refCode: e.detail.value.trim(), error: '' });
     },
     // ---- 忘记密码表单输入 ----
     onEmailInput(e) {
@@ -182,7 +188,7 @@ Page({
     },
     /** 登录/注册提交 */
     onSubmit() {
-        const { username, password, registerEmail, mode } = this.data;
+        const { username, password, registerEmail, refCode, mode } = this.data;
         if (!username.trim()) {
             this.setData({ error: '请输入用户名' });
             return;
@@ -202,16 +208,20 @@ Page({
         this.setData({ loading: true, error: '' });
         const request = mode === 'login'
             ? api.login(username, password)
-            : api.register(username, password, this.data.registerEmail || undefined);
+            : api.register(username, password, this.data.registerEmail || undefined, refCode || undefined);
         request
             .then((res) => {
             if (res?.data?.token) {
                 app.setToken(res.data.token);
+                // 存储用户信息（含会员/教师状态，与网页版同步）
                 app.saveUser({
                     userId: res.data.userId,
                     username: res.data.username,
                     role: res.data.role,
                     avatarUrl: res.data.avatarUrl,
+                    membership: res.data.membership || null,
+                    teacherStatus: res.data.teacherStatus || null,
+                    lichessUsername: res.data.lichessUsername || null,
                 });
                 wx.showToast({ title: mode === 'login' ? '登录成功' : '注册成功', icon: 'success' });
                 wx.switchTab({ url: '/pages/choice/choice' });
@@ -225,6 +235,24 @@ Page({
         })
             .finally(() => {
             this.setData({ loading: false });
+        });
+    },
+    /** Lichess OAuth 登录 */
+    onLichessLogin() {
+        this.setData({ loading: true, error: '' });
+        api.lichessLogin()
+            .then((res) => {
+            const authUrl = res?.data?.url;
+            if (authUrl) {
+                // 在小程序中打开 Lichess OAuth 授权页面
+                wx.redirectTo({ url: `/pages/webview/webview?url=${encodeURIComponent(authUrl)}` });
+            }
+            else {
+                this.setData({ error: 'Lichess 登录服务暂时不可用', loading: false });
+            }
+        })
+            .catch((err) => {
+            this.setData({ error: err.message || 'Lichess 登录失败', loading: false });
         });
     },
     /** 开启倒计时 */

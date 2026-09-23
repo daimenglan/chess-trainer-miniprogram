@@ -84,7 +84,7 @@ function createSSERequest(url, data, callbacks) {
             baseUrl = app.globalData.baseUrl;
         }
     }
-    catch (e) { }
+    catch (e) { /* non-critical */ }
     const token = wx.getStorageSync('auth_token');
     const state = { buffer: '', done: false };
     let finished = false;
@@ -158,7 +158,7 @@ function createSSERequest(url, data, callbacks) {
             try {
                 requestTask && requestTask.abort();
             }
-            catch (e) { }
+            catch (e) { /* non-critical */ }
             onDone && onDone();
         },
     };

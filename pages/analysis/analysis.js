@@ -27,7 +27,7 @@ Page({
                 this.setData({ __theme__: theme });
             }
         }
-        catch (e) { }
+        catch (e) { /* non-critical */ }
     },
     data: {
         __theme__: (typeof getApp === "function" ? (getApp().globalData?.settings?.uiTheme || "dark") : "dark"),
@@ -122,7 +122,7 @@ Page({
             try {
                 game = JSON.parse(decodeURIComponent(options.game));
             }
-            catch (e) { }
+            catch (e) { /* non-critical */ }
         }
         if (game) {
             try {
@@ -232,7 +232,7 @@ Page({
             this.updateBoardState(idx);
             this.triggerAnalysis();
         }
-        catch (e) { }
+        catch (e) { /* non-critical */ }
     },
     goToEnd() {
         if (this.data.moves.length === 0)
@@ -1152,7 +1152,7 @@ Page({
                 steps.push({ fen: chess.fen(), san: move.san, uci: move.from + move.to });
             }
         }
-        catch (e) { }
+        catch (e) { /* non-critical */ }
         this.setData({
             explorationMode: 'auto',
             exploreSteps: steps,
@@ -1180,7 +1180,7 @@ Page({
                     steps.push({ fen: chess.fen(), san: move.san, uci: move.from + move.to });
                 }
             }
-            catch (e) { }
+            catch (e) { /* non-critical */ }
         }
         this.setData({
             explorationMode: 'manual',
@@ -1238,7 +1238,7 @@ Page({
                     });
                 }
             }
-            catch (e) { }
+            catch (e) { /* non-critical */ }
         }
         else {
             // 点击其他棋子切换选中
@@ -1391,14 +1391,15 @@ Page({
     /** 打开分享弹窗 */
     onShowShare() {
         this.closeMoreMenu();
+        // 生成分享链接
         const gameId = this.data.gameId;
         const recordId = this.data.recordId;
         let link = '';
         if (gameId) {
-            link = (api.getBaseUrl?.() || '') + '/analysis?gameId=' + gameId;
+            link = `${api.getBaseUrl?.() || ''}/analysis?gameId=${gameId}`;
         }
         else if (recordId) {
-            link = (api.getBaseUrl?.() || '') + '/analysis?recordId=' + recordId;
+            link = `${api.getBaseUrl?.() || ''}/analysis?recordId=${recordId}`;
         }
         else {
             link = '当前对局（仅本地可查看）';

@@ -41,7 +41,7 @@ Page({
                 this.setData({ __theme__: theme });
             }
         }
-        catch (e) { }
+        catch (e) { /* non-critical */ }
     },
     data: {
         __theme__: (typeof getApp === "function" ? (getApp().globalData?.settings?.uiTheme || "dark") : "dark"),
@@ -111,7 +111,7 @@ Page({
         try {
             this._syncTheme();
         }
-        catch (e) { }
+        catch (e) { /* non-critical */ }
         const app = getAppSafe();
         if (app && !app.globalData.token) {
             wx.navigateTo({ url: '/pages/login/login' });
@@ -712,7 +712,7 @@ Page({
                             lastTo = data.opponentMoveUci.slice(2, 4);
                         }
                     }
-                    catch (e) { }
+                    catch (e) { /* non-critical */ }
                     this.setData({
                         attempt: {
                             ...this.data.attempt,
@@ -757,7 +757,7 @@ Page({
                         lastTo = data.opponentMoveUci.slice(2, 4);
                     }
                 }
-                catch (e) { }
+                catch (e) { /* non-critical */ }
                 this.setData({
                     attempt: {
                         ...this.data.attempt,

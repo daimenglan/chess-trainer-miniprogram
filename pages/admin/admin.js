@@ -26,7 +26,7 @@ Page({
                 this.setData({ __theme__: theme });
             }
         }
-        catch (e) { }
+        catch (e) { /* non-critical */ }
     },
     data: {
         __theme__: (typeof getApp === 'function' ? (getApp().globalData?.settings?.uiTheme || 'dark') : 'dark'),
@@ -119,5 +119,44 @@ Page({
     },
     goUsers() {
         wx.navigateTo({ url: '/pages/admin-users/admin-users' });
+    },
+    goAiBots() {
+        wx.navigateTo({ url: '/pages/admin/admin-ai-bots/admin-ai-bots' });
+    },
+    goChessGames() {
+        wx.navigateTo({ url: '/pages/admin/admin-chess-games/admin-chess-games' });
+    },
+    goCompetitions() {
+        wx.navigateTo({ url: '/pages/admin/admin-competitions/admin-competitions' });
+    },
+    goTeachers() {
+        wx.navigateTo({ url: '/pages/admin/admin-teachers/admin-teachers' });
+    },
+    goKnowledge() {
+        wx.navigateTo({ url: '/pages/admin/admin-knowledge/admin-knowledge' });
+    },
+    goPuzzles() {
+        wx.navigateTo({ url: '/pages/admin/admin-puzzles/admin-puzzles' });
+    },
+    goSurveys() {
+        wx.navigateTo({ url: '/pages/admin/admin-surveys/admin-surveys' });
+    },
+    goFeedback() {
+        wx.navigateTo({ url: '/pages/admin/admin-feedback/admin-feedback' });
+    },
+    goDistribution() {
+        wx.navigateTo({ url: '/pages/admin/admin-distribution/admin-distribution' });
+    },
+    goDragonCoin() {
+        wx.navigateTo({ url: '/pages/admin/admin-dragon-coin/admin-dragon-coin' });
+    },
+    goMembership() {
+        wx.navigateTo({ url: '/pages/admin/admin-membership/admin-membership' });
+    },
+    goMenu() {
+        wx.navigateTo({ url: '/pages/admin/admin-menu/admin-menu' });
+    },
+    goSmtp() {
+        wx.navigateTo({ url: '/pages/admin/admin-smtp/admin-smtp' });
     },
 });

@@ -22,6 +22,12 @@ exports.keyedList = keyedList;
 exports.navigateBackSafe = navigateBackSafe;
 exports.parseJwtPayload = parseJwtPayload;
 exports.isAdminUser = isAdminUser;
+exports.isTeacherUser = isTeacherUser;
+exports.isTeacher = isTeacher;
+exports.isDistributionEnabled = isDistributionEnabled;
+exports.isMembershipEnabled = isMembershipEnabled;
+exports.getMenuVisibility = getMenuVisibility;
+exports.isMenuItemVisible = isMenuItemVisible;
 /**
  * 格式化时间（秒 → MM:SS）
  */
@@ -267,83 +273,95 @@ function isAdminUser() {
     }
     return false;
 }
-
 /**
  * 判断当前用户是否为教师（与网页版逻辑一致：admin 或 teacherStatus === 'approved'）
  */
 function isTeacherUser(role, teacherStatus) {
     return role === 'admin' || teacherStatus === 'approved';
 }
-exports.isTeacherUser = isTeacherUser;
-
 function isTeacher() {
     let user = null;
     try {
         const app = typeof getApp === 'function' ? getApp() : null;
         user = (app && app.globalData && app.globalData.user) || null;
-    } catch { }
-    if (!user) {
-        try { user = wx.getStorageSync('user_info') || null; } catch { }
     }
-    if (!user) return false;
+    catch { }
+    if (!user) {
+        try {
+            user = wx.getStorageSync('user_info') || null;
+        }
+        catch { }
+    }
+    if (!user)
+        return false;
     return isTeacherUser(user.role, user.teacherStatus);
 }
-exports.isTeacher = isTeacher;
-
 /**
- * 从全局配置获取分销系统是否启用
+ * 从全局配置获取分销系统是否启用（与网页版 distributionEnabled 一致）
+ * 启动时由 app.ts 异步加载并写入 globalData.permissions
  */
 function isDistributionEnabled() {
     try {
         const app = typeof getApp === 'function' ? getApp() : null;
         const perms = (app && app.globalData && app.globalData.permissions) || null;
-        if (perms && typeof perms.distributionEnabled === 'boolean') return perms.distributionEnabled;
-    } catch { }
+        if (perms && typeof perms.distributionEnabled === 'boolean')
+            return perms.distributionEnabled;
+    }
+    catch { }
+    // 默认开启，与网页版失败时的回退一致
     return true;
 }
-exports.isDistributionEnabled = isDistributionEnabled;
-
 /**
- * 从全局配置获取会员系统是否启用
+ * 从全局配置获取会员系统是否启用（与网页版 membershipEnabled 一致）
  */
 function isMembershipEnabled() {
     try {
         const app = typeof getApp === 'function' ? getApp() : null;
         const perms = (app && app.globalData && app.globalData.permissions) || null;
-        if (perms && typeof perms.membershipEnabled === 'boolean') return perms.membershipEnabled;
-    } catch { }
+        if (perms && typeof perms.membershipEnabled === 'boolean')
+            return perms.membershipEnabled;
+    }
+    catch { }
+    // 默认开启
     return true;
 }
-exports.isMembershipEnabled = isMembershipEnabled;
-
 /**
- * 获取菜单可见性配置
+ * 获取菜单可见性配置（与网页版 getAdminMenuVisibility 一致）
+ * 返回 null 表示使用默认全部可见
  */
 function getMenuVisibility() {
     try {
         const app = typeof getApp === 'function' ? getApp() : null;
         return (app && app.globalData && app.globalData.permissions && app.globalData.permissions.menuVisibility) || null;
-    } catch { }
+    }
+    catch { }
     return null;
 }
-exports.getMenuVisibility = getMenuVisibility;
-
 /**
- * 检查指定菜单路径对当前用户是否可见
+ * 检查指定菜单路径对当前用户是否可见（与网页版 isMenuItemVisible 逻辑一致）
+ * - 无菜单配置 → 全部可见
+ * - 菜单项未隐藏 → 可见
+ * - 菜单项已隐藏 → 管理员始终可见；普通用户看白名单
  */
 function isMenuItemVisible(menuPath) {
     const visibility = getMenuVisibility();
-    if (!visibility) return true;
+    if (!visibility)
+        return true;
     const items = visibility.items || [];
-    const config = items.find(function(v) { return v.path === menuPath; });
-    if (!config || !config.hidden) return true;
-    if (isAdminUser()) return true;
+    const config = items.find((v) => v.path === menuPath);
+    if (!config || !config.hidden)
+        return true;
+    // 管理员始终可见
+    if (isAdminUser())
+        return true;
+    // 普通用户检查白名单
     let user = null;
     try {
         const app = typeof getApp === 'function' ? getApp() : null;
         user = (app && app.globalData && app.globalData.user) || null;
-    } catch { }
-    if (!user) return false;
+    }
+    catch { }
+    if (!user)
+        return false;
     return (config.visibleToUserIds || []).includes(user.userId);
 }
-exports.isMenuItemVisible = isMenuItemVisible;

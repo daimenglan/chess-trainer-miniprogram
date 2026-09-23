@@ -32,6 +32,11 @@ Page({
     phase: '', difficulty: '', mode: 'new',
     selectedThemes: [] as string[], showThemes: false,
     themeGroups: [] as { category: string; items: { name: string; description: string }[] }[],
+    // 搜索
+    showSearch: false,
+    searchQuery: '',
+    searchResults: [] as any[],
+    searching: false,
     // 做题
     attemptState: null as any,
     puzzleInfo: null as any,
@@ -245,6 +250,58 @@ Page({
     this.setData({ phase: '', difficulty: '', mode: 'new', selectedThemes: [], showThemes: false, themeGroups });
   },
   onToggleFilters() { this.setData({ showFilters: !this.data.showFilters }); },
+
+  // ===== 搜索 =====
+
+  onToggleSearch() {
+    this.setData({ showSearch: !this.data.showSearch, searchQuery: '', searchResults: [] });
+  },
+
+  onSearchInput(e: any) {
+    this.setData({ searchQuery: e.detail.value });
+  },
+
+  onSearchPuzzles() {
+    const query = this.data.searchQuery.trim();
+    if (!query) {
+      this.showMessage('请输入搜索关键词', 'error');
+      return;
+    }
+    this.setData({ searching: true });
+    api.searchChessGames(query, 'lichess', 5)
+      .then((res: any) => {
+        const results = res?.data?.results || res?.data || [];
+        this.setData({ searchResults: results, searching: false });
+        if (results.length === 0) {
+          this.showMessage('未找到相关棋谱', 'info');
+        }
+      })
+      .catch((err: any) => {
+        this.showMessage(err.message || '搜索失败', 'error');
+        this.setData({ searching: false });
+      });
+  },
+
+  onImportSearchResult(e: any) {
+    const idx = e.currentTarget.dataset.idx;
+    const result = this.data.searchResults[idx];
+    if (!result) return;
+    const pgn = result.pgn || result.fen;
+    if (!pgn) {
+      this.showMessage('该结果没有可导入的棋谱数据', 'error');
+      return;
+    }
+    this.setData({ loading: true });
+    api.importChessRecords(pgn)
+      .then((res: any) => {
+        if (res?.data) {
+          this.showMessage(`导入成功 ${res.data.count} 局`, 'success');
+          this.setData({ searchResults: [], searchQuery: '', showSearch: false });
+        }
+      })
+      .catch((err: any) => this.showMessage(err.message || '导入失败', 'error'))
+      .finally(() => this.setData({ loading: false }));
+  },
 
   // ===== 做题 =====
   async onStartPuzzle() {

@@ -16,7 +16,7 @@ Page({
                 this.setData({ __theme__: theme });
             }
         }
-        catch (e) { }
+        catch (e) { /* non-critical */ }
     },
     data: {
         __theme__: (typeof getApp === "function" ? (getApp().globalData?.settings?.uiTheme || "dark") : "dark"),
@@ -50,7 +50,7 @@ Page({
             try {
                 record = JSON.parse(decodeURIComponent(options.record));
             }
-            catch (e) { }
+            catch (e) { /* non-critical */ }
         }
         if (record) {
             this.setData({ record });
@@ -145,7 +145,7 @@ Page({
                 lastMoveTo: move.to,
             });
         }
-        catch (e) { }
+        catch (e) { /* non-critical */ }
     },
     goToEnd() {
         const moves = this.data.moves;

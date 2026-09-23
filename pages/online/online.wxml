@@ -1,12 +1,12 @@
 <view class="online-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
   <!-- ===== 空闲/摆桌/匹配状态 ===== -->
   <block wx:if="{{status === 'idle' || status === 'tabling' || status === 'matching'}}">
-    
+
     <!-- 标题区域 -->
     <view class="match-container">
       <view class="match-title">在线对弈</view>
       <view class="match-desc">摆下棋桌等待挑战，或主动匹配随机对手</view>
-      
+
       <!-- 状态提示 -->
       <view wx:if="{{statusMessage}}" class="status-toast {{statusToastType}}">
         <text>{{statusMessage}}</text>
@@ -55,9 +55,36 @@
       <view class="lobby-header">
         <text class="lobby-title">🏆 棋桌大厅</text>
         <text class="lobby-count">{{activeTables.length}} 张棋桌</text>
+        <view class="lobby-history-btn" catchtap="onToggleHistory">
+          📋 历史记录
+        </view>
       </view>
 
-      <scroll-view scroll-y class="lobby-scroll">
+      <!-- 历史面板 -->
+      <view wx:if="{{showHistory}}" class="history-panel">
+        <view wx:if="{{historyLoading}}" class="loading-mini">加载中...</view>
+        <view wx:else class="history-list">
+          <view wx:if="{{gameHistory.length === 0}}" class="history-empty">
+            <text>暂无历史对局</text>
+          </view>
+          <view class="history-item" wx:for="{{gameHistory}}" wx:key="gameId" wx:for-index="idx">
+            <view class="history-players">
+              <text class="history-name">{{item.whiteName}}</text>
+              <text class="history-vs">VS</text>
+              <text class="history-name">{{item.blackName}}</text>
+            </view>
+            <view class="history-meta">
+              <text class="history-result {{item.resultLabel === '白胜' ? 'res-win' : item.resultLabel === '黑胜' ? 'res-loss' : 'res-draw'}}">{{item.resultLabel}}</text>
+              <text wx:if="{{item.dateFormatted}}" class="history-date">{{item.dateFormatted}}</text>
+            </view>
+            <view class="history-actions">
+              <view class="history-replay-btn" catchtap="onReplayGame" data-idx="{{idx}}">▶ 回放</view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <scroll-view wx:if="{{!showHistory}}" scroll-y class="lobby-scroll">
         <view wx:if="{{activeTables.length === 0}}" class="lobby-empty">
           <text class="lobby-empty-icon">🪑</text>
           <text class="lobby-empty-text">暂无棋桌，快去摆下一张吧</text>
@@ -72,11 +99,15 @@
             <view class="table-meta-row">
               <text class="table-meta-time">⏱ {{formatTableTime(item)}}</text>
               <text class="table-meta-wait">🕐 {{formatWaitingTime(item.createdAt)}}</text>
+              <text wx:if="{{getSpectatorCount(item) > 0}}" class="table-meta-spec">👁 {{getSpectatorCount(item)}}</text>
             </view>
           </view>
           <view class="table-card-right">
             <view class="table-join-btn" catchtap="onChallengeTable" data-tableid="{{item.tableId}}">
               挑战
+            </view>
+            <view class="table-spectate-btn" catchtap="onSpectateTable" data-tableid="{{item.tableId}}">
+              观战
             </view>
           </view>
         </view>
@@ -165,6 +196,35 @@
     </view>
   </block>
 
+  <!-- ===== 回放模式 ===== -->
+  <block wx:if="{{status === 'replay'}}">
+    <view class="replay-bar-inline">
+      <view class="replay-btn" catchtap="replayPrev">◀ 上一步</view>
+      <text class="replay-info">{{replayIndex + 1}} / {{replayTotal}}</text>
+      <view class="replay-btn" catchtap="replayNext">下一步 ▶</view>
+      <view class="replay-btn" catchtap="exitReplay">✕ 退出</view>
+    </view>
+
+    <view class="online-board-area">
+      <chess-board
+        fen="{{fen}}"
+        isCheck="{{isCheck}}"
+        interactive="false"
+        flipped="{{flipped}}"
+        selectedSquare=""
+        legalMoves="[]"
+        lastMoveFrom=""
+        lastMoveTo=""
+        boardColorPreset="blueWhite">
+      </chess-board>
+    </view>
+
+    <view class="replay-info-bar">
+      <text class="replay-players">{{opponentName}} VS {{myName}}</text>
+      <text class="replay-progress">回放进度：{{replayIndex}} / {{replayTotal}}</text>
+    </view>
+  </block>
+
   <!-- ===== 对局结束弹窗 ===== -->
   <view wx:if="{{showGameOver}}" class="overlay">
     <view class="gameover-dialog">
@@ -205,5 +265,5 @@
   <!-- 升变弹窗 -->
   <promotion-dialog show="{{showPromotion}}" color="{{myColor}}"
                     bind:select="onPromotionSelect" bind:cancel="onPromotionCancel"></promotion-dialog>
-  
+
 </view>

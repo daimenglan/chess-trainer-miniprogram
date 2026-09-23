@@ -169,14 +169,15 @@ Component({
                 }).catch((err) => {
                     this.setData({ openingError: err?.message || '加载失败', openingLoading: false });
                 });
-            } else {
+            }
+            else {
                 this.setData({ openingLoading: false });
             }
         },
         onCloseOpening() {
             this.setData({ showOpeningModal: false });
         },
-        stopPropagation() {},
+        stopPropagation() { },
         /**
          * 格式化评分
          */
