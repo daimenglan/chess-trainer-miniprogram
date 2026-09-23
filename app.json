@@ -3,6 +3,7 @@
     "pages/choice/choice",
     "pages/index/index",
     "pages/login/login",
+    "pages/webview/webview",
     "pages/online/online",
     "pages/records/records",
     "pages/record-detail/record-detail",
