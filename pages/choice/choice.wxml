@@ -36,7 +36,7 @@
         <view class="tc-card" catchtap="onGoWrongBook">
           <text class="tc-icon">❌</text>
           <view class="tc-body">
-            <text class="tc-value">{{mistakeSummary?.unresolved || 0}}</text>
+            <text class="tc-value">{{(mistakeSummary && mistakeSummary.unresolved) || 0}}</text>
             <text class="tc-label">待解决错题</text>
           </view>
         </view>
@@ -54,7 +54,7 @@
     <view class="weekly-plan-section" wx:if="{{weeklyPlan || weeklyPlanLoading}}">
       <view class="section-header">
         <text class="section-title">📅 本周计划</text>
-        <text class="section-sub">{{weeklyPlan?.weekStart}} - {{weeklyPlan?.weekEnd}}</text>
+        <text class="section-sub">{{weeklyPlan && weeklyPlan.weekStart}} - {{weeklyPlan && weeklyPlan.weekEnd}}</text>
       </view>
 
       <view wx:if="{{weeklyPlanLoading}}" class="loading-mini">加载中...</view>
