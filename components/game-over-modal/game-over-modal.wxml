@@ -5,8 +5,11 @@
     <view class="subtitle">{{subtitle}}</view>
     <view class="result-text">{{resultText}}</view>
     <view class="actions">
-      <view class="action-btn" catchtap="onUndo">↩ 悔棋复盘</view>
-      <view class="action-btn action-primary" catchtap="onNewGame">再来一局</view>
+      <view class="actions-row">
+        <view class="action-btn" catchtap="onUndo">↩ 悔棋复盘</view>
+        <view class="action-btn" catchtap="onReview">🔍 立即复盘</view>
+      </view>
+      <view class="action-btn action-primary action-full" catchtap="onNewGame">再来一局</view>
     </view>
   </view>
 </view>

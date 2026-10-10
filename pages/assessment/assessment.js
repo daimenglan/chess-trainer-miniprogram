@@ -7,6 +7,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
  * 根据问卷回答结果评估出题难度，根据做题测评结果智能调整 AI 对弈引擎难度。
  */
 const api = require('../../utils/api');
+const { trackEvent } = require('../../utils/analytics');
 function getAppSafe() {
     try {
         return typeof getApp === 'function' ? getApp() : null;
@@ -236,6 +237,8 @@ Page({
             this.onReloadQuestionnaire();
             return;
         }
+        // 埋点：开始定级测评（问卷环节）
+        trackEvent('trial_start', { flow: 'questionnaire' });
         this.setData({
             questionIndex: 0,
             stage: 'questionnaire',
@@ -333,6 +336,8 @@ Page({
                 const res = await api.startAssessment(this.data.answers, 'full');
                 created = res?.data || res;
             }
+            // 埋点：问卷提交成功
+            trackEvent('questionnaire_submit');
             this.setData({
                 session: created,
                 puzzleResults: [],
@@ -510,6 +515,8 @@ Page({
             const gamesToAnalyze = (this.data.recentGames || []).filter((g) => this.data.selectedGameIds.indexOf(g.gameId) !== -1);
             this.setData({ multiGameTotal: gamesToAnalyze.length });
             const allResults = [];
+            // 埋点：批量分析选中的对局
+            trackEvent('assessment_batch_analyze', { count: gamesToAnalyze.length });
             for (let gi = 0; gi < gamesToAnalyze.length; gi++) {
                 const game = gamesToAnalyze[gi];
                 this.setData({ multiGameCurrent: gi + 1 });

@@ -1,4 +1,5 @@
 .online-page {
+  position: relative; /* 观战视图的 ⚙️ 下拉面板按页面定位（同 index 页 .game-page 约定） */
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -90,7 +91,7 @@
   margin-left: 20rpx;
 }
 
-/* ===== 观战人数 ===== */
+/* ===== 观战人数（本人对局视图用；观战视图见文件末尾 .spec-* ） ===== */
 .spectator-bar {
   display: flex;
   align-items: center;
@@ -168,24 +169,55 @@
   50% { opacity: 0.3; }
 }
 
-/* ===== 棋盘区域 ===== */
-.online-board-area {
-  width: 100%;
-  max-width: 700rpx;
-  margin: 0 auto;
+/* ===== 竖屏模式：玩家信息卡片（同网页版 glass 卡片） ===== */
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16rpx;
+  padding: 14rpx 28rpx;
+  transition: all 0.2s;
 }
 
-.online-board-area chess-board {
-  width: 100%;
+.player-info.active-turn {
+  background: rgba(108, 99, 255, 0.18);
+  border-color: rgba(108, 99, 255, 0.45);
+  box-shadow: 0 0 20rpx rgba(108, 99, 255, 0.15);
 }
 
-/* ===== 操作按钮 ===== */
+/* ===== 竖屏模式：底部操作栏（同网页版 shrink-0 bg-white/90） ===== */
 .action-bar {
   display: flex;
   justify-content: center;
   gap: 16rpx;
   padding: 20rpx 0;
   flex-wrap: wrap;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ===== 竖屏模式：棋盘区域自适应（同网页版 flex-1 min-h-0） ===== */
+.online-board-area {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 700rpx;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.online-board-area chess-board {
+  width: 100%;
+  height: 100%;
 }
 
 .action-btn {
@@ -684,4 +716,977 @@
   font-size: 26rpx;
   color: var(--text-primary);
   font-weight: 600;
+}
+
+
+/* ===== 连接断开提示 ===== */
+.conn-warning {
+  margin: 0 0 16rpx;
+  padding: 14rpx 20rpx;
+  border-radius: 12rpx;
+  font-size: 24rpx;
+  text-align: center;
+  color: var(--warning);
+  background: var(--warning-bg);
+}
+
+/* ===== 标题区域 ===== */
+.match-hero {
+  font-size: 64rpx;
+  line-height: 1;
+}
+
+/* ===== 模式切换（随机匹配 / 好友对弈 / 棋桌大厅） ===== */
+.mode-toggle {
+  display: flex;
+  gap: 6rpx;
+  padding: 6rpx;
+  width: 100%;
+  max-width: 560rpx;
+  background: var(--bg-card);
+  border-radius: 16rpx;
+  box-sizing: border-box;
+}
+
+.mode-tab {
+  flex: 1;
+  text-align: center;
+  padding: 18rpx 4rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  color: var(--text-muted);
+  border-radius: 12rpx;
+  transition: all 0.2s;
+  /* 三个页签并列，禁止换行以免撑高 */
+  white-space: nowrap;
+}
+
+.mode-tab-active {
+  color: var(--accent);
+  background: var(--bg-card-strong);
+  font-weight: 600;
+}
+
+/* ===== 主匹配按钮 ===== */
+.match-main-btn {
+  width: 100%;
+  max-width: 560rpx;
+  text-align: center;
+  padding: 32rpx 0;
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent-gradient);
+  border-radius: 22rpx;
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
+  transition: transform 0.15s;
+}
+
+.match-main-btn:active {
+  transform: scale(0.97);
+}
+
+.match-main-btn-disabled {
+  opacity: 0.55;
+}
+
+.conn-hint {
+  font-size: 22rpx;
+  color: var(--text-dim);
+}
+
+.open-table-btn {
+  font-size: 26rpx;
+  color: var(--text-secondary);
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-color);
+  border-radius: 16rpx;
+  padding: 20rpx 44rpx;
+}
+
+.open-table-btn:active {
+  opacity: 0.7;
+}
+
+.match-sub-hint {
+  font-size: 22rpx;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 0 40rpx;
+}
+
+/* ===== 时限预设 ===== */
+.time-preset-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.time-preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12rpx;
+}
+
+.time-chip {
+  padding: 12rpx 22rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  border-radius: 12rpx;
+  color: var(--text-muted);
+  background: var(--bg-card-hover);
+  transition: all 0.2s;
+}
+
+.time-chip-active {
+  color: #fff;
+  background: #7a5540;
+}
+
+.time-chip-sm {
+  padding: 8rpx 16rpx;
+  font-size: 22rpx;
+}
+
+.lobby-time-row {
+  margin-bottom: 16rpx;
+}
+
+/* ===== Lichess 账号资料卡片 ===== */
+.lichess-card {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  width: 100%;
+  max-width: 560rpx;
+  padding: 22rpx;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 18rpx;
+  box-sizing: border-box;
+}
+
+.lichess-avatar {
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--bg-card-hover);
+}
+
+.lichess-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34rpx;
+}
+
+.lichess-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.lichess-card-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.lichess-card-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.lichess-card-title {
+  font-size: 20rpx;
+  font-weight: 500;
+  color: var(--purple);
+  background: var(--purple-bg);
+  border-radius: 6rpx;
+  padding: 2rpx 8rpx;
+}
+
+.lichess-card-tag {
+  margin-left: auto;
+  font-size: 18rpx;
+  color: var(--text-dim);
+}
+
+.lichess-card-perf {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: var(--text-muted);
+}
+
+.lichess-card-games {
+  color: var(--text-dim);
+}
+
+/* ===== Lichess 绑定引导 ===== */
+.lichess-bind-card {
+  width: 100%;
+  max-width: 560rpx;
+  padding: 28rpx 24rpx;
+  text-align: center;
+  background: rgba(122, 85, 64, 0.06);
+  border: 1px dashed rgba(122, 85, 64, 0.45);
+  border-radius: 18rpx;
+  box-sizing: border-box;
+}
+
+.lichess-bind-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #b88a6e;
+  margin-bottom: 12rpx;
+}
+
+.lichess-bind-desc {
+  font-size: 22rpx;
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin-bottom: 22rpx;
+}
+
+.lichess-bind-btn {
+  display: inline-block;
+  padding: 16rpx 48rpx;
+  font-size: 26rpx;
+  font-weight: 500;
+  color: #fff;
+  background: #5a3e2b;
+  border-radius: 999rpx;
+}
+
+.lichess-bind-btn:active {
+  opacity: 0.8;
+}
+
+/* ===== Lichess 在线棋手列表 ===== */
+.lichess-users-section {
+  width: 100%;
+  max-width: 560rpx;
+  margin-top: 24rpx;
+}
+
+.lichess-users-title {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 14rpx;
+}
+
+.lichess-users-empty {
+  font-size: 22rpx;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 24rpx 0;
+}
+
+.lichess-user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.lichess-user-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 18rpx 20rpx;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16rpx;
+}
+
+.lichess-user-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.lichess-user-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.lichess-user-name {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.lichess-user-title {
+  font-size: 18rpx;
+  color: var(--purple);
+  background: var(--purple-bg);
+  border-radius: 6rpx;
+  padding: 2rpx 8rpx;
+}
+
+.lichess-user-meta {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin-top: 6rpx;
+  font-size: 20rpx;
+  color: var(--text-muted);
+}
+
+.online-dot-on {
+  color: var(--success);
+}
+
+.online-dot-off {
+  color: var(--text-dim);
+}
+
+.lichess-invite-btn {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  color: #fff;
+  background: #7a5540;
+  border-radius: 12rpx;
+  padding: 12rpx 20rpx;
+}
+
+.lichess-invite-btn:active {
+  opacity: 0.8;
+}
+
+.invite-btn-disabled {
+  opacity: 0.4;
+}
+
+/* ===== 邀请状态 / 错误条 ===== */
+.invite-status-bar,
+.invite-error-bar {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 14rpx 20rpx;
+  border-radius: 14rpx;
+  margin-bottom: 14rpx;
+}
+
+.invite-status-bar {
+  background: var(--warning-bg);
+  border: 1px solid rgba(234, 179, 8, 0.25);
+}
+
+.invite-status-text {
+  flex: 1;
+  font-size: 22rpx;
+  color: var(--warning);
+  line-height: 1.5;
+}
+
+.invite-cancel-btn {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  color: var(--text-secondary);
+  background: var(--bg-card-hover);
+  border-radius: 10rpx;
+  padding: 8rpx 18rpx;
+}
+
+.invite-error-bar {
+  background: var(--danger-bg);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.invite-error-text {
+  flex: 1;
+  font-size: 22rpx;
+  color: var(--danger);
+  line-height: 1.5;
+}
+
+.invite-error-close {
+  flex-shrink: 0;
+  font-size: 24rpx;
+  color: var(--danger);
+  padding: 0 8rpx;
+}
+
+/* ===== 观战相关（旧版横幅已移除，改用 .spec-* 观战视图） ===== */
+
+.lichess-game-badge {
+  text-align: center;
+  font-size: 20rpx;
+  color: #b88a6e;
+  padding: 6rpx 0;
+}
+
+.player-rating {
+  font-size: 20rpx;
+  color: var(--text-dim);
+}
+
+/* ===== 棋桌卡片补充 ===== */
+.table-badge-playing {
+  font-size: 18rpx;
+  color: var(--info);
+  background: var(--info-bg);
+  border-radius: 8rpx;
+  padding: 2rpx 10rpx;
+}
+
+.table-badge-auto {
+  font-size: 18rpx;
+  color: var(--purple);
+  background: var(--purple-bg);
+  border-radius: 8rpx;
+  padding: 2rpx 10rpx;
+}
+
+.table-badge-matching {
+  font-size: 18rpx;
+  color: var(--warning);
+  background: var(--warning-bg);
+  border-radius: 8rpx;
+  padding: 2rpx 10rpx;
+}
+
+/* ===== Lichess 挑战弹窗 ===== */
+.challenge-item {
+  width: 100%;
+  padding: 16rpx 0;
+  border-bottom: 1px solid var(--border-color-light);
+}
+
+.challenge-item:last-child {
+  border-bottom: none;
+}
+
+/* ===== 棋桌大厅：历史记录面板 ===== */
+.lobby-history-btn {
+  margin-left: auto;
+  font-size: 22rpx;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border-radius: 10rpx;
+  padding: 8rpx 18rpx;
+}
+
+.lobby-history-btn:active {
+  opacity: 0.7;
+}
+
+.loading-mini {
+  font-size: 22rpx;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 24rpx 0;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.history-empty {
+  font-size: 22rpx;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 24rpx 0;
+}
+
+.history-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+  padding: 18rpx 20rpx;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14rpx;
+}
+
+.history-players {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.history-name {
+  font-size: 24rpx;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.history-vs {
+  font-size: 20rpx;
+  color: var(--text-dim);
+}
+
+.history-meta {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.history-result {
+  font-size: 20rpx;
+  border-radius: 8rpx;
+  padding: 2rpx 12rpx;
+}
+
+.res-win {
+  color: var(--success);
+  background: var(--success-bg);
+}
+
+.res-loss {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.res-draw {
+  color: var(--text-muted);
+  background: var(--bg-card-hover);
+}
+
+.history-date {
+  font-size: 20rpx;
+  color: var(--text-dim);
+}
+
+.history-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.history-replay-btn {
+  font-size: 22rpx;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border-radius: 10rpx;
+  padding: 8rpx 20rpx;
+}
+
+.history-replay-btn:active {
+  opacity: 0.7;
+}
+
+/* ===== 棋桌卡片：观战按钮 / 观战人数 ===== */
+.table-spectate-btn {
+  font-size: 22rpx;
+  color: var(--info);
+  background: var(--info-bg);
+  border-radius: 12rpx;
+  padding: 12rpx 22rpx;
+}
+
+.table-spectate-btn:active {
+  opacity: 0.7;
+}
+
+.table-meta-spec {
+  font-size: 20rpx;
+  color: var(--text-muted);
+}
+
+/* ===== 历史回放模式 ===== */
+.replay-bar-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  padding: 16rpx 0;
+}
+
+.replay-btn {
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-color);
+  border-radius: 12rpx;
+  padding: 12rpx 22rpx;
+}
+
+.replay-btn:active {
+  opacity: 0.7;
+}
+
+.replay-info {
+  font-size: 24rpx;
+  color: var(--text-muted);
+  min-width: 120rpx;
+  text-align: center;
+}
+
+.replay-info-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  padding: 20rpx 0;
+}
+
+.replay-players {
+  font-size: 24rpx;
+  color: var(--text-secondary);
+}
+
+.replay-progress {
+  font-size: 20rpx;
+  color: var(--text-dim);
+}
+
+.history-panel {
+  padding: 16rpx 0;
+}
+
+/* ============================================================
+   ===== 观战视图（isSpectating，布局对齐网页版移动端） =====
+   ============================================================ */
+
+/* 计时器行：左右两个 pill 居中，右上角固定操作按钮 */
+.spec-timer-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 76rpx;
+  flex-shrink: 0;
+}
+
+.spec-timer-inner {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.spec-pill {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 8rpx 20rpx;
+  border-radius: 14rpx;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  transition: all 0.2s;
+}
+
+/* 活动方：加亮描边 + 强调底色（对齐网页版 glass-strong + ring-2 ring-accent/50） */
+.spec-pill-active {
+  background: var(--bg-card-strong);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2rpx var(--accent-border);
+}
+
+.spec-pill-name {
+  font-size: 22rpx;
+  font-weight: 500;
+  color: var(--text-muted);
+  max-width: 140rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spec-pill-time {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1rpx;
+}
+
+.spec-time-low {
+  color: var(--danger);
+  animation: blink 1s infinite;
+}
+
+.spec-vs {
+  font-size: 22rpx;
+  color: var(--text-dim);
+}
+
+/* 右上角 ⚙️ 操作按钮 */
+.spec-menu-btn {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14rpx;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  z-index: 50;
+}
+
+.spec-menu-btn:active {
+  background: var(--accent-border);
+}
+
+.spec-menu-icon {
+  font-size: 32rpx;
+  line-height: 1;
+}
+
+/* 棋盘区域：上吃子栏 + 棋盘 + 下吃子栏，整体居中 */
+.spec-board-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  flex-shrink: 0;
+  padding: 8rpx 0;
+}
+
+.spec-board-wrap {
+  width: 100%;
+  max-width: 700rpx;
+  margin: 0 auto;
+}
+
+.spec-board-wrap chess-board {
+  width: 100%;
+}
+
+/* 回看导航条 */
+.spec-replay-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  padding: 8rpx 16rpx;
+  margin-top: 8rpx;
+  border-radius: 14rpx;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.spec-replay-btn {
+  font-size: 22rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+  background: var(--bg-card-hover);
+  color: var(--text-secondary);
+}
+
+.spec-replay-btn:active {
+  background: var(--accent-border);
+}
+
+.spec-replay-main {
+  background: var(--accent);
+  color: var(--text-white);
+}
+
+.spec-replay-info {
+  font-size: 22rpx;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 110rpx;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.spec-replay-live {
+  font-size: 22rpx;
+  padding: 4rpx 16rpx;
+  margin-left: 6rpx;
+  border-radius: 8rpx;
+  background: var(--danger);
+  color: var(--text-white);
+}
+
+/* 状态行 */
+.spec-status {
+  align-self: center;
+  margin-top: 10rpx;
+  padding: 6rpx 20rpx;
+  border-radius: 10rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  flex-shrink: 0;
+}
+
+.spec-status-history {
+  color: var(--text-dim);
+}
+
+/* 信息区（棋盘信息 / 走法记录） */
+.spec-tab-body {
+  margin-top: 12rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  flex-shrink: 0;
+}
+
+/* 双方玩家卡：两列 */
+.spec-player-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14rpx;
+}
+
+.spec-player-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+  padding: 16rpx;
+  border-radius: 14rpx;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+}
+
+.spec-player-label {
+  font-size: 20rpx;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.spec-player-main {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-width: 0;
+}
+
+.spec-avatar {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 24rpx;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.spec-avatar-white {
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+}
+
+.spec-avatar-black {
+  background: linear-gradient(135deg, #6b7280, #374151);
+}
+
+.spec-player-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2rpx;
+  min-width: 0;
+}
+
+.spec-player-name {
+  font-size: 24rpx;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spec-player-rating {
+  font-size: 20rpx;
+  color: var(--text-dim);
+}
+
+/* 对局信息卡 */
+.spec-info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  padding: 16rpx;
+  border-radius: 14rpx;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+}
+
+.spec-info-title {
+  font-size: 22rpx;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 2rpx;
+}
+
+.spec-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 24rpx;
+}
+
+.spec-info-key {
+  color: var(--text-muted);
+}
+
+.spec-info-value {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.spec-info-result {
+  padding-top: 8rpx;
+  border-top: 1px solid var(--border-color-light);
+}
+
+/* 操作菜单（同首页 ☰ 下拉：透明遮罩 + 面板） */
+.spec-menu-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 99;
+  background: transparent;
+}
+
+.spec-menu-panel {
+  position: absolute;
+  top: 100rpx;
+  right: 20rpx;
+  width: 360rpx;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16rpx;
+  box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.spec-menu-item {
+  padding: 26rpx 32rpx;
+  font-size: 28rpx;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border-bottom: 1rpx solid var(--border-color-light);
+}
+
+.spec-menu-item:last-of-type {
+  border-bottom: none;
+}
+
+.spec-menu-item:active {
+  background: var(--accent-border);
+}
+
+.spec-menu-item-active {
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.spec-menu-item-danger {
+  color: var(--danger);
 }

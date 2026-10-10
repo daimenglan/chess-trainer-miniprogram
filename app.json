@@ -1,10 +1,11 @@
 {
   "pages": [
     "pages/choice/choice",
+    "pages/web-view/web-view",
     "pages/index/index",
     "pages/login/login",
-    "pages/webview/webview",
     "pages/online/online",
+    "pages/lichess-bind/lichess-bind",
     "pages/records/records",
     "pages/record-detail/record-detail",
     "pages/analysis/analysis",
@@ -66,14 +67,22 @@
     "pages/classroom/courseware/courseware",
     "pages/classroom/review/review",
     "pages/reward-center/index",
-    "pages/reset-password/index"
+    "pages/reset-password/index",
+    "pages/agreement/agreement",
+    "pages/daily-challenge/index",
+    "pages/dragon-coin-shop/index",
+    "pages/board-record/index",
+    "pages/explore/explore",
+    "pages/friend-invite/index",
+    "pages/payment-result/index"
   ],
   "window": {
-    "navigationBarTitleText": "mychess AI",
+    "navigationBarTitleText": "Mychess",
     "navigationBarBackgroundColor": "#1a1a2e",
     "navigationBarTextStyle": "white",
     "backgroundColor": "#0f0f23",
-    "backgroundTextStyle": "light"
+    "backgroundTextStyle": "light",
+    "screenOrientation": "portrait"
   },
   "tabBar": {
     "color": "#8888aa",
@@ -108,6 +117,12 @@
     ]
   },
   "requiredBackgroundModes": [],
+  "usingComponents": {
+    "coach-chatter": "./components/coach-chatter/coach-chatter",
+    "page-guide": "./components/page-guide/page-guide",
+    "training-drill-banner": "./components/training-drill-banner/training-drill-banner",
+    "watch-grid": "./components/watch-grid/watch-grid"
+  },
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"
 }

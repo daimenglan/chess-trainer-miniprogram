@@ -3,6 +3,8 @@
  */
 const app = getApp();
 const api = require('../../../utils/api');
+const util = require('../../../utils/util');
+const { trackEvent } = require('../../../utils/analytics');
 
 Page({
   data: {
@@ -29,8 +31,7 @@ Page({
     const userId = parseInt(e.userId) || 0;
     const username = e.username || '';
     this.setData({ userId, username });
-    if (!app.globalData.token) {
-      wx.reLaunch({ url: '/pages/login/login' });
+    if (!util.requireLogin('私信')) {
       return;
     }
     this.loadMessages();
@@ -55,6 +56,7 @@ Page({
   onSend() {
     const text = this.data.inputText.trim();
     if (!text) return;
+    trackEvent('social_send_message', { channel: 'private' });
     api.sendMessage({ toUserId: this.data.userId, content: text, type: 'text' })
       .then((res: any) => {
         const msg = res?.data || res;

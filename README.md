@@ -1,4 +1,4 @@
-# mychess AI 国际象棋陪练 - 微信小程序
+# Mychess 国际象棋陪练 - 微信小程序
 
 基于网页版（`../国际象棋陪练`）开发的微信小程序前端，**复用同一套后端 API 和数据库**。
 
@@ -54,6 +54,28 @@ npm run dev
 也可在登录页直接注册新账号。注意以上账号只存在于**本机数据库**；
 手机端连的是线上后端，需用线上注册的账号登录。
 
+## 登录方式
+
+登录页支持四种方式，后端接口共用同一套 JWT 签发逻辑：
+
+| 方式 | 入口 | 说明 |
+|------|------|------|
+| 用户名 + 密码 | 登录 / 注册 Tab | `POST /api/auth/login`、`/api/auth/register` |
+| **微信一键登录** | 登录页「微信一键登录」按钮 | `wx.login` 取 code → `POST /api/auth/wechat/miniapp/confirm` 换 JWT |
+| 手机浏览器唤起小程序 | 网页版点「微信登录」 | 后端生成 URL Scheme → 拉起 `pages/login/login?ticket=xxx` → 自动登录并回传浏览器 |
+| Lichess OAuth | 登录页「使用 Lichess 账号登录」/ 绑定页「一键授权」 | 票据 + 浏览器授权：小程序取票据 → 浏览器打开授权链接 → 回调写回票据 → 小程序轮询取结果 |
+
+### 微信登录说明
+
+- 依赖后端环境变量 `MINIAPP_APPID` / `MINIAPP_APPSECRET`（已配置，线上
+  `GET /api/auth/wechat/miniapp/status` 返回 `configured: true`），AppID 与
+  `project.config.json` 一致（`wx12784b35c1087406`）
+- 账号匹配顺序：`miniapp_openid` 已绑定 → 直接登录；`unionid` 匹配已有账号
+  （公众号登录过）→ 绑定小程序 openid 后登录；否则静默注册新用户
+  （用户名 `wx_xxxxxxxx`，`registration_channel='miniapp'`，可在资料页修改）
+- 获取 `access_token` 要求小程序后台配置**服务器 IP 白名单**，否则报 `40164`
+- 微信新用户默认无邮箱，如需邮箱找回密码请提示其登录后自行补充资料
+
 ## 连接腾讯云服务器（部署配置）
 
 客户端已指向生产域名，无需再改动代码：
@@ -94,6 +116,7 @@ npm run dev
 | WXML 不支持语法（函数调用/可选链/Math） | ✅ 已全部清除 |
 | SSE 解析器单元测试 | ✅ 6/6 |
 | 端到端对弈模拟（走子→AI→分析→保存） | ✅ 13/13 |
+| 微信登录流程（mock wx，10 场景 33 断言） | ✅ 33/33 |
 
 运行测试：
 
@@ -104,6 +127,9 @@ TEST_TOKEN=$(curl -s -X POST http://localhost:3001/api/auth/login \
   -d '{"username":"mp_test_user","password":"test123456"}' \
   | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>console.log(JSON.parse(d).data.token))")
 TEST_TOKEN="$TEST_TOKEN" node test/e2e-simulation.js
+
+# 微信登录流程（mock wx，无需后端）
+node test/wechat-login-test.js
 
 # WXML 事件绑定检查
 node test/check-bindings.js

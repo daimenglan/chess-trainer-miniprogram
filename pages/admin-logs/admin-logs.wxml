@@ -3,6 +3,9 @@
 
   <!-- 筛选栏 -->
   <view class="filter-bar">
+    <picker class="filter-item" range="{{platformOptions}}" value="{{platformIndex}}" bindchange="onPlatformChange">
+      <view class="filter-btn">渠道：{{platformOptions[platformIndex]}} ▾</view>
+    </picker>
     <picker class="filter-item" range="{{typeOptions}}" value="{{typeIndex}}" bindchange="onTypeChange">
       <view class="filter-btn">类型：{{typeOptions[typeIndex]}} ▾</view>
     </picker>
@@ -22,6 +25,7 @@
     <view class="log-item" wx:for="{{logs}}" wx:key="logId">
       <view class="log-head">
         <text class="log-type type-{{item.activityType}}">{{item.typeLabel}}</text>
+        <text class="log-platform">{{item.platformText}}</text>
         <text class="log-time">{{item.timeText}}</text>
       </view>
       <view class="log-body">
@@ -35,4 +39,6 @@
     <view wx:if="{{loading}}" class="loading-tip">加载中...</view>
     <view wx:if="{{!loading && finished && logs.length > 0}}" class="end-tip">没有更多了</view>
   </view>
+  <!-- AI生成内容免责声明 -->
+  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
 </view>

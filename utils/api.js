@@ -14,6 +14,18 @@ exports.register = register;
 exports.forgotPassword = forgotPassword;
 exports.resetPassword = resetPassword;
 exports.getCurrentUser = getCurrentUser;
+exports.lichessAuth = lichessAuth;
+exports.lichessLogin = lichessLogin;
+exports.getLichessConfig = getLichessConfig;
+exports.lichessMiniAppTicket = lichessMiniAppTicket;
+exports.lichessMiniAppLoginTicket = lichessMiniAppLoginTicket;
+exports.lichessMiniAppStatus = lichessMiniAppStatus;
+exports.lichessBindToken = lichessBindToken;
+exports.lichessLoginToken = lichessLoginToken;
+exports.getLichessBinding = getLichessBinding;
+exports.unbindLichess = unbindLichess;
+exports.isPvpTableLobbyEnabled = isPvpTableLobbyEnabled;
+exports.wechatMiniAppLogin = wechatMiniAppLogin;
 exports.requestAIMove = requestAIMove;
 exports.saveGame = saveGame;
 exports.loadGames = loadGames;
@@ -27,6 +39,7 @@ exports.getPositionCommentary = getPositionCommentary;
 exports.listChessRecords = listChessRecords;
 exports.importChessRecords = importChessRecords;
 exports.deleteRecord = deleteRecord;
+exports.recognizeBoardImage = recognizeBoardImage;
 exports.searchChessGames = searchChessGames;
 exports.importChessRecordsFromUrl = importChessRecordsFromUrl;
 exports.searchAndImportChessGames = searchAndImportChessGames;
@@ -114,6 +127,15 @@ exports.updateAdminPuzzle = updateAdminPuzzle;
 exports.deleteAdminPuzzle = deleteAdminPuzzle;
 exports.getCurrentWeeklyTheme = getCurrentWeeklyTheme;
 exports.getWeeklyThemePuzzles = getWeeklyThemePuzzles;
+exports.getWatchChannels = getWatchChannels;
+exports.openWatchStream = openWatchStream;
+exports.getDailyChallengeToday = getDailyChallengeToday;
+exports.startDailyChallenge = startDailyChallenge;
+exports.settleDailyChallenge = settleDailyChallenge;
+exports.abandonDailyChallenge = abandonDailyChallenge;
+exports.getDailyChallengeCurve = getDailyChallengeCurve;
+exports.getWechatPayOrderStatus = getWechatPayOrderStatus;
+exports.createJSAPIPayOrder = createJSAPIPayOrder;
 exports.getUpgradePlan = getUpgradePlan;
 exports.getTrainingDashboard = getTrainingDashboard;
 exports.saveGradeSettings = saveGradeSettings;
@@ -123,8 +145,14 @@ exports.getMistakeMatchingPuzzles = getMistakeMatchingPuzzles;
 exports.getTrainingCenterData = getTrainingCenterData;
 exports.triggerDynamicAssessment = triggerDynamicAssessment;
 exports.getWeeklyPlan = getWeeklyPlan;
+exports.getWeeklyReport = getWeeklyReport;
+exports.generateWeeklyReport = generateWeeklyReport;
 exports.submitWeeklyEvaluation = submitWeeklyEvaluation;
 exports.getWeeklyEvaluations = getWeeklyEvaluations;
+exports.getTodayTrainingPuzzles = getTodayTrainingPuzzles;
+exports.logPreferenceEvent = logPreferenceEvent;
+exports.getPreferenceProfile = getPreferenceProfile;
+exports.fetchCoachHint = fetchCoachHint;
 exports.isDistributionEnabled = isDistributionEnabled;
 exports.isVideoGenerationEnabled = isVideoGenerationEnabled;
 exports.isAIAnalysisReportEnabled = isAIAnalysisReportEnabled;
@@ -212,6 +240,10 @@ exports.getFriendList = getFriendList;
 exports.getFriendRequests = getFriendRequests;
 exports.removeFriend = removeFriend;
 exports.searchUsers = searchUsers;
+exports.createFriendChallenge = createFriendChallenge;
+exports.redeemShareToken = redeemShareToken;
+exports.cancelFriendChallenge = cancelFriendChallenge;
+exports.getFriendChallengeShareCode = getFriendChallengeShareCode;
 exports.createGroup = createGroup;
 exports.getUserGroups = getUserGroups;
 exports.getGroupDetail = getGroupDetail;
@@ -248,6 +280,12 @@ exports.getDragonCoinConfigs = getDragonCoinConfigs;
 exports.getDragonCoinExchanges = getDragonCoinExchanges;
 exports.exchangeDragonCoin = exchangeDragonCoin;
 exports.getDragonCoinExchangeRecords = getDragonCoinExchangeRecords;
+exports.getDragonCoinShop = getDragonCoinShop;
+exports.purchaseDragonCoinShop = purchaseDragonCoinShop;
+exports.consumeDragonCoinShop = consumeDragonCoinShop;
+exports.getDragonCoinTasks = getDragonCoinTasks;
+exports.repairStreak = repairStreak;
+exports.freezeStreak = freezeStreak;
 exports.getAdminDragonCoinConfigs = getAdminDragonCoinConfigs;
 exports.createDragonCoinConfig = createDragonCoinConfig;
 exports.updateDragonCoinConfig = updateDragonCoinConfig;
@@ -400,16 +438,20 @@ function request(method, url, data = {}, options = {}) {
             enableChunked: options.enableChunked || false,
             responseType: options.responseType || 'text',
             success(res) {
-                // 401 未授权 → 清除token并跳转登录
+                // 401 未授权：仅在「原本已登录」时清理会话并引导重新登录；
+                // 游客（本就无 token）不跳转登录页，交由页面的登录引导处理，避免体验被强行打断
                 if (res.statusCode === 401) {
                     const currentApp = getAppSafe();
-                    if (currentApp) {
+                    const hadToken = !!(currentApp && currentApp.globalData && currentApp.globalData.token);
+                    if (currentApp && hadToken) {
                         currentApp.setToken(null);
                         currentApp.globalData.user = null;
                     }
-                    wx.removeStorageSync('auth_token');
-                    wx.removeStorageSync('user_info');
-                    wx.navigateTo({ url: '/pages/login/login' });
+                    if (hadToken) {
+                        wx.removeStorageSync('auth_token');
+                        wx.removeStorageSync('user_info');
+                        wx.navigateTo({ url: '/pages/login/login' });
+                    }
                     reject(new Error(res.data?.error || '未登录'));
                     return;
                 }
@@ -423,7 +465,12 @@ function request(method, url, data = {}, options = {}) {
                     resolve(body);
                 }
                 else {
-                    reject(new Error(body?.error || `请求失败 (${res.statusCode})`));
+                    // 透传服务端的 code / benefit：配额型权益不足时上层据此渲染会员升级引导
+                    const err = new Error(body?.error || `请求失败 (${res.statusCode})`);
+                    err.code = body?.code;
+                    err.benefit = body?.benefit;
+                    err.statusCode = res.statusCode;
+                    reject(err);
                 }
             },
             fail(err) {
@@ -508,21 +555,87 @@ function resetPassword(email, code, newPassword) {
 function getCurrentUser() {
     return request('GET', '/api/auth/me');
 }
-/** Lichess OAuth 登录：获取授权 URL（前端跳转用） */
+/**
+ * Lichess OAuth 授权 URL（需登录 + 灰度放行，用于浏览器/网页版绑定）
+ * 小程序内请改用 lichessBindToken()：web-view 无法加载 lichess.org
+ */
+function lichessAuth() {
+    return request('GET', '/api/lichess/auth');
+}
+/** Lichess OAuth 登录 URL（公开入口，未登录也能调用） */
 function lichessLogin() {
     return request('GET', '/api/lichess/login');
 }
-/** Lichess OAuth 回调处理（前端从 URL hash 提取 token 后调用） */
-function lichessCallback(code, state) {
-    return request('POST', '/api/lichess/callback', { code, state });
+/**
+ * Lichess 集成配置 + 灰度状态
+ * 返回 { clientId, redirectUri, scope, featureEnabled, allowed }
+ * 入口是否展示必须同时满足 featureEnabled 与 allowed（与网页版一致）
+ */
+function getLichessConfig() {
+    return request('GET', '/api/lichess/config');
 }
-/** 检查 Lichess 绑定状态 */
+/**
+ * 创建 Lichess 绑定授权票据（与网页版 /auth 等价的 OAuth 流程，需登录 + 灰度放行）
+ *
+ * 返回 { ticket, url, expiresIn }：让用户在浏览器打开 url 完成 Lichess 授权，
+ * 小程序轮询 lichessMiniAppStatus(ticket) 取绑定结果，全程无需粘贴令牌。
+ */
+function lichessMiniAppTicket() {
+    return request('POST', '/api/lichess/miniapp/ticket');
+}
+/**
+ * 创建 Lichess 登录授权票据（公开入口，无需登录）
+ *
+ * 与 lichessLogin() 语义相同，但结果经票据回传，无需浏览器回调页面。
+ */
+function lichessMiniAppLoginTicket() {
+    return request('POST', '/api/lichess/miniapp/login-ticket');
+}
+/**
+ * 轮询 Lichess 授权结果
+ * 返回 { status: 'pending' | 'completed' | 'expired' | 'failed', lichessUsername?, token?, ... }
+ */
+function lichessMiniAppStatus(ticket) {
+    return request('GET', '/api/lichess/miniapp/status', { ticket });
+}
+/**
+ * 用 Lichess 个人访问令牌绑定账号（小程序备用入口）
+ * 令牌需包含 board:play 与 challenge:write 权限
+ */
+function lichessBindToken(token) {
+    return request('POST', '/api/lichess/bind-token', { token });
+}
+/**
+ * 用 Lichess 个人访问令牌登录/注册（小程序备用入口）
+ * 等价于 OAuth 登录，但无需浏览器回调
+ */
+function lichessLoginToken(token) {
+    return request('POST', '/api/lichess/login-token', { token });
+}
+/** 检查 Lichess 绑定状态（返回 { bound, lichessUsername?, profile? }） */
 function getLichessBinding() {
     return request('GET', '/api/lichess/me');
 }
 /** 解除 Lichess 绑定 */
 function unbindLichess() {
     return request('POST', '/api/lichess/unbind');
+}
+/** 棋桌大厅全局开关（后台系统设置，关闭时仅保留随机匹配） */
+function isPvpTableLobbyEnabled() {
+    return request('GET', '/api/settings/pvp-table-lobby-enabled');
+}
+// ---- 微信小程序登录 ----
+/**
+ * 微信小程序登录：wx.login 取 code 上报后端换取系统 JWT
+ *
+ * 后端 code2Session 换 openid → 查找（miniapp_openid / unionid 匹配）/ 创建用户 → 签发 token。
+ *
+ * @param code    wx.login 获取的登录凭证
+ * @param ticket  可选。手机浏览器点「微信登录」生成 URL Scheme 拉起小程序时携带的票据，
+ *                上报后后端把登录结果回传给等待中的浏览器页面
+ */
+function wechatMiniAppLogin(code, ticket) {
+    return request('POST', '/api/auth/wechat/miniapp/confirm', ticket ? { code, ticket } : { code });
 }
 /**
  * 注册（支持推荐码）
@@ -567,8 +680,12 @@ function getPositionCommentary(fen, depth = 10) {
 function listChessRecords(params = {}) {
     return request('GET', '/api/records', params);
 }
-function importChessRecords(pgnText) {
-    return request('POST', '/api/records/import', { pgnText });
+/**
+ * 导入棋谱
+ * recordType='classroom' 标记为个人录制（课堂/棋盘录制），不进入大师棋谱公共库
+ */
+function importChessRecords(pgnText, recordType) {
+    return request('POST', '/api/records/import', { pgnText, recordType });
 }
 function deleteRecord(recordId) {
     return request('DELETE', `/api/records/${recordId}`);
@@ -602,6 +719,42 @@ function uploadAvatar(filePath) {
                 }
                 catch {
                     reject(new Error('上传失败'));
+                }
+            },
+            fail(err) {
+                reject(new Error(err.errMsg || '网络错误'));
+            },
+        });
+    });
+}
+/**
+ * 拍照识别棋盘：上传棋盘照片，由后端视觉模型识别棋子位置
+ * 返回 { fen, moves, pieces? }
+ */
+function recognizeBoardImage(filePath) {
+    return new Promise((resolve, reject) => {
+        const token = getAuthHeaders()['Authorization']?.slice(7) || wx.getStorageSync('auth_token');
+        wx.uploadFile({
+            url: `${baseUrl}/api/records/recognize`,
+            filePath: filePath,
+            name: 'image',
+            header: {
+                'Authorization': `Bearer ${token}`,
+            },
+            // 视觉模型请求耗时较长，uploadFile 默认超时时间较短
+            timeout: 60000,
+            success(res) {
+                try {
+                    const body = JSON.parse(res.data);
+                    if (body.success) {
+                        resolve(body);
+                    }
+                    else {
+                        reject(new Error(body.error || '识别失败'));
+                    }
+                }
+                catch {
+                    reject(new Error('识别失败'));
                 }
             },
             fail(err) {
@@ -731,6 +884,73 @@ function explainStream(url, callbacks) {
     });
 }
 // ===== 习题（Puzzle）API =====
+// ---- 观战（Watch）API ----
+/**
+ * 获取 Lichess 观战频道列表
+ */
+function getWatchChannels() {
+    return request('GET', '/api/watch/channels');
+}
+/**
+ * 打开观战 SSE 流（断线自动重连）
+ * @param gameId  对局 ID
+ * @param callbacks  事件回调
+ */
+function openWatchStream(gameId, callbacks) {
+    const sse = require('./sse');
+    return sse.createSSERequest(`/api/watch/stream/${gameId}`, {}, {
+        onEvent: (evt) => {
+            callbacks.onEvent && callbacks.onEvent(evt);
+        },
+        onError: (err) => callbacks.onError && callbacks.onError(err),
+        onDone: () => callbacks.onDone && callbacks.onDone(),
+    });
+}
+// ---- 每日挑战（Daily Challenge）API ----
+/**
+ * 获取今日挑战信息
+ */
+function getDailyChallengeToday() {
+    return request('GET', '/api/daily-challenge/today');
+}
+/**
+ * 开始每日挑战
+ */
+function startDailyChallenge(data) {
+    return request('POST', '/api/daily-challenge/start', data);
+}
+/**
+ * 结算每日挑战
+ */
+function settleDailyChallenge(id, data) {
+    return request('POST', `/api/daily-challenge/${id}/settle`, data);
+}
+/**
+ * 放弃每日挑战
+ */
+function abandonDailyChallenge(id) {
+    return request('POST', `/api/daily-challenge/${id}/abandon`);
+}
+/**
+ * 获取每日挑战历史曲线
+ */
+function getDailyChallengeCurve() {
+    return request('GET', '/api/daily-challenge/curve');
+}
+// ---- 微信支付 ----
+/**
+ * 查询微信支付订单状态
+ */
+function getWechatPayOrderStatus(orderId) {
+    return request('GET', `/api/wechat-pay/orders/${orderId}/status`);
+}
+/**
+ * 小程序 JSAPI 支付下单
+ * 返回微信小程序 wx.requestPayment 所需参数
+ */
+function createJSAPIPayOrder(orderId) {
+    return request('POST', `/api/wechat-pay/orders/${orderId}/jsapi`);
+}
 /**
  * 获取习题主题目录
  */
@@ -1050,11 +1270,13 @@ function getKnowledgeStatus() {
     return request('GET', '/api/knowledge/status');
 }
 // ---- 深度复盘 ----
-function deepReviewGameStream(moveHistory, callbacks, depth = 12, movetime = 250) {
+function deepReviewGameStream(moveHistory, callbacks, depth = 12, movetime = 250, playerSide) {
     const sse = require('./sse');
-    return sse.createSSERequest('/api/analyze/deep-review', {
-        moveHistory, depth, movetime,
-    }, {
+    const payload = { moveHistory, depth, movetime };
+    // 传入执棋方后 LLM 始终站在学员（我方）视角分析
+    if (playerSide)
+        payload.playerSide = playerSide === 'b' ? 'black' : 'white';
+    return sse.createSSERequest('/api/analyze/deep-review', payload, {
         onEvent: (evt) => {
             if (evt.type === 'engine') {
                 callbacks.onEngine && callbacks.onEngine({ ...evt.data, progress: evt.progress || 0 });
@@ -1064,6 +1286,9 @@ function deepReviewGameStream(moveHistory, callbacks, depth = 12, movetime = 250
             }
             else if (evt.type === 'summary') {
                 callbacks.onSummary && callbacks.onSummary(evt.data);
+            }
+            else if (evt.type === 'llm_error') {
+                callbacks.onLlmError && callbacks.onLlmError(evt.message);
             }
             else if (evt.type === 'done') {
                 callbacks.onDone && callbacks.onDone();
@@ -1150,20 +1375,62 @@ function getMistakeSummary() {
 function getMistakeMatchingPuzzles(limit) {
     return request('GET', '/api/profile/mistakes/puzzles', { limit });
 }
-function getTrainingCenterData() {
-    return request('GET', '/api/profile/training-center');
+function getTrainingCenterData(today) {
+    const params = {};
+    if (today)
+        params.today = today;
+    return request('GET', '/api/profile/training-center', params);
 }
 function triggerDynamicAssessment() {
     return request('POST', '/api/profile/dynamic-assessment');
 }
-function getWeeklyPlan(refresh) {
-    return request('GET', '/api/profile/weekly-plan', { refresh: refresh ? 1 : undefined });
+function getWeeklyPlan(refresh, today) {
+    const params = { refresh: refresh ? 1 : undefined };
+    if (today)
+        params.today = today;
+    return request('GET', '/api/profile/weekly-plan', params);
+}
+/** 读取已缓存的周训练报告（不触发 AI 生成）；无缓存返回 null */
+function getWeeklyReport(week) {
+    const params = {};
+    if (week)
+        params.week = week;
+    return request('GET', '/api/profile/weekly-report', params);
+}
+/** 生成该周的 AI 训练报告（refresh=true 忽略缓存重新生成） */
+function generateWeeklyReport(week, refresh) {
+    const body = {};
+    if (week)
+        body.week = week;
+    if (refresh)
+        body.refresh = true;
+    return request('POST', '/api/profile/weekly-report', body, { timeout: 120000 });
 }
 function submitWeeklyEvaluation(data) {
     return request('POST', '/api/profile/weekly-evaluation', data);
 }
 function getWeeklyEvaluations() {
     return request('GET', '/api/profile/weekly-evaluations');
+}
+/** 今日题目清单：优先「我的习题」到期复习，不足时从错题本按弱项主题+难度补齐 */
+function getTodayTrainingPuzzles(today) {
+    const params = {};
+    if (today)
+        params.today = today;
+    return request('GET', '/api/profile/today-puzzles', params);
+}
+// ===== 偏好日志（同网页版 preferenceLogService） =====
+/** 写入一条下棋偏好事件（流水表），后端聚合到画像表并触发提醒/表扬 */
+function logPreferenceEvent(event) {
+    return request('POST', '/api/profile/preference-log/event', event);
+}
+/** 获取用户偏好画像（聚合结果：强项/弱项/习惯等） */
+function getPreferenceProfile() {
+    return request('GET', '/api/profile/preference-log/profile');
+}
+/** 获取教练提示（提醒常犯错误/表扬好习惯），后端自带节流 */
+function fetchCoachHint(polarity) {
+    return request('GET', '/api/profile/coach-hint', { polarity });
 }
 // ---- 全局开关 ----
 function isDistributionEnabled() {
@@ -1456,6 +1723,32 @@ function removeFriend(userId) {
 function searchUsers(q) {
     return request('GET', '/api/users/search', { q });
 }
+// ---- 好友对弈挑战 / 邀请链接 ----
+/**
+ * 创建好友挑战。
+ * 带 toUserId：定向挑战在线好友；不带：生成分享 token（邀请链接/小程序码用）。
+ */
+function createFriendChallenge(timeControl, toUserId) {
+    const body = { timeControl };
+    if (toUserId != null)
+        body.toUserId = toUserId;
+    return request('POST', '/api/friend-challenges', body);
+}
+/** 兑换分享链接：自动成为双向好友，返回发起方资料与时限 */
+function redeemShareToken(token) {
+    return request('GET', `/api/friend-challenges/token/${encodeURIComponent(token)}`);
+}
+/** 撤销自己发起的挑战（分享链接未兑换时也可作废） */
+function cancelFriendChallenge(id) {
+    return request('POST', `/api/friend-challenges/${id}/cancel`);
+}
+/**
+ * 取挑战的邀请物料：小程序码（base64）+ 可复制链接。
+ * 微信侧生成失败时降级为字段级错误（qrError / urlLinkError），仍返回 200。
+ */
+function getFriendChallengeShareCode(id) {
+    return request('GET', `/api/friend-challenges/${id}/share-code`);
+}
 // ---- 群组系统 ----
 function createGroup(name, description, memberIds) {
     return request('POST', '/api/groups', { name, description, memberIds });
@@ -1570,6 +1863,27 @@ function exchangeDragonCoin(configId, amount) {
 }
 function getDragonCoinExchangeRecords(page = 1, limit = 20) {
     return request('GET', '/api/dragon-coin/exchange-records', { page, limit });
+}
+// ---- 龙币商店（与网页版共用后端） ----
+function getDragonCoinShop() {
+    return request('GET', '/api/dragon-coin/shop');
+}
+function purchaseDragonCoinShop(goodsCode) {
+    return request('POST', `/api/dragon-coin/shop/purchase/${goodsCode}`);
+}
+function consumeDragonCoinShop(goodsCode) {
+    return request('POST', `/api/dragon-coin/shop/consume/${goodsCode}`);
+}
+// ---- 龙币任务（奖励中心） ----
+function getDragonCoinTasks() {
+    return request('GET', '/api/dragon-coin/tasks');
+}
+// ---- 龙币连击 ----
+function repairStreak() {
+    return request('POST', '/api/dragon-coin/streak/repair');
+}
+function freezeStreak() {
+    return request('POST', '/api/dragon-coin/streak/freeze');
 }
 // ---- 龙币（管理端） ----
 function getAdminDragonCoinConfigs() {
@@ -1866,7 +2180,8 @@ function getCompetitionDetail(id) {
     return request('GET', `/api/competitions/${id}`);
 }
 function joinCompetition(id, data) {
-    return request('POST', `/api/competitions/${id}/join`, data);
+    // 后端报名端点是 POST /:id/register（competitionRoutes），此前写成 /join 打不到路由
+    return request('POST', `/api/competitions/${id}/register`, data);
 }
 function getCompetitionRounds(competitionId) {
     return request('GET', `/api/competitions/${competitionId}/rounds`);

@@ -1,6 +1,7 @@
 .puzzles-page {
   height: 100vh;
   background: var(--bg-primary);
+  position: relative;
 }
 
 .page-scroll {
@@ -8,15 +9,37 @@
   padding: 0 16rpx 40rpx;
 }
 
-/* 统计栏 */
+/* ===== 竖屏模式：统计栏（同网页版 stats bar） ===== */
 .stats-bar {
   display: flex;
   justify-content: space-around;
   padding: 20rpx;
-  background: var(--accent-bg-light);
-  border: 1px solid var(--accent-border);
-  border-radius: 12rpx;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 16rpx;
   margin: 16rpx 0;
+}
+
+/* ===== 竖屏模式：玻璃卡片（同网页版 glass rounded-xl） ===== */
+.glass {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 16rpx;
+}
+
+/* ===== 竖屏模式：筛选面板（同网页版 filter panel） ===== */
+.filter-panel {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 16rpx;
+  padding: 20rpx;
+  margin-bottom: 16rpx;
 }
 
 .stat-cell {
@@ -129,18 +152,29 @@
 .mb-amber { background: linear-gradient(135deg, #f59e0b, #f97316); }
 .mb-purple { background: linear-gradient(135deg, #8b5cf6, #a855f7); }
 
-/* 消息 */
+/* 消息：绝对定位覆盖在顶部，避免出现/消失时把下方棋盘顶高或压低导致抖动 */
 .msg-bar {
+  position: absolute;
+  left: 16rpx;
+  right: 16rpx;
+  top: 12rpx;
+  z-index: 20;
   padding: 16rpx 24rpx;
   border-radius: 10rpx;
   font-size: 26rpx;
   font-weight: 500;
-  margin-bottom: 12rpx;
   text-align: center;
+  /* 消息压住棋盘时不要吞掉棋子的点击 */
+  pointer-events: none;
+  box-sizing: border-box;
+  /* 不透明底色：覆盖在内容之上时不能透出棋盘 */
+  background-color: var(--bg-secondary);
 }
-.msg-info { background: var(--info-bg); color: var(--info); }
-.msg-success { background: var(--success-bg); color: var(--success); }
-.msg-error { background: var(--danger-bg); color: var(--danger); }
+
+/* 用左边框保留信息/成功/错误的区分度，避免只剩文字颜色 */
+.msg-info { color: var(--info); border-left: 6rpx solid var(--info); }
+.msg-success { color: var(--success); border-left: 6rpx solid var(--success); }
+.msg-error { color: var(--danger); border-left: 6rpx solid var(--danger); }
 
 /* 筛选面板 */
 .filter-panel {
@@ -306,6 +340,30 @@
   color: var(--text-muted);
 }
 
+/* 本次做题统计：本次对了/错了，做题过程中常驻可见 */
+.session-stats {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  width: 100%;
+  margin-top: 16rpx;
+  font-size: 24rpx;
+}
+
+.session-stats-label {
+  color: var(--text-dim);
+}
+
+.session-stat-correct {
+  color: var(--success);
+  font-weight: 700;
+}
+
+.session-stat-wrong {
+  color: var(--danger);
+  font-weight: 700;
+}
+
 .puzzle-actions {
   display: flex;
   gap: 12rpx;
@@ -457,6 +515,47 @@
   font-family: monospace;
 }
 
+/* 对方上一步提示条 + 下一题按钮（同网页版 849f27f） */
+.next-move-bar {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 16rpx;
+  padding: 20rpx 24rpx;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 16rpx;
+}
+.next-move-hint {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  flex: 1;
+  min-width: 0;
+}
+.next-move-label {
+  font-size: 22rpx;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.next-move-san {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #3b82f6;
+  font-family: monospace;
+  white-space: nowrap;
+}
+.next-move-turn {
+  font-size: 18rpx;
+  color: var(--text-dim);
+  margin-left: auto;
+}
+.next-move-btn {
+  flex-shrink: 0;
+  padding: 16rpx 28rpx;
+  font-size: 26rpx;
+}
+
 /* 空状态 */
 .empty-guide {
   text-align: center;
@@ -496,3 +595,26 @@
 .diag-detail { font-size: 20rpx; }
 .text-green { color: var(--success); }
 .text-red { color: var(--danger); }
+/* ===== AI生成内容显著标识 ===== */
+.explain-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.ai-gen-flag {
+  display: inline-flex;
+  padding: 2rpx 12rpx;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #6c63ff, #4834d4);
+  border: 1rpx solid rgba(255, 255, 255, 0.35);
+}
+
+.ai-gen-notice {
+  padding: 8rpx 24rpx 0;
+  font-size: 20rpx;
+  color: #8888aa;
+}

@@ -17,12 +17,17 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  padding: 6rpx;
+  padding: 8rpx;
   border-radius: 4rpx;
   background: var(--board-frame, #4a6fa5);
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.3);
   box-sizing: border-box;
   overflow: hidden;
+}
+
+/* inline 模式：细边框 + 内嵌标签，棋盘格尽量占满空间 */
+.board-frame-inline {
+  padding: 2rpx;
 }
 
 /* 上方文件标签 (a-h) */
@@ -40,6 +45,33 @@
   font-size: 20rpx;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.85);
+}
+
+/* inline 模式：文件标签内嵌在底行格子右下角 */
+.file-label-inline {
+  position: absolute;
+  right: 2rpx;
+  bottom: 0;
+  font-size: 11px;
+  font-weight: 600;
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* inline 模式：行标签内嵌在最左列格子左上角 */
+.rank-label-inline {
+  position: absolute;
+  left: 2rpx;
+  top: 0;
+  font-size: 11px;
+  font-weight: 600;
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* inline 模式：棋盘网格占满空间，无外边距 */
+.board-grid-inline {
+  margin: 0;
 }
 
 /* 下方文件标签 (a-h) */

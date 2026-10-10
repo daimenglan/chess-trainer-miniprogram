@@ -3,8 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * 用户自建习题解答页
  */
-const app = getApp();
 const api = require('../../../utils/api');
+const util = require('../../../utils/util');
 Page({
     data: {
         __theme__: (typeof getApp === "function" ? (getApp().globalData?.settings?.uiTheme || "dark") : "dark"),
@@ -27,8 +27,7 @@ Page({
         this._syncTheme();
         const id = parseInt(e.id) || 0;
         this.setData({ puzzleId: id });
-        if (!app.globalData.token) {
-            wx.reLaunch({ url: '/pages/login/login' });
+        if (!util.requireLogin('习题记录')) {
             return;
         }
         this.loadPuzzle();

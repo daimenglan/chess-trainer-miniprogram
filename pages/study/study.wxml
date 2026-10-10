@@ -12,8 +12,16 @@
       <view class="search-btn" catchtap="onSearch">搜索</view>
     </view>
 
+    <!-- 加载失败：展示服务端返回的真实原因，并给出重试入口 -->
+    <view wx:if="{{!loading && error}}" class="list-empty">
+      <text class="empty-icon">⚠️</text>
+      <text>加载棋谱失败</text>
+      <text class="list-empty-hint">{{error}}</text>
+      <view class="search-btn" catchtap="loadRecords">重新加载</view>
+    </view>
+
     <!-- 列表 -->
-    <view wx:if="{{!loading && records.length === 0}}" class="list-empty">
+    <view wx:if="{{!loading && !error && records.length === 0}}" class="list-empty">
       <text class="empty-icon">📭</text>
       <text>暂无棋谱</text>
     </view>
@@ -45,6 +53,8 @@
       <view class="page-btn {{page >= totalPages ? 'page-disabled' : ''}}" catchtap="onNextPage">下一页</view>
 </view>
 
+  <!-- AI生成内容免责声明 -->
+  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
 	  </scroll-view>
   
 </view>

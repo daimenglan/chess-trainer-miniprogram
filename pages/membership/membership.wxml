@@ -116,8 +116,8 @@
         </view>
       </view>
 
-      <!-- 模拟支付关闭提示 -->
-      <view wx:if="{{!simulatedPayEnabled}}" class="simulate-off-notice">
+      <!-- 在线购买关闭提示（微信支付未就绪且未放开模拟支付） -->
+      <view wx:if="{{!purchaseEnabled}}" class="simulate-off-notice">
         <text>管理员已关闭在线购买，请使用兑换码开通会员</text>
       </view>
     </view>
@@ -193,13 +193,13 @@
         <view wx:if="{{simulatedPayEnabled}}" class="purchase-simulate-notice">
           ⚠️ 演示环境使用模拟支付：点击确认后立即生效，不产生真实扣款
         </view>
-        <view wx:else class="purchase-simulate-notice purchase-disabled-notice">
-          ⚠️ 在线购买已关闭，请使用兑换码开通会员
+        <view wx:elif="{{!wechatPayConfigured}}" class="purchase-simulate-notice purchase-disabled-notice">
+          ⚠️ 在线支付暂不可用，请使用兑换码开通会员
         </view>
 
         <view class="purchase-actions">
           <view class="btn-secondary" catchtap="onCloseModal">取消</view>
-          <view wx:if="{{simulatedPayEnabled}}" class="btn-primary {{paying ? 'btn-loading' : ''}}" catchtap="onPurchase">
+          <view wx:if="{{purchaseEnabled}}" class="btn-primary {{paying ? 'btn-loading' : ''}}" catchtap="onPurchase">
             <text>{{paying ? '处理中...' : (selectedPrice ? '确认支付 ¥' + selectedPrice.price : '请选择时长')}}</text>
           </view>
         </view>
@@ -232,6 +232,8 @@
       </view>
     </view>
 
+  <!-- AI生成内容免责声明 -->
+  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
   </scroll-view>
 
 </view>

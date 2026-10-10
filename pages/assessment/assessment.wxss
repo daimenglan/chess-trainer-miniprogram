@@ -393,7 +393,7 @@
 }
 .mode-feature {
   font-size: 18rpx;
-  color: var(--text-success);
+  color: var(--success);
 }
 .mode-time {
   color: var(--text-muted);
@@ -1077,4 +1077,33 @@
 }
 .shake {
   animation: shake 0.4s ease-in-out;
+}
+/* ===== AI生成内容显著标识 ===== */
+.report-label-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-wrap: wrap;
+  margin-bottom: 8rpx;
+}
+
+.report-label-row .report-label {
+  margin-bottom: 0;
+}
+
+.ai-gen-flag {
+  display: inline-flex;
+  padding: 2rpx 12rpx;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1rpx solid rgba(255, 255, 255, 0.55);
+}
+
+.ai-gen-notice {
+  margin-bottom: 20rpx;
+  font-size: 20rpx;
+  opacity: 0.85;
 }

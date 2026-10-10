@@ -1,10 +1,11 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * 本地 AI 引擎（离线降级用）
  * 当后端 API 不可用时（如真机预览未配置合法域名），
  * 使用 chess.js 做 alpha-beta 搜索，保证对弈可继续。
  */
-const Chess = require('./chessjs');
+const ChessLib = require('./chessjs');
 const PIECE_VALUES = {
     p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000,
 };
@@ -69,7 +70,7 @@ function negamax(chess, depth, alpha, beta) {
  * @param difficulty 1-10 难度，映射搜索深度与随机性
  */
 function getLocalAIMove(fen, difficulty) {
-    const chess = new Chess.Chess(fen);
+    const chess = new ChessLib.Chess(fen);
     const moves = chess.moves({ verbose: true });
     if (!moves || moves.length === 0)
         return '';
@@ -94,4 +95,4 @@ function getLocalAIMove(fen, difficulty) {
     }
     return candidates[Math.floor(Math.random() * candidates.length)] || '';
 }
-module.exports = { getLocalAIMove };
+module.exports = { getLocalAIMove, evaluate };

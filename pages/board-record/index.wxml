@@ -1,0 +1,127 @@
+<view class="board-record-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
+  <!-- 顶栏 -->
+  <view class="br-topbar">
+    <button class="br-btn" bindtap="onBack">← 返回</button>
+    <button class="br-btn" bindtap="onFlip">🔄 翻转</button>
+  </view>
+
+  <!-- 状态条：走子方 / 复盘进度 / 将杀结果 -->
+  <view class="br-status {{gameOverText ? 'br-status-over' : ''}}">
+    <text class="br-status-text">{{statusText}}</text>
+    <text wx:if="{{moveCount > 0}}" class="br-status-count">{{moveCount}} 手</text>
+  </view>
+
+  <!-- 棋盘 -->
+  <view class="br-board-wrap">
+    <chess-board
+      fen="{{fen}}"
+      boardColorPreset="{{boardColorPreset}}"
+      labelVariant="inline"
+      flipped="{{boardFlip}}"
+      interactive="{{!saving}}"
+      selectedSquare="{{selectedSquare}}"
+      legalMoves="{{legalMoves}}"
+      isCheck="{{isCheck}}"
+      moveHistory="{{moveHistoryRaw}}"
+      replayIndex="{{replayIndex}}"
+      showHints="{{aiHintOn}}"
+      analysis="{{analysisCandidates}}"
+      canvasHidden="{{showPromotion}}"
+      bind:squaretap="onSquareTap"
+      bind:scrolltocandidate="onScrollToCandidate">
+    </chess-board>
+  </view>
+
+  <!-- 控制面板 -->
+  <view class="br-panel">
+    <!-- 可滚动区：面板内容较多（尤其展开 AI 推荐后），短屏上靠这里滚动 -->
+    <scroll-view class="br-panel-scroll" scroll-y enable-flex>
+      <view class="br-panel-inner">
+        <!-- 元数据 -->
+        <view class="br-meta">
+          <view class="br-meta-item">
+            <text class="br-meta-label">白方</text>
+            <input class="br-meta-input" value="{{whiteName}}" placeholder="白方" bindinput="onWhiteName" />
+          </view>
+          <view class="br-meta-item">
+            <text class="br-meta-label">黑方</text>
+            <input class="br-meta-input" value="{{blackName}}" placeholder="黑方" bindinput="onBlackName" />
+          </view>
+          <view class="br-meta-item">
+            <text class="br-meta-label">赛事</text>
+            <input class="br-meta-input" value="{{eventName}}" placeholder="课堂对局" bindinput="onEventName" />
+          </view>
+        </view>
+
+        <!-- 工具栏 -->
+        <view class="br-toolbar">
+          <button class="br-tool-btn" bindtap="onUndo" disabled="{{saving}}">↩ 撤销</button>
+          <button wx:if="{{replayIndex >= 0}}" class="br-tool-btn br-tool-btn-active" bindtap="onBackToLatest">⏭ 回到最新</button>
+          <button class="br-tool-btn {{aiHintOn ? 'br-tool-btn-active' : ''}}" bindtap="onToggleAIHint" disabled="{{saving}}">
+            🤖 AI提示{{aiHintOn ? ' 开' : ''}}
+          </button>
+          <button class="br-tool-btn" bindtap="onClear" disabled="{{saving}}">🗑 清空</button>
+        </view>
+
+        <!-- AI 推荐走法：默认关闭，开启后按当前走子方视角分析当前局面 -->
+        <view wx:if="{{aiHintOn}}" class="br-ai">
+          <view class="br-ai-head">
+            <text class="br-ai-title">AI 推荐走法</text>
+            <text wx:if="{{analyzing}}" class="br-ai-hint">分析中…</text>
+            <text wx:elif="{{replayIndex >= 0}}" class="br-ai-hint">复盘中 · 回到最新可分析</text>
+            <text wx:elif="{{analysisError}}" class="br-ai-hint">分析失败 · 再点按钮重试</text>
+            <text wx:elif="{{analysisCandidates.length > 0}}" class="br-ai-hint">{{analysisCandidates.length}} 条 · 点击可走子</text>
+            <text wx:else class="br-ai-hint">等待分析</text>
+          </view>
+          <view class="br-ai-body">
+            <analysis-panel
+              id="boardRecordPanel"
+              gameStarted="{{true}}"
+              fen="{{fen}}"
+              analysis="{{analysisCandidates}}"
+              analysisError="{{analysisError}}"
+              showHints="{{true}}"
+              showActions="{{false}}"
+              isAIThinking="{{analyzing}}"
+              playerSide="{{turnSide}}"
+              turn="{{turnSide}}"
+              bind:playcontinuation="onPlayCandidate">
+            </analysis-panel>
+          </view>
+        </view>
+
+        <!-- 走棋历史 -->
+        <view wx:if="{{moveCount > 0}}" class="br-move-history">
+          <text class="br-history-title">走棋历史（{{moveCount}} 手）· 点击可回看</text>
+          <view class="br-move-list">
+            <view wx:for="{{moveItems}}" wx:key="index" data-index="{{index}}" bindtap="onMoveHistoryTap"
+                  class="br-move-item {{item.active ? 'br-move-item-active' : ''}}">
+              <text class="br-move-text">{{item.label}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+  <!-- AI生成内容免责声明 -->
+  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
+    </scroll-view>
+
+    <!-- 底部固定：保存常驻可见，不必滚动去找 -->
+    <view class="br-save-bar">
+      <view wx:if="{{saveResult}}" class="br-save-success">
+        <text>✅ 已保存到我的棋谱</text>
+        <view class="br-view-btn" catchtap="onViewSaved">去复盘 →</view>
+      </view>
+      <view wx:if="{{saveError}}" class="br-save-error">
+        <text>{{saveError}}</text>
+      </view>
+
+      <button class="br-save-btn" bindtap="onSave" disabled="{{saving || moveCount === 0}}">
+        {{saving ? '保存中…' : '💾 保存到我的棋谱'}}
+      </button>
+    </view>
+  </view>
+
+  <!-- 兵升变选择 -->
+  <promotion-dialog show="{{showPromotion}}" color="{{promotionColor}}"
+                    bind:select="onPromotionSelect" bind:cancel="onPromotionCancel"></promotion-dialog>
+</view>

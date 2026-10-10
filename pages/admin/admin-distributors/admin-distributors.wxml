@@ -11,5 +11,7 @@
       <text class="item-desc">等级：{{item.level || '-'}} · 佣金：{{item.commissionRate || 0}}%</text>
     </view>
     <view wx:if="{{distributors.length === 0 && !loading}}" class="empty-tip">暂无分销商</view>
+  <!-- AI生成内容免责声明 -->
+  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
   </scroll-view>
 </view>

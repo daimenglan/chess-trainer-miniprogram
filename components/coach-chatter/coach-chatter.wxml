@@ -1,0 +1,7 @@
+<!-- Rex 教练闲聊气泡（同网页版 CoachChatter） -->
+<view class="coach-chatter" wx:if="{{visible}}">
+  <view class="coach-chatter-bubble">
+    <text class="coach-chatter-text">{{bubbleText}}</text>
+    <view class="coach-chatter-close" catchtap="onCloseBubble">✕</view>
+  </view>
+</view>

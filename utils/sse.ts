@@ -107,8 +107,10 @@ function createSSERequest(url: string, data: any, callbacks: SSECallbacks): { ab
     success(res: any) {
       if (finished) return;
       if (res.statusCode !== 200) {
+        // 非 200 时不要再走 finish()：它会触发 onDone，
+        // 调用方（如整局复盘）的 onDone 会把 onError 刚写入的错误文案清空。
         onError && onError(new Error(`SSE 请求失败 (${res.statusCode})`));
-        finish();
+        finished = true;
         return;
       }
       if (!chunkedSupported && typeof res.data === 'string' && res.data) {
@@ -121,7 +123,7 @@ function createSSERequest(url: string, data: any, callbacks: SSECallbacks): { ab
     fail(err: any) {
       if (finished) return;
       onError && onError(new Error(err.errMsg || 'SSE 网络错误'));
-      finish();
+      finished = true;
     },
   });
 
@@ -137,7 +139,8 @@ function createSSERequest(url: string, data: any, callbacks: SSECallbacks): { ab
             finish();
           } else if (evt.type === 'error') {
             onError && onError(new Error(evt.message || '流式响应错误'));
-            finish();
+            // 同 success()：出错后不再触发 onDone，保留调用方写入的错误文案
+            finished = true;
           }
         }
       } catch (e) {

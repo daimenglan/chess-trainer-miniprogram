@@ -3,7 +3,7 @@
  * 当后端 API 不可用时（如真机预览未配置合法域名），
  * 使用 chess.js 做 alpha-beta 搜索，保证对弈可继续。
  */
-const Chess = require('./chessjs');
+const ChessLib: any = require('./chessjs');
 
 const PIECE_VALUES: Record<string, number> = {
   p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000,
@@ -67,7 +67,7 @@ function negamax(chess: any, depth: number, alpha: number, beta: number): number
  * @param difficulty 1-10 难度，映射搜索深度与随机性
  */
 function getLocalAIMove(fen: string, difficulty: number): string {
-  const chess = new (Chess as any).Chess(fen);
+  const chess = new (ChessLib as any).Chess(fen);
   const moves = chess.moves({ verbose: true }) as any[];
   if (!moves || moves.length === 0) return '';
 
@@ -93,4 +93,5 @@ function getLocalAIMove(fen: string, difficulty: number): string {
   return candidates[Math.floor(Math.random() * candidates.length)] || '';
 }
 
-module.exports = { getLocalAIMove };
+module.exports = { getLocalAIMove, evaluate };
+export {};

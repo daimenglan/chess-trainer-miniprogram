@@ -25,6 +25,13 @@
 
 .empty-icon { font-size: 60rpx; display: block; margin-bottom: 16rpx; }
 
+.list-empty-hint {
+  display: block;
+  margin: 8rpx 0 20rpx;
+  font-size: 22rpx;
+  opacity: 0.75;
+}
+
 /* 搜索 */
 .search-bar {
   display: flex;

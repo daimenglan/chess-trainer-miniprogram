@@ -1,8 +1,6 @@
 /**
  * 教室棋盘页
  */
-const app = getApp();
-const api = require('../../../utils/api');
 
 Page({
   data: {
@@ -22,10 +20,7 @@ Page({
 
   onShow() {
     this._syncTheme();
-    if (!app.globalData.token) {
-      wx.reLaunch({ url: '/pages/login/login' });
-      return;
-    }
+    // 本页不调任何接口：只是重置/展示本地 FEN 的棋盘演示，游客可直接使用，无需登录
   },
 
   onResetBoard() {

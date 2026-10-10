@@ -1,8 +1,8 @@
 /**
  * 奖励中心页
  */
-const app = getApp();
 const api = require('../../utils/api');
+const util = require('../../utils/util');
 
 Page({
   data: {
@@ -23,8 +23,7 @@ Page({
 
   onShow() {
     this._syncTheme();
-    if (!app.globalData.token) {
-      wx.reLaunch({ url: '/pages/login/login' });
+    if (!util.requireLogin('奖励中心')) {
       return;
     }
     this.loadRewards();

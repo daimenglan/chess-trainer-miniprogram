@@ -1,6 +1,25 @@
 {
-  "rules": [{
-    "action": "allow",
-    "page": "*"
-  }]
+  "rules": [
+    {
+      "action": "allow",
+      "page": "*"
+    },
+    {
+      "//": "管理后台不对外：31 个 pages/admin* 页面仅管理员可访问（前端 checkAdmin + 后端 requireAdmin），无需被微信搜索收录",
+      "action": "disallow",
+      "page": "pages/admin"
+    },
+    {
+      "action": "disallow",
+      "page": "pages/admin-stats"
+    },
+    {
+      "action": "disallow",
+      "page": "pages/admin-logs"
+    },
+    {
+      "action": "disallow",
+      "page": "pages/admin-users"
+    }
+  ]
 }

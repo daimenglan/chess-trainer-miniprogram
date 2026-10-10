@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate tab bar icons for mychess AI mini program.
+"""Generate tab bar icons for Mychess mini program.
 
 Creates 4 icon pairs (active + inactive):
   - 首页 (Home)    : house

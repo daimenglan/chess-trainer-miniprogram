@@ -1,29 +1,133 @@
-<view class="page" __theme__="{{__theme__}}">
+<view class="page {{__theme__ ? 'theme-' + __theme__ : ''}}">
   <view class="nav-bar">
     <view class="nav-back" bindtap="onBack">
       <text class="nav-back-icon">←</text>
-      <text class="nav-back-text">返回</text>
+      <text class="nav-back-text">{{viewMode === 'board' ? '返回' : '返回棋盘'}}</text>
     </view>
-    <text class="nav-title">竞赛对弈</text>
+    <text class="nav-title">{{viewMode === 'board' ? '竞赛对弈' : viewMode === 'standings' ? '排行榜' : '轮次视图'}}</text>
   </view>
 
-  <view class="play-container">
-    <view class="match-info" wx:if="{{match}}">
-      <text class="match-title">对弈 #{{match.id}}</text>
-      <text class="match-status">{{match.status === 'ongoing' ? '进行中' : match.status === 'finished' ? '已结束' : match.status}}</text>
+  <scroll-view scroll-y class="page-scroll">
+
+    <!-- 棋盘视图 -->
+    <view wx:if="{{viewMode === 'board'}}" class="play-container">
+      <!-- 对局信息 -->
+      <view class="match-info" wx:if="{{match}}">
+        <view class="match-players">
+          <view class="match-player {{playerSide === 'w' ? 'player-active' : ''}}">
+            <text class="player-color">⚪</text>
+            <text class="player-name">{{match.whiteName || '白方'}}</text>
+            <text wx:if="{{match.whiteRating}}" class="player-rating">({{match.whiteRating}})</text>
+          </view>
+          <view class="match-result" wx:if="{{gameOver}}">
+            <text class="result-text">{{resultLabel}}</text>
+          </view>
+          <view class="match-result" wx:else>
+            <text class="result-text">{{turn === 'w' ? '白方走棋' : '黑方走棋'}}</text>
+          </view>
+          <view class="match-player {{playerSide === 'b' ? 'player-active' : ''}}">
+            <text class="player-color">⚫</text>
+            <text class="player-name">{{match.blackName || '黑方'}}</text>
+            <text wx:if="{{match.blackRating}}" class="player-rating">({{match.blackRating}})</text>
+          </view>
+        </view>
+        <view class="match-meta">
+          <text wx:if="{{match.competitionTitle}}" class="match-comp">🏆 {{match.competitionTitle}}</text>
+          <text wx:if="{{match.timeControl}}" class="match-time">⏱ {{match.timeControl}}</text>
+          <text wx:if="{{match.roundNumber}}" class="match-round">第 {{match.roundNumber}} 轮</text>
+        </view>
+      </view>
+
+      <!-- 真实棋盘 -->
+      <chess-board
+        fen="{{fen}}"
+        isCheck="{{isCheck}}"
+        interactive="{{!gameOver}}"
+        selectedSquare="{{selectedSquare}}"
+        legalMoves="{{legalMoves}}"
+        lastMoveFrom="{{lastMoveFrom}}"
+        lastMoveTo="{{lastMoveTo}}"
+        boardColorPreset="blueWhite"
+        bind:squaretap="onSquareTap">
+      </chess-board>
+
+      <!-- 操作按钮 -->
+      <view class="match-actions">
+        <view class="action-btn" catchtap="onShowStandings">📊 排行榜</view>
+        <view class="action-btn" catchtap="onShowRounds">📋 轮次</view>
+        <view class="action-btn" catchtap="onBack">返回</view>
+      </view>
+
+      <view class="loading-tip" wx:if="{{loading}}">
+        <text>加载中...</text>
+      </view>
     </view>
 
-    <view class="board-placeholder">
-      <text class="placeholder-text"> Chess Board Component </text>
-      <text class="placeholder-sub">竞赛对弈棋盘（复用 chess-board 组件）</text>
+    <!-- 排行榜视图 -->
+    <view wx:if="{{viewMode === 'standings'}}" class="standings-view">
+      <view class="standings-header">
+        <text class="standings-title">📊 排行榜</text>
+        <text wx:if="{{standings.length > 0}}" class="standings-count">共 {{standings.length}} 人</text>
+      </view>
+      <scroll-view scroll-y class="standings-scroll">
+        <view class="standings-table">
+          <view class="standings-header-row">
+            <text class="sh-rank">#</text>
+            <text class="sh-player">选手</text>
+            <text class="sh-score">得分</text>
+            <text class="sh-sb">S</text>
+            <text class="sh-sb">B</text>
+            <text class="sh-sb">V</text>
+          </view>
+          <view class="standings-row" wx:for="{{standings}}" wx:key="userId" wx:for-item="s">
+            <text class="sh-rank {{s.rank <= 3 ? 'medal-' + s.rank : ''}}">{{s.rank}}</text>
+            <view class="sh-player-cell">
+              <text class="sh-player-name">{{s.username || '选手'}}</text>
+              <text wx:if="{{s.rating}}" class="sh-player-rating">({{s.rating}})</text>
+            </view>
+            <text class="sh-score">{{s.score || 0}}</text>
+            <text class="sh-sb">{{s.tiebreak1 || 0}}</text>
+            <text class="sh-sb">{{s.tiebreak2 || 0}}</text>
+            <text class="sh-sb">{{s.tiebreak3 || 0}}</text>
+          </view>
+        </view>
+        <view wx:if="{{standings.length === 0}}" class="empty-tip">
+          <text>暂无排行榜数据</text>
+        </view>
+      </scroll-view>
     </view>
 
-    <view class="match-actions">
-      <view class="action-btn" bindtap="onBack"><text>返回</text></view>
+    <!-- 轮次视图 -->
+    <view wx:if="{{viewMode === 'rounds'}}" class="rounds-view">
+      <view class="rounds-header">
+        <text class="rounds-title">📋 轮次视图</text>
+      </view>
+      <scroll-view scroll-y class="rounds-scroll">
+        <view class="round-card" wx:for="{{rounds}}" wx:key="roundNumber" wx:for-item="round">
+          <view class="round-card-header">
+            <text class="round-num">第 {{round.roundNumber}} 轮</text>
+            <text class="round-status {{round.status === 'completed' ? 'status-done' : round.status === 'in_progress' ? 'status-active' : 'status-pending'}}">
+              {{round.status === 'completed' ? '已完成' : round.status === 'in_progress' ? '进行中' : '待开始'}}
+            </text>
+          </view>
+          <view class="round-matches">
+            <view class="round-match" wx:for="{{round.matches}}" wx:key="id" wx:for-item="m">
+              <view class="match-mini">
+                <text class="match-mini-players">{{m.whiteName || '?'}}
+                  {{m.result === '1-0' ? ' 1:0' : m.result === '0-1' ? ' 0:1' : m.result === '1/2-1/2' ? ' ½:½' : ' vs'}}
+                  {{m.blackName || '?'}}</text>
+                <text wx:if="{{m.result}}" class="match-mini-result">{{m.result}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+        <view wx:if="{{rounds.length === 0}}" class="empty-tip">
+          <text>暂无轮次数据</text>
+        </view>
+      </scroll-view>
     </view>
 
-    <view class="loading-tip" wx:if="{{loading}}">
-      <text>加载中...</text>
-    </view>
-  </view>
+  </scroll-view>
+  <!-- AI生成内容免责声明 -->
+  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
 </view>

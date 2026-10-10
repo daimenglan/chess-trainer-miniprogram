@@ -1,0 +1,143 @@
+<view class="coin-shop-page">
+  <view class="cs-header">
+    <view class="cs-balance">
+      <text class="cs-balance-label">金币余额</text>
+      <text class="cs-balance-value">🪙 {{balance}}</text>
+    </view>
+    <view wx:if="{{streak}}" class="cs-streak">
+      <text class="cs-streak-item">🔥 {{streak.taskCheckinStreak}} 天</text>
+      <text class="cs-streak-item">🎫 {{streak.makeupCards}} 补签卡</text>
+    </view>
+  </view>
+
+  <view class="cs-tabs">
+    <button class="cs-tab {{tab === 'earn' ? 'active' : ''}}" data-tab="earn" bindtap="onTab">🎁 赚金币</button>
+    <button class="cs-tab {{tab === 'spend' ? 'active' : ''}}" data-tab="spend" bindtap="onTab">🛍️ 花金币</button>
+    <button class="cs-tab {{tab === 'records' ? 'active' : ''}}" data-tab="records" bindtap="onTab">📒 记录</button>
+  </view>
+
+  <view wx:if="{{message}}" class="cs-message {{msgType === 'error' ? 'error' : ''}}">{{message}}</view>
+
+  <!-- 赚金币 -->
+  <view wx:if="{{tab === 'earn'}}" class="cs-tab-content">
+    <view wx:if="{{reward && reward.chests}}" class="cs-section">
+      <text class="cs-section-title">连续打卡里程碑</text>
+      <view class="cs-chest-grid">
+        <view wx:for="{{reward.chests}}" wx:key="ruleKey" class="cs-chest {{chestStyle(item.streakDays)}}">
+          <text class="cs-chest-icon">{{item.claimed ? '📦' : item.reachable ? '🎁' : '🔒'}}</text>
+          <text class="cs-chest-name">{{item.chestName}}</text>
+          <text class="cs-chest-days">{{item.streakDays}}天</text>
+          <text class="cs-chest-coins">🪙{{item.coins}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{reward && reward.tasks}}" class="cs-section">
+      <text class="cs-section-title">每日任务</text>
+      <view wx:for="{{reward.tasks}}" wx:key="ruleKey" class="cs-task {{task.completed ? 'completed' : ''}}">
+        <view class="cs-task-info">
+          <text class="cs-task-name">{{task.name}}</text>
+          <text wx:if="{{task.description}}" class="cs-task-desc">{{task.description}}</text>
+          <view class="cs-task-progress">
+            <view class="cs-task-bar" style="width: {{Math.min(100, task.progress / task.target * 100)}}%"></view>
+          </view>
+        </view>
+        <view class="cs-task-reward">
+          <text class="cs-task-coin">+{{task.coinAmount}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="cs-section">
+      <text class="cs-section-title">连击道具</text>
+      <view class="cs-streak-items">
+        <view class="cs-streak-item-card">
+          <text class="cs-streak-item-name">🔧 连击修复卡</text>
+          <text class="cs-streak-item-desc">断连 72 小时内修复，每月限 3 次</text>
+          <view class="cs-streak-item-action">
+            <text class="cs-streak-item-price">300 币</text>
+            <button class="cs-streak-item-btn" bindtap="onRepair" disabled="{{acting !== '' || !canRepair}}">购买并修复</button>
+          </view>
+        </view>
+        <view class="cs-streak-item-card">
+          <text class="cs-streak-item-name">🧊 连击冻结卡</text>
+          <text class="cs-streak-item-desc">休假 3 天，连击不中断，每月限 1 次</text>
+          <view class="cs-streak-item-action">
+            <text class="cs-streak-item-price">500 币</text>
+            <button class="cs-streak-item-btn" bindtap="onFreeze" disabled="{{acting !== '' || isFrozen}}">{{isFrozen ? '生效中' : '购买并启用'}}</button>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="cs-section">
+      <text class="cs-section-title">金币发放规则</text>
+      <view wx:for="{{configs}}" wx:key="id" class="cs-rule">
+        <text class="cs-rule-name">{{item.name}}</text>
+        <text class="cs-rule-coin">+{{item.coinAmount}} 金币</text>
+        <text wx:if="{{item.description}}" class="cs-rule-desc">{{item.description}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 花金币 -->
+  <view wx:if="{{tab === 'spend'}}" class="cs-tab-content">
+    <view wx:if="{{shop}}" class="cs-goods-sections">
+      <view wx:for="{{CATEGORY_META}}" wx:key="type" class="cs-goods-category">
+        <text class="cs-goods-title">{{item.icon}} {{item.title}}</text>
+        <view class="cs-goods-grid">
+          <view wx:for="{{shop.goods}}" wx:key="goodsCode" wx:if="{{item.type === goodsType}}" class="cs-goods-card">
+            <text class="cs-goods-name">{{item.name}}</text>
+            <text wx:if="{{item.description}}" class="cs-goods-desc">{{item.description}}</text>
+            <view class="cs-goods-action">
+              <text class="cs-goods-price">🪙 {{item.price}}</text>
+              <button class="cs-goods-btn" data-code="{{item.goodsCode}}" bindtap="onBuy" disabled="{{buying !== '' || balance < item.price}}">购买</button>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="cs-exchange-section">
+      <text class="cs-section-title">👑 兑换会员权益</text>
+      <view wx:for="{{exchanges}}" wx:key="id" class="cs-exchange-card">
+        <view class="cs-exchange-info">
+          <text class="cs-exchange-name">{{item.name}}</text>
+          <text class="cs-exchange-detail">{{item.coinCost}} 金币 · {{item.durationDays}} 天</text>
+        </view>
+        <button class="cs-exchange-btn" data-key="{{item.ruleKey}}" bindtap="onExchange" disabled="{{exchanging !== '' || balance < item.coinCost}}">兑换</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 记录 -->
+  <view wx:if="{{tab === 'records'}}" class="cs-tab-content">
+    <view class="cs-section">
+      <text class="cs-section-title">金币流水</text>
+      <view wx:if="{{ledger.length > 0}}" class="cs-ledger">
+        <view wx:for="{{ledger}}" wx:key="id" class="cs-ledger-row">
+          <text class="cs-ledger-desc">{{item.note || item.ruleKey || item.source}}</text>
+          <text class="cs-ledger-delta {{item.delta >= 0 ? 'positive' : 'negative'}}">{{item.delta >= 0 ? '+' : ''}}{{item.delta}}</text>
+          <text class="cs-ledger-balance">{{item.balanceAfter}}</text>
+        </view>
+      </view>
+      <view wx:else class="cs-empty">暂无流水记录</view>
+    </view>
+
+    <view class="cs-section">
+      <text class="cs-section-title">兑换记录</text>
+      <view wx:if="{{records.length > 0}}" class="cs-records">
+        <view wx:for="{{records}}" wx:key="id" class="cs-record-row">
+          <text class="cs-record-name">{{item.benefitCode}}</text>
+          <text class="cs-record-cost">{{item.coinCost}} 金币</text>
+          <text class="cs-record-status {{item.status === 'completed' ? 'done' : ''}}">{{item.status}}</text>
+        </view>
+      </view>
+      <view wx:else class="cs-empty">暂无兑换记录</view>
+    </view>
+  </view>
+
+  <button class="cs-back-btn" bindtap="onBack">← 返回</button>
+  <!-- AI生成内容免责声明 -->
+  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
+</view>

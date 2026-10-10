@@ -33,4 +33,9 @@ Page({
     onShow() {
         this._syncTheme();
     },
+    /** 打开《用户服务协议》/《隐私政策》 */
+    onOpenAgreement(e) {
+        const doc = e?.currentTarget?.dataset?.doc === 'privacy' ? 'privacy' : 'service';
+        wx.navigateTo({ url: `/pages/agreement/agreement?doc=${doc}` });
+    },
 });

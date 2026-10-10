@@ -1,8 +1,18 @@
 <view class="analysis-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
+  <!-- 页面新手引导（同网页版 PageGuide） -->
+  <page-guide
+    storageKey="page_analysis"
+    icon="🔍"
+    title="分析模式"
+    desc="在这里你可以回放对局、逐走复盘、查看引擎分析与走势"
+    hint="复盘会自动开始，分析线与推荐走法直接标注在棋盘上"
+  ></page-guide>
+
   <!-- 顶部导航 -->
   <view class="top-bar glass gradient-top">
     <view class="top-bar-left">
       <text class="mode-badge">🔍 分析模式</text>
+      <text class="ai-gen-flag ai-gen-flag-top">AI生成</text>
       <block wx:if="{{game}}">
         <view class="player-tag"><text class="player-dot-white"></text><text>{{game.whiteName || game.white || '白方'}}</text></view>
         <text class="vs-text">VS</text>
@@ -19,21 +29,18 @@
       </view>
       <!-- 下拉菜单 -->
       <view wx:if="{{showMoreMenu}}" class="more-dropdown">
-        <view class="more-item {{reviewLoading ? 'more-item-disabled' : ''}} {{moveReviewCount > 0 ? '' : ''}}"
-              catchtap="onToggleReview">
-          <text>{{reviewLoading ? '⏳ ' + reviewProgress + '%' : (moveReviewCount > 0 ? '📊 复盘' : '🤖 复盘')}}</text>
+        <!-- 复盘默认自动运行，此项用于查看分析线 / 失败后重试 -->
+        <view class="more-item {{reviewLoading ? 'more-item-disabled' : ''}}" catchtap="onToggleReview">
+          <text>{{reviewLoading ? '⏳ ' + reviewProgress + '%' : (moveReviewCount > 0 ? '📊 查看分析线' : (reviewError ? '🔄 重试复盘' : '🤖 复盘'))}}</text>
         </view>
         <view class="more-item {{explorationMode ? 'more-item-active' : ''}}" catchtap="onToggleExploration">
           <text>{{explorationMode ? '📝 退出推演' : '✏️ 推演'}}</text>
         </view>
-        <view class="more-item" catchtap="onStartAutoExploration">
-          <text>🤖 自动推演</text>
+        <view class="more-item {{deepOpen ? 'more-item-active' : ''}}" catchtap="onToggleDeepReview">
+          <text>🧠 深度复盘</text>
         </view>
         <view class="more-item" catchtap="onShowAiAnalysis">
-          <text>🤖 AI分析</text>
-        </view>
-        <view wx:if="{{showVideoGeneration}}" class="more-item" catchtap="onShowVideoModal">
-          <text>🎬 讲解视频</text>
+          <text>🤖 AI推荐</text>
         </view>
         <view class="more-item" catchtap="onShowShare">
           <text>📤 分享</text>
@@ -46,22 +53,27 @@
   </view>
 
   <!-- 优劣势走势图（复盘时显示在棋盘上方，点击数据点跳转到对应步；分析线与推荐走法均可折叠） -->
-  <view wx:if="{{!showMoreMenu && (reviewLoading || reviewError || (reviewDone && chartData.length >= 2))}}" class="chart-section-top">
+  <view wx:if="{{!showMoreMenu && (reviewLoading || reviewError || reviewNeedLogin || (reviewDone && chartData.length >= 2))}}" class="chart-section-top">
     <!-- 分析线：折叠头 -->
     <view class="collapse-bar" catchtap="onToggleChartLine">
       <text class="collapse-title">📈 分析线</text>
-      <text wx:if="{{!chartLineExpanded}}" class="collapse-hint">
+      <text wx:if="{{!chartLineExpanded && !reviewNeedLogin}}" class="collapse-hint">
         {{reviewLoading ? '分析中 ' + reviewProgress + '%' : (reviewError ? '加载失败' : chartData.length + ' 个局面点')}}
       </text>
-      <text class="collapse-icon">{{chartLineExpanded ? '收起 ▲' : '展开 ▼'}}</text>
+      <text wx:if="{{!chartLineExpanded && reviewNeedLogin}}" class="collapse-hint">登录后可查看</text>
+      <text wx:if="{{!reviewNeedLogin}}" class="collapse-icon">{{chartLineExpanded ? '收起 ▲' : '展开 ▼'}}</text>
     </view>
+    <view class="ai-disclaimer-inline"><text>本服务为AI生成内容，结果仅供参考</text></view>
     <view wx:if="{{chartLineExpanded}}">
       <canvas wx:if="{{reviewDone && chartData.length >= 2}}" type="2d" id="evalChart" class="eval-chart-top" catchtap="onChartTap"></canvas>
+      <view wx:elif="{{reviewNeedLogin}}" class="chart-placeholder-top">
+        <text class="chart-need-login">🔒 登录后才能加载分析线</text>
+      </view>
       <view wx:elif="{{reviewLoading}}" class="chart-placeholder-top">
         <text>⏳ 正在分析优劣势... {{reviewProgress > 0 ? reviewProgress + '%' : ''}}</text>
       </view>
       <view wx:else class="chart-placeholder-top">
-        <text class="text-warn">⚠️ 分析加载失败</text>
+        <text class="text-warn">⚠️ {{reviewErrorText || '分析加载失败'}}</text>
       </view>
     </view>
 
@@ -109,9 +121,23 @@
       selectedSquare="{{selectedSquare}}"
       legalMoves="{{legalMoves}}"
       canvasHidden="{{showMoreMenu}}"
-      bind:squaretap="onExploreSquareTap">
+      labelVariant="inline"
+      showHints="{{true}}"
+      analysis="{{displayFen === analysisFen ? analysisCandidates : []}}"
+      bind:squaretap="onExploreSquareTap"
+      bind:scrolltocandidate="onBoardCandidateTap">
     </chess-board>
   </view>
+
+  <!-- Rex 教练闲聊气泡（同网页版 CoachChatter） -->
+  <coach-chatter
+    fen="{{displayFen}}"
+    moveHistory="{{moves}}"
+    playerSide="{{playerSide}}"
+    gameStarted="{{gameStarted}}"
+    gameOver="{{gameOver}}"
+    enabled="{{true}}"
+  ></coach-chatter>
 
   <!-- 导航控制 -->
   <view class="nav-controls">
@@ -145,6 +171,8 @@
     <view class="section-card">
       <view class="collapse-bar collapse-bar-flush" catchtap="onToggleAnalysisPanel">
         <text class="collapse-title">🧭 局面分析</text>
+        <!-- 手动推演：当前局面相对推演前的赚亏（正=赚 / 负=亏，己方视角） -->
+        <text wx:if="{{exploreDeltaLabel}}" class="explore-delta" style="color: {{exploreDeltaColor}};">{{exploreDeltaLabel}}</text>
         <text wx:if="{{!panelExpanded}}" class="collapse-hint">
           {{analysisCandidates.length > 0 ? analysisCandidates.length + ' 条推荐走法' : '评估条与推荐走法'}}
         </text>
@@ -203,10 +231,13 @@
     <!-- 走法详情面板 -->
     <view wx:if="{{reviewDetail}}" class="detail-panel">
       <view class="detail-header">
-        <text class="detail-title">
-          第 {{reviewDetail.playerMoveNumber}} 手
+        <view class="detail-title-wrap">
+          <text class="detail-title">
+            第 {{reviewDetail.playerMoveNumber}} 手
+          </text>
           <text class="detail-class {{reviewDetail.meta.color}}">{{reviewDetail.meta.icon}} {{reviewDetail.meta.label}}</text>
-        </text>
+          <text class="ai-gen-flag">AI生成</text>
+        </view>
         <text class="detail-close" catchtap="onCloseDetail">✕</text>
       </view>
       <view class="score-compare">
@@ -235,26 +266,201 @@
       </view>
     </view>
 
-    <!-- 棋谱历史 -->
-    <view class="section-card">
-      <text class="section-title">📝 对局棋谱</text>
-      <move-history moveHistory="{{moves}}" moveReviews="{{moveReviews}}"
-        replayIndex="{{currentMoveIndex}}" isReplay="{{true}}"
-        bind:gotomove="onGoToMove">
-      </move-history>
-    </view>
+    <!-- 棋谱历史：复盘时与棋盘上方的逐步导航重复，按需求不展示 -->
+
+    <!-- AI生成内容免责声明 -->
+    <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
   </scroll-view>
 
-  <!-- AI 分析弹窗 -->
+  <!-- 深度复盘抽屉（引擎分析 + LLM 战略战术解析，对齐网页版 DeepReviewPanel） -->
+  <view wx:if="{{deepOpen}}" class="deep-mask" catchtap="onCloseDeepReview"></view>
+  <view class="deep-drawer {{deepOpen ? 'deep-drawer-open' : ''}}">
+    <!-- 抽屉把手 -->
+    <view class="deep-handle" catchtap="onCloseDeepReview">
+      <text class="deep-handle-title">🧠 深度复盘</text>
+      <text class="deep-handle-hint">收起 ▾</text>
+    </view>
+
+    <scroll-view class="deep-body" scroll-y>
+      <!-- AI生成内容免责声明 -->
+      <view class="ai-disclaimer-inline deep-disclaimer">
+        <text class="ai-gen-flag">AI生成</text>
+        <text>本服务为AI生成内容，结果仅供参考</text>
+      </view>
+      <!-- 未分析：启动入口 -->
+      <view wx:if="{{deepResults.length === 0 && !deepLoading}}" class="deep-empty">
+        <text class="deep-empty-icon">🧠</text>
+        <text class="deep-empty-desc">对每步走法进行引擎分析 + LLM 战略战术深度解析</text>
+        <view class="deep-start-btn" catchtap="onStartDeepReview">开始深度复盘</view>
+      </view>
+
+      <!-- 进度 -->
+      <view wx:if="{{deepLoading}}" class="deep-progress">
+        <view class="deep-progress-bg">
+          <view class="deep-progress-fill" style="width: {{deepProgress}}%"></view>
+        </view>
+        <text class="deep-progress-text">
+          {{deepProgress < 50 ? '引擎分析中 (' + deepProgress + '%)' : (deepProgress < 100 ? 'LLM 战略分析中 (' + deepProgress + '%)' : '分析完成')}}
+        </text>
+      </view>
+
+      <!-- LLM 分析进行中（引擎已完成） -->
+      <view wx:if="{{deepResults.length > 0 && deepLoading && deepProgress >= 50}}" class="deep-llm-running">
+        <view class="deep-spinner"></view>
+        <text>LLM 正在分析每一步的战略战术…</text>
+      </view>
+
+      <!-- 错误 -->
+      <view wx:if="{{deepError}}" class="deep-error">
+        <text class="deep-error-title">分析失败</text>
+        <text>{{deepError}}</text>
+        <view class="deep-retry-btn" catchtap="onStartDeepReview">重新分析</view>
+      </view>
+
+      <!-- LLM 战略分析失败（引擎结果仍有效） -->
+      <view wx:if="{{!deepLoading && deepLlmFailed && deepResults.length > 0}}" class="deep-llm-failed">
+        <text class="deep-error-title">⚠️ LLM 战略分析未生成</text>
+        <text>{{deepLlmFailed}}</text>
+        <view class="deep-retry-btn" catchtap="onClearDeepReview">清除后重新分析</view>
+      </view>
+
+      <!-- 整局总结 -->
+      <block wx:if="{{deepSummary}}">
+        <view wx:if="{{deepSummary.phaseSummary}}" class="deep-summary-card deep-phase-card">
+          <text class="deep-summary-title">📋 三阶段总评</text>
+          <view wx:if="{{deepSummary.phaseSummary.opening}}" class="deep-phase-row">
+            <text class="deep-phase-label deep-phase-opening">开局</text>
+            <text class="deep-phase-text">{{deepSummary.phaseSummary.opening}}</text>
+          </view>
+          <view wx:if="{{deepSummary.phaseSummary.middlegame}}" class="deep-phase-row">
+            <text class="deep-phase-label deep-phase-mid">中局</text>
+            <text class="deep-phase-text">{{deepSummary.phaseSummary.middlegame}}</text>
+          </view>
+          <view wx:if="{{deepSummary.phaseSummary.endgame}}" class="deep-phase-row">
+            <text class="deep-phase-label deep-phase-end">残局</text>
+            <text class="deep-phase-text">{{deepSummary.phaseSummary.endgame}}</text>
+          </view>
+        </view>
+        <view class="deep-summary-card">
+          <view wx:if="{{deepSummary.gameSummary}}" class="deep-summary-block">
+            <text class="deep-summary-label">对局评价</text>
+            <text class="deep-summary-text">{{deepSummary.gameSummary}}</text>
+          </view>
+          <view wx:if="{{deepSummary.keyTurningPoints}}" class="deep-summary-block">
+            <text class="deep-summary-label">关键转折</text>
+            <text class="deep-summary-text">{{deepSummary.keyTurningPoints}}</text>
+          </view>
+          <view wx:if="{{deepSummary.playerStrengths}}" class="deep-summary-block">
+            <text class="deep-summary-label deep-label-good">优点</text>
+            <text class="deep-summary-text">{{deepSummary.playerStrengths}}</text>
+          </view>
+          <view wx:if="{{deepSummary.playerWeaknesses}}" class="deep-summary-block">
+            <text class="deep-summary-label deep-label-warn">待改进</text>
+            <text class="deep-summary-text">{{deepSummary.playerWeaknesses}}</text>
+          </view>
+          <view wx:if="{{deepSummary.recommendedTraining}}" class="deep-summary-block">
+            <text class="deep-summary-label deep-label-info">推荐训练</text>
+            <text class="deep-summary-text">{{deepSummary.recommendedTraining}}</text>
+          </view>
+        </view>
+      </block>
+
+      <!-- 统计 + 过滤 -->
+      <block wx:if="{{deepStats}}">
+        <view class="deep-stats">
+          <view class="deep-stat" catchtap="onDeepClassTap" data-cls="best">
+            <text class="deep-stat-val deep-c-best">{{deepStats.best}}</text>
+            <text class="deep-stat-lbl {{deepFilterMap.best ? 'deep-stat-lbl-on' : ''}}">最佳</text>
+          </view>
+          <view class="deep-stat" catchtap="onDeepClassTap" data-cls="good">
+            <text class="deep-stat-val deep-c-good">{{deepStats.good}}</text>
+            <text class="deep-stat-lbl {{deepFilterMap.good ? 'deep-stat-lbl-on' : ''}}">良好</text>
+          </view>
+          <view class="deep-stat" catchtap="onDeepClassTap" data-cls="inaccuracy">
+            <text class="deep-stat-val deep-c-inacc">{{deepStats.inacc}}</text>
+            <text class="deep-stat-lbl {{deepFilterMap.inaccuracy ? 'deep-stat-lbl-on' : ''}}">不精确</text>
+          </view>
+          <view class="deep-stat" catchtap="onDeepClassTap" data-cls="mistake">
+            <text class="deep-stat-val deep-c-mistake">{{deepStats.mistake}}</text>
+            <text class="deep-stat-lbl {{deepFilterMap.mistake ? 'deep-stat-lbl-on' : ''}}">失误</text>
+          </view>
+          <view class="deep-stat" catchtap="onDeepClassTap" data-cls="blunder">
+            <text class="deep-stat-val deep-c-blunder">{{deepStats.blunder}}</text>
+            <text class="deep-stat-lbl {{deepFilterMap.blunder ? 'deep-stat-lbl-on' : ''}}">大错</text>
+          </view>
+        </view>
+        <view class="deep-filter-row">
+          <view class="deep-filter-chip {{deepOnlyMine ? 'deep-filter-chip-on' : ''}}" catchtap="onToggleDeepOnlyMine">
+            仅看我方
+          </view>
+          <view wx:if="{{deepOnlyMine || deepClassFilter.length > 0}}" class="deep-filter-chip" catchtap="onDeepClearFilters">
+            清除筛选
+          </view>
+          <text class="deep-count">共 {{deepStats.total}} 步</text>
+        </view>
+      </block>
+
+      <!-- 逐步分析列表 -->
+      <view wx:for="{{deepList}}" wx:key="index" wx:for-item="rv"
+            class="deep-move-card {{reviewDetailIndex === rv.index ? 'deep-move-active' : ''}}">
+        <view class="deep-move-head" catchtap="onDeepToggleMove" data-index="{{rv.index}}">
+          <text class="deep-move-icon {{rv.classColor}}">{{rv.classIcon}}</text>
+          <text class="deep-move-num">#{{rv.playerMoveNumber}}</text>
+          <text class="deep-side-dot {{rv.sideIsWhite ? 'side-white' : 'side-black'}}"></text>
+          <text class="deep-move-san">{{rv.san}}</text>
+          <text class="deep-move-class">{{rv.classLabel}}</text>
+          <text class="deep-move-score {{rv.playedScore <= -0.5 ? 'score-negative' : 'score-positive'}}">{{rv.playedScoreFormatted}}</text>
+          <text class="deep-move-caret">{{deepExpanded[rv.index] ? '▲' : '▼'}}</text>
+        </view>
+
+        <view wx:if="{{deepExpanded[rv.index]}}" class="deep-move-body">
+          <view wx:if="{{rv.strategicTag}}" class="deep-tag-row">
+            <text class="deep-tag">{{rv.strategicTag}}</text>
+          </view>
+          <text wx:if="{{rv.strategicCommentary}}" class="deep-commentary">{{rv.strategicCommentary}}</text>
+          <view wx:if="{{!rv.isBest && rv.bestMoveText}}" class="deep-best-row">
+            <text class="deep-best-label">推荐走法</text>
+            <text class="deep-best-move">{{rv.bestMoveText}}</text>
+            <text class="deep-best-score">{{rv.bestScoreFormatted}}</text>
+          </view>
+          <view wx:if="{{rv.mistakeReason}}" class="deep-block-warn">
+            <text class="deep-block-title">⚠️ 失误原因</text>
+            <text class="deep-block-text">{{rv.mistakeReason}}</text>
+          </view>
+          <view wx:if="{{rv.alternativePlan}}" class="deep-block-info">
+            <text class="deep-block-title">💡 后续计划</text>
+            <text class="deep-block-text">{{rv.alternativePlan}}</text>
+          </view>
+          <view class="deep-goto-btn" catchtap="onDeepGoToMove" data-index="{{rv.index}}">
+            跳到第 {{rv.playerMoveNumber}} 手
+          </view>
+        </view>
+      </view>
+
+      <!-- 底部操作 -->
+      <view wx:if="{{deepResults.length > 0 && !deepLoading}}" class="deep-footer-row">
+        <view class="deep-footer-btn" catchtap="onStartDeepReview">重新分析</view>
+        <view class="deep-footer-btn deep-footer-danger" catchtap="onClearDeepReview">清除</view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- AI 推荐走法弹窗 -->
   <view wx:if="{{showAiAnalysis}}" class="modal-overlay" catchtap="onHideAiAnalysis">
     <view class="ai-analysis-modal glass-strong" catchtap="stopPropagation">
       <view class="modal-header">
-        <text class="modal-title">🤖 AI 局面分析</text>
+        <view class="modal-title-wrap">
+          <text class="modal-title">🤖 AI 推荐走法讲解</text>
+          <text class="ai-gen-flag">AI生成</text>
+        </view>
         <text class="modal-close" catchtap="onHideAiAnalysis">✕</text>
       </view>
+      <view class="ai-gen-notice"><text>以下内容由人工智能（AI）自动生成，仅供参考</text></view>
       <scroll-view class="modal-body" scroll-y>
         <text wx:if="{{aiAnalysisLoading}}" class="modal-loading">⏳ AI 正在分析当前局面...</text>
         <text wx:if="{{aiAnalysisText}}" class="modal-text">{{aiAnalysisText}}</text>
+  <!-- AI生成内容免责声明 -->
+  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
       </scroll-view>
     </view>
   </view>
@@ -275,7 +481,7 @@
           <text class="video-status">{{videoStatus}}</text>
         </view>
         <view wx:else>
-          <text class="video-desc">将本局棋谱生成带 AI 幽默解说的讲解视频（MP4）</text>
+          <text class="video-desc">将本局棋谱生成带 AI 幽默解说的讲解视频（MP4），视频内容由人工智能（AI）自动生成，仅供参考</text>
           <view class="btn-row">
             <view class="btn primary" catchtap="onGenerateVideo">
               <text class="btn-text">开始生成</text>

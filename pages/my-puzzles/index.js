@@ -3,8 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * 我的习题页
  */
-const app = getApp();
 const api = require('../../utils/api');
+const util = require('../../utils/util');
 Page({
     data: {
         __theme__: (typeof getApp === "function" ? (getApp().globalData?.settings?.uiTheme || "dark") : "dark"),
@@ -25,8 +25,7 @@ Page({
     },
     onShow() {
         this._syncTheme();
-        if (!app.globalData.token) {
-            wx.reLaunch({ url: '/pages/login/login' });
+        if (!util.requireLogin('我的习题')) {
             return;
         }
         this.loadAll();

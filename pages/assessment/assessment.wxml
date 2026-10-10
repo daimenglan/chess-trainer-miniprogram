@@ -329,7 +329,11 @@
       <block wx:else>
         <!-- 结论卡 -->
         <view class="report-hero">
-          <text class="report-label">📊 定级报告 · {{report.mode == 'game' ? '实战对弈定级' : report.mode == 'puzzle' ? '习题作答定级' : '综合定级'}} · {{report.completedAtShort}}</text>
+          <view class="report-label-row">
+            <text class="report-label">📊 定级报告 · {{report.mode == 'game' ? '实战对弈定级' : report.mode == 'puzzle' ? '习题作答定级' : '综合定级'}} · {{report.completedAtShort}}</text>
+            <text class="ai-gen-flag">AI生成</text>
+          </view>
+          <view class="ai-gen-notice"><text>本报告由人工智能（AI）根据对弈与作答数据自动分析生成，仅供参考</text></view>
           <view class="report-elo-row">
             <view>
               <text class="report-elo-label">评估等级分</text>
@@ -424,4 +428,6 @@
     </view>
 
   </view>
+  <!-- AI生成内容免责声明 -->
+  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
 </view>

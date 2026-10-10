@@ -1,0 +1,113 @@
+<!-- 好友对弈大厅：时限 + 生成邀请 + 好友列表挑战 + 搜索加好友 -->
+<view class="friend-lobby">
+
+  <!-- ===== 时限 + 生成邀请 ===== -->
+  <view class="fl-invite-bar">
+    <view class="fl-time-row">
+      <text class="fl-time-label">时限</text>
+      <picker mode="selector" range="{{timePresets}}" range-key="label"
+              value="{{presetIndex}}" bindchange="onPresetChange">
+        <view class="fl-time-picker">
+          <text>{{timeLabel}}</text>
+          <text class="fl-time-arrow">▾</text>
+        </view>
+      </picker>
+    </view>
+
+    <view class="fl-generate-btn {{(inviteCreating || !connected) ? 'disabled' : ''}}"
+          catchtap="onGenerateInvite">
+      <text>{{inviteCreating ? '⏳ 生成中…' : '📨 生成邀请二维码 / 链接'}}</text>
+    </view>
+
+    <!-- 生成结果：二维码 + 链接 + 文案 -->
+    <block wx:if="{{inviteData}}">
+      <view wx:if="{{inviteData.qrCodeDataUrl}}" class="fl-qr">
+        <image class="fl-qr-img" src="{{inviteData.qrCodeDataUrl}}"
+               mode="aspectFit" show-menu-by-longpress></image>
+        <text class="fl-qr-hint">让对方用微信扫码，或长按图片保存后发给好友</text>
+      </view>
+      <view wx:else class="fl-qr fl-qr-fallback">
+        <text class="fl-qr-fallback-icon">🔗</text>
+        <text class="fl-qr-hint">{{inviteData.qrError || '小程序码暂不可用，可直接转发或复制下面的链接'}}</text>
+      </view>
+
+      <view wx:if="{{inviteData.urlLink}}" class="fl-link-row" catchtap="onCopyInviteLink">
+        <text class="fl-link-text">{{inviteData.urlLink}}</text>
+        <text class="fl-link-copy">复制</text>
+      </view>
+      <view wx:elif="{{inviteData.urlLinkError}}" class="fl-link-error">
+        <text>{{inviteData.urlLinkError}}</text>
+      </view>
+
+      <view class="fl-actions">
+        <button class="fl-share-btn" open-type="share">
+          <text>发送给微信好友</text>
+        </button>
+        <view class="fl-copy-btn" catchtap="onCopyInviteText">
+          <text>复制邀请文案</text>
+        </view>
+      </view>
+      <view class="fl-reset-btn" catchtap="onResetInvite">
+        <text>换一个</text>
+      </view>
+      <text class="fl-expire">邀请 7 天内有效，对方登录后自动成为好友并进入对弈</text>
+    </block>
+  </view>
+
+  <text class="fl-hint">点击好友头像即可发起挑战（时限 {{timeLabel}}）；对方需在线。</text>
+
+  <!-- ===== 好友列表 ===== -->
+  <view wx:if="{{friends.length > 0}}" class="fl-friends-head">
+    <text>👥 我的好友（{{onlineCount}} 人在线 / 共 {{friendCount}}）</text>
+  </view>
+
+  <view wx:if="{{friends.length > 0}}" class="fl-grid">
+    <view wx:for="{{friends}}" wx:key="userId" class="fl-card {{item.isOnline ? 'online' : ''}}">
+      <view class="fl-card-dot {{item.isOnline ? 'on' : ''}}"></view>
+      <view class="fl-avatar" catchtap="onChallengeFriend" data-id="{{item.userId}}" data-name="{{item.username}}">
+        <text class="fl-avatar-text">{{item.avatarText}}</text>
+      </view>
+      <text class="fl-card-name">{{item.username}}</text>
+      <text class="fl-card-rating">♟ {{item.rating}}</text>
+      <view class="fl-challenge-btn {{(pendingUserId === item.userId) ? 'pending' : ''}} {{(pendingUserId !== null && pendingUserId !== item.userId) || inGame || !connected ? 'disabled' : ''}}"
+            catchtap="onChallengeFriend" data-id="{{item.userId}}" data-name="{{item.username}}">
+        <text>{{pendingUserId === item.userId ? '⏳ 邀请中' : '⚔️ 挑战'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{friends.length === 0 && !loading}}" class="fl-empty">
+    <text class="fl-empty-icon">👥</text>
+    <text class="fl-empty-text">还没有好友</text>
+    <text class="fl-empty-sub">用下方搜索添加好友，或生成邀请链接发给好友</text>
+  </view>
+
+  <view wx:if="{{loading}}" class="fl-loading">
+    <text>加载中…</text>
+  </view>
+
+  <!-- ===== 搜索加好友 ===== -->
+  <view class="fl-search-section">
+    <view class="fl-search-title">🔍 添加好友</view>
+    <input class="fl-search-input" value="{{searchQuery}}" bindinput="onSearchInput"
+           placeholder="输入用户名搜索" placeholder-class="fl-placeholder" />
+    <view wx:if="{{searchResults.length > 0}}" class="fl-search-results">
+      <view class="fl-search-item" wx:for="{{searchResults}}" wx:key="userId">
+        <view class="fl-search-avatar">
+          <text class="fl-avatar-text">{{item.avatarText}}</text>
+        </view>
+        <view class="fl-search-info">
+          <text class="fl-search-name">{{item.username}}</text>
+          <text class="fl-search-meta">♟ {{item.rating || 1500}}</text>
+        </view>
+        <view wx:if="{{item.canAdd}}" class="fl-add-btn" catchtap="onAddFriend" data-id="{{item.userId}}">
+          <text>{{addingId === item.userId ? '…' : '加好友'}}</text>
+        </view>
+        <view wx:else class="fl-add-btn fl-add-btn-disabled">
+          <text>{{item.relationLabel}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+</view>

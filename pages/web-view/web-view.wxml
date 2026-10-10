@@ -1,0 +1,21 @@
+<view class="web-view-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
+
+  <view wx:if="{{loading}}" class="web-view-loading">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">正在加载 Mychess 网页版…</text>
+  </view>
+
+  <view wx:if="{{error}}" class="web-view-error">
+    <text class="error-icon">⚠️</text>
+    <text class="error-text">{{error}}</text>
+    <view class="error-btn" catchtap="onRetry">重试</view>
+  </view>
+
+  <web-view
+    class="web-view"
+    src="{{WebViewUrl}}"
+    bindmessage="onMessage"
+    binderror="onError"
+  ></web-view>
+
+</view>

@@ -1,12 +1,12 @@
 <view class="board-wrapper">
-  <view class="board-frame">
-    <!-- 上方文件标签 (a-h) -->
-    <view class="file-labels-top">
+  <view class="board-frame {{labelVariant === 'inline' ? 'board-frame-inline' : ''}}">
+    <!-- 上方文件标签 (a-h) — outside 模式 -->
+    <view wx:if="{{labelVariant !== 'inline'}}" class="file-labels-top">
       <text wx:for="{{fileLabels}}" wx:key="*this" class="file-label" data-file="{{item}}">{{item}}</text>
     </view>
 
     <!-- 棋盘主体 -->
-    <view class="board-grid">
+    <view class="board-grid {{labelVariant === 'inline' ? 'board-grid-inline' : ''}}">
       <!-- 全盘棋子 + 最后一步箭头：type="2d" 同层渲染 Canvas。
            当弹窗/菜单打开时用 wx:if 彻底移除 canvas 元素，避免原生渲染层仍然遮挡弹窗。
            隐藏后通过 canvasHidden=false 触发的 observer 自动重绘。 -->
@@ -19,6 +19,19 @@
                 style="background-color: {{sq.isLight ? colors.light : colors.dark}};"
                 data-square="{{sq.square}}"
                 catchtap="onSquareTap">
+
+            <!-- inline 模式：文件标签内嵌在底行格子右下角 -->
+            <text wx:if="{{labelVariant === 'inline' && rowIdx === 7}}"
+                   class="file-label-inline"
+                   style="color: {{sq.isLight ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.85)'}};">
+              {{fileLabels[rowIdx > 7 ? 0 : rowIdx]}}
+            </text>
+            <!-- inline 模式：行标签内嵌在最左列格子左上角 -->
+            <text wx:if="{{labelVariant === 'inline' && sq.square.charAt(0) === 'a'}}"
+                   class="rank-label-inline"
+                   style="color: {{sq.isLight ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.85)'}};">
+              {{rankLabels[rowIdx]}}
+            </text>
 
             <!-- 最后一步高亮 -->
             <view wx:if="{{sq.isLastMove}}" class="last-move-highlight"></view>
@@ -42,18 +55,18 @@
       </block>
     </view>
 
-    <!-- 左侧行标签 (1-8) -->
-    <view class="rank-labels-left">
+    <!-- 左侧行标签 (1-8) — outside 模式 -->
+    <view wx:if="{{labelVariant !== 'inline'}}" class="rank-labels-left">
       <text wx:for="{{rankLabels}}" wx:key="*this" class="rank-label" data-rank="{{item}}">{{item}}</text>
     </view>
 
-    <!-- 右侧行标签 (1-8) -->
-    <view class="rank-labels-right">
+    <!-- 右侧行标签 (1-8) — outside 模式 -->
+    <view wx:if="{{labelVariant !== 'inline'}}" class="rank-labels-right">
       <text wx:for="{{rankLabels}}" wx:key="*this" class="rank-label-right" data-rank="{{item}}">{{item}}</text>
     </view>
 
-    <!-- 下方文件标签 (a-h) -->
-    <view class="file-labels-bottom">
+    <!-- 下方文件标签 (a-h) — outside 模式 -->
+    <view wx:if="{{labelVariant !== 'inline'}}" class="file-labels-bottom">
       <text wx:for="{{fileLabels}}" wx:key="*this" class="file-label" data-file="{{item}}">{{item}}</text>
     </view>
   </view>

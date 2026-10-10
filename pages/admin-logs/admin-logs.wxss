@@ -92,6 +92,14 @@
   color: var(--text-muted);
 }
 
+.log-platform {
+  font-size: 20rpx;
+  color: var(--text-muted);
+  padding: 2rpx 10rpx;
+  border: 1rpx solid var(--border-color, rgba(255, 255, 255, 0.15));
+  border-radius: 6rpx;
+}
+
 .log-body {
   display: flex;
   align-items: center;

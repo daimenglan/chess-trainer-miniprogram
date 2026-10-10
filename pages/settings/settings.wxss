@@ -6,10 +6,37 @@
   overflow: hidden;
 }
 
+/* ===== 竖屏模式：头部（同网页版 glass） ===== */
 .page-header {
   padding: 20rpx 24rpx;
-  border-top: 2px solid transparent;
-  border-image: linear-gradient(90deg, #6c63ff, #4834d4, #6c63ff) 1;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ===== 竖屏模式：设置区块（同网页版 glass rounded-2xl p-5） ===== */
+.setting-section {
+  margin-bottom: 24rpx;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 20rpx;
+  padding: 20rpx;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 顶部渐变装饰线（同网页版 absolute top-0 h-1 bg-gradient-accent） */
+.setting-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3rpx;
+  background: linear-gradient(90deg, var(--accent), var(--purple));
 }
 
 .page-title {

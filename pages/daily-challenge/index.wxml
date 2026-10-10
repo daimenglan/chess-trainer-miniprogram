@@ -1,0 +1,97 @@
+<view class="daily-challenge-page">
+  <view wx:if="{{phase === 'loading'}}" class="dc-loading">
+    <text>⏳ 加载中…</text>
+  </view>
+
+  <!-- 加载失败/需登录：必须给出可见文案与出口，否则页面只剩一个永久转圈 -->
+  <view wx:if="{{phase === 'error'}}" class="dc-error">
+    <text class="dc-error-text">{{error}}</text>
+    <button class="dc-start-btn" wx:if="{{needLogin}}" bindtap="onGoLogin">去登录</button>
+    <button class="dc-start-btn" wx:else bindtap="onRetry">重试</button>
+  </view>
+
+  <view wx:if="{{phase === 'entry'}}" class="dc-entry">
+    <view class="dc-header">
+      <text class="dc-title">每日 90 秒陪练局</text>
+      <text class="dc-subtitle">每日 0 点更新</text>
+    </view>
+
+    <view class="dc-info-card">
+      <view class="dc-info-row">
+        <text class="dc-label">你执</text>
+        <text class="dc-value">{{info.userColor === 'white' ? '⚪ 白方（先走）' : '⚫ 黑方（先走）'}}</text>
+      </view>
+      <view class="dc-info-row">
+        <text class="dc-label">AI 强度</text>
+        <text class="dc-value">难度 {{info.aiDifficulty}}</text>
+      </view>
+      <view class="dc-info-row">
+        <text class="dc-label">连续打卡</text>
+        <text class="dc-value">🔥 {{streak}} 天</text>
+      </view>
+      <view wx:if="{{info.themes && info.themes.length > 0}}" class="dc-themes">
+        <text wx:for="{{info.themes}}" wx:key="*this" class="dc-theme-tag">{{themeLabel(item)}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{settledToday && todaySummary}}" class="dc-summary-card">
+      <text class="dc-summary-title">今日已完成</text>
+      <view class="dc-summary-row">
+        <text>结果：</text>
+        <text class="{{resultText(todaySummary.result).cls}}">{{resultText(todaySummary.result).text}}</text>
+      </view>
+      <view class="dc-summary-row">
+        <text>步数：</text>
+        <text>{{todaySummary.moveCount}} 步</text>
+      </view>
+      <view class="dc-summary-row">
+        <text>用时：</text>
+        <text>{{formatDuration(todaySummary.elapsed)}}</text>
+      </view>
+    </view>
+
+    <button class="dc-start-btn" bindtap="onStart">开始挑战</button>
+  </view>
+
+  <view wx:if="{{phase === 'playing'}}" class="dc-playing">
+    <view class="dc-timer-bar">
+      <text class="dc-timer">{{CHALLENGE_SECONDS - elapsed}}s</text>
+      <text class="dc-move-count">{{moveCount}} 步</text>
+    </view>
+    <view class="dc-board-wrap">
+      <chess-board fen="{{fen}}" lastMoveFrom="{{lastMoveUci ? lastMoveUci.slice(0,2) : ''}}" lastMoveTo="{{lastMoveUci ? lastMoveUci.slice(2,4) : ''}}" boardColorPreset="blueWhite" labelVariant="inline" disableHighlight="{{true}}"></chess-board>
+    </view>
+    <view class="dc-actions">
+      <button class="dc-action-btn" bindtap="onBack">← 返回</button>
+      <button class="dc-action-btn" bindtap="_settle">结束并结算</button>
+    </view>
+  </view>
+
+  <view wx:if="{{phase === 'summary'}}" class="dc-summary">
+    <view class="dc-summary-card-full">
+      <text class="dc-summary-emoji">🎉</text>
+      <text class="dc-summary-title">打卡完成</text>
+      <view class="dc-summary-stats">
+        <view class="dc-stat">
+          <text class="dc-stat-value">{{summary.result}}</text>
+          <text class="dc-stat-label">结果</text>
+        </view>
+        <view class="dc-stat">
+          <text class="dc-stat-value">{{summary.moveCount}}</text>
+          <text class="dc-stat-label">步数</text>
+        </view>
+        <view class="dc-stat">
+          <text class="dc-stat-value">{{formatDuration(summary.elapsed)}}</text>
+          <text class="dc-stat-label">用时</text>
+        </view>
+      </view>
+      <view class="dc-streak-badge">
+        <text>🔥 连胜 {{summary.streak || streak}} 天</text>
+      </view>
+      <button class="dc-summary-btn" bindtap="onReplay">查看复盘</button>
+      <button class="dc-summary-btn secondary" bindtap="onBack">返回</button>
+    </view>
+  </view>
+  <!-- AI生成内容免责声明 -->
+  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
+</view>

@@ -30,5 +30,7 @@
       <text class="item-desc">{{item.description || '无描述'}}</text>
     </view>
     <view wx:if="{{levels.length === 0 && !loading}}" class="empty-tip">暂无会员等级</view>
+  <!-- AI生成内容免责声明 -->
+  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
   </scroll-view>
 </view>

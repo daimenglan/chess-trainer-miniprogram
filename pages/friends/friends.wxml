@@ -1,10 +1,19 @@
-<view class="page" __theme__="{{__theme__}}">
+<view class="page {{__theme__ ? 'theme-' + __theme__ : ''}}">
   <view class="nav-bar">
-    <view class="nav-back" bindtap="onBack">
+    <view class="nav-back" catchtap="onBack">
       <text class="nav-back-icon">←</text>
       <text class="nav-back-text">返回</text>
     </view>
     <text class="nav-title">好友</text>
+    <view class="nav-actions">
+      <view class="dnd-toggle {{dndEnabled ? 'dnd-on' : ''}}" catchtap="onToggleDnd">
+        <text class="dnd-icon">{{dndEnabled ? '📵' : '🔔'}}</text>
+        <text class="dnd-label">{{dndEnabled ? '免打扰' : ''}}</text>
+      </view>
+      <view class="nav-invite" catchtap="onOpenInvite">
+        <text>➕ 邀请</text>
+      </view>
+    </view>
   </view>
 
   <scroll-view class="scroll-content" scroll-y="true">
@@ -13,38 +22,56 @@
       <input class="search-input" value="{{searchQuery}}" bindinput="onSearchInput" placeholder="搜索用户添加好友" placeholder-class="placeholder" />
       <view class="search-results" wx:if="{{searchResults.length}}">
         <view class="search-item" wx:for="{{searchResults}}" wx:key="userId">
+          <view class="friend-avatar">
+            <text class="avatar-text">{{item.avatarText}}</text>
+          </view>
           <view class="search-info">
             <text class="search-name">{{item.username}}</text>
+            <text class="search-meta">{{item.rating || 1500}} 分</text>
           </view>
-          <view class="add-btn" bindtap="onAddFriend" data-id="{{item.userId}}"><text>+</text></view>
+          <view wx:if="{{item.canAdd}}" class="add-btn" catchtap="onAddFriend" data-id="{{item.userId}}">
+            <text>加好友</text>
+          </view>
+          <view wx:else class="add-btn add-btn-disabled">
+            <text>{{item.relationLabel}}</text>
+          </view>
         </view>
       </view>
     </view>
 
     <!-- 标签页 -->
     <view class="tabs">
-      <view class="tab {{activeTab === 'friends' ? 'active' : ''}}" bindtap="onTabChange" data-tab="friends">好友</view>
-      <view class="tab {{activeTab === 'requests' ? 'active' : ''}}" bindtap="onTabChange" data-tab="requests">请求</view>
+      <view class="tab {{activeTab === 'friends' ? 'active' : ''}}" catchtap="onTabChange" data-tab="friends">好友</view>
+      <view class="tab {{activeTab === 'requests' ? 'active' : ''}}" catchtap="onTabChange" data-tab="requests">
+        请求{{requests.length ? ' (' + requests.length + ')' : ''}}
+      </view>
     </view>
 
     <!-- 好友列表 -->
     <view class="tab-content" wx:if="{{activeTab === 'friends'}}">
       <view class="friend-list">
         <view class="friend-item" wx:for="{{friends}}" wx:key="userId">
-          <view class="friend-avatar">
-            <text class="avatar-text">{{item.username ? item.username.substring(0,1) : '?'}}</text>
+          <view class="friend-avatar {{item.isOnline ? 'online' : ''}}">
+            <text class="avatar-text">{{item.avatarText}}</text>
+            <view class="online-dot {{item.isOnline ? 'on' : ''}}"></view>
           </view>
           <view class="friend-info">
             <text class="friend-name">{{item.username}}</text>
-            <text class="friend-status">{{item.status === 'online' ? '在线' : '离线'}}</text>
+            <text class="friend-status {{item.isOnline ? 'on' : ''}}">
+              {{item.isOnline ? '在线' : '离线'}} · {{item.rating || 1500}} 分
+            </text>
           </view>
           <view class="friend-actions">
-            <view class="action-btn chat" bindtap="onChatFriend" data-id="{{item.userId}}"><text>💬</text></view>
-            <view class="action-btn del" bindtap="onRemoveFriend" data-id="{{item.userId}}"><text>🗑</text></view>
+            <view class="action-btn fight" catchtap="onChallengeFriend"
+                  data-id="{{item.userId}}" data-name="{{item.username}}"><text>⚔️</text></view>
+            <view class="action-btn chat" catchtap="onChatFriend"
+                  data-id="{{item.userId}}" data-name="{{item.username}}"><text>💬</text></view>
+            <view class="action-btn del" catchtap="onRemoveFriend" data-id="{{item.userId}}"><text>🗑</text></view>
           </view>
         </view>
+        <view class="loading-tip" wx:if="{{loading}}"><text>加载中...</text></view>
         <view class="empty-tip" wx:if="{{friends.length === 0 && !loading}}">
-          <text>暂无好友，搜索上方用户添加吧</text>
+          <text>暂无好友，搜索上方用户添加，或点右上角「➕ 邀请」分享给朋友</text>
         </view>
       </view>
     </view>
@@ -53,13 +80,16 @@
     <view class="tab-content" wx:if="{{activeTab === 'requests'}}">
       <view class="request-list">
         <view class="request-item" wx:for="{{requests}}" wx:key="id">
+          <view class="friend-avatar">
+            <text class="avatar-text">{{item.avatarText}}</text>
+          </view>
           <view class="request-info">
             <text class="request-name">{{item.fromUsername}}</text>
             <text class="request-msg">{{item.message || '想加您为好友'}}</text>
           </view>
           <view class="request-actions">
-            <view class="action-btn accept" bindtap="onAcceptRequest" data-id="{{item.id}}"><text>✓</text></view>
-            <view class="action-btn reject" bindtap="onRejectRequest" data-id="{{item.id}}"><text>✕</text></view>
+            <view class="action-btn accept" catchtap="onAcceptRequest" data-id="{{item.id}}"><text>✓</text></view>
+            <view class="action-btn reject" catchtap="onRejectRequest" data-id="{{item.id}}"><text>✕</text></view>
           </view>
         </view>
         <view class="empty-tip" wx:if="{{requests.length === 0}}">
@@ -67,5 +97,97 @@
         </view>
       </view>
     </view>
+
+    <!-- AI生成内容免责声明 -->
+    <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
   </scroll-view>
+
+  <!-- ===== 邀请好友面板 ===== -->
+  <view wx:if="{{showInvitePanel}}" class="confirm-overlay" catchtap="onCloseInvite">
+    <view class="confirm-dialog invite-panel" catchtap="stopPropagation">
+      <text class="invite-panel-title">邀请好友</text>
+      <text class="invite-panel-desc">选好时限后生成邀请，对方扫码或点开链接、注册登录后会自动成为好友</text>
+
+      <!-- 时限选择 -->
+      <view class="preset-label">选择时限</view>
+      <view class="preset-grid">
+        <view wx:for="{{timePresets}}" wx:key="label"
+              class="preset-chip {{presetIndex === index ? 'on' : ''}}"
+              data-index="{{index}}" catchtap="onSelectPreset">
+          <text>{{item.label}}</text>
+        </view>
+      </view>
+
+      <!-- 生成前 -->
+      <view wx:if="{{!inviteData}}" class="invite-generate">
+        <view class="invite-primary {{inviteCreating ? 'disabled' : ''}}" catchtap="onGenerateInvite">
+          <text>{{inviteCreating ? '生成中…' : '生成邀请'}}</text>
+        </view>
+      </view>
+
+      <!-- 生成后 -->
+      <block wx:else>
+        <!-- 小程序码：长按可保存/转发 -->
+        <view wx:if="{{inviteData.qrCodeDataUrl}}" class="invite-qr">
+          <image class="invite-qr-img" src="{{inviteData.qrCodeDataUrl}}"
+                 mode="aspectFit" show-menu-by-longpress></image>
+          <text class="invite-qr-hint">微信扫码，或长按图片保存后发给好友</text>
+        </view>
+        <view wx:else class="invite-qr invite-qr-fallback">
+          <text class="invite-qr-fallback-icon">🔗</text>
+          <text class="invite-qr-hint">{{inviteData.qrError || '小程序码暂不可用，可直接转发或复制下面的链接'}}</text>
+        </view>
+
+        <!-- 链接 -->
+        <view wx:if="{{inviteData.urlLink}}" class="invite-link-row" catchtap="onCopyInviteLink">
+          <text class="invite-link-text">{{inviteData.urlLink}}</text>
+          <text class="invite-link-copy">复制</text>
+        </view>
+        <view wx:elif="{{inviteData.urlLinkError}}" class="invite-link-error">
+          <text>{{inviteData.urlLinkError}}</text>
+        </view>
+
+        <!-- 文案预览 + 复制 -->
+        <view class="invite-text-preview">
+          <text>{{inviteText}}</text>
+        </view>
+
+        <view class="invite-actions">
+          <button class="invite-share-btn" open-type="share">
+            <text>发送给微信好友</text>
+          </button>
+          <view class="invite-copy-btn" catchtap="onCopyInviteText">
+            <text>复制邀请文案</text>
+          </view>
+        </view>
+        <text class="invite-expire">邀请 7 天内有效，生成后可在任意场合粘贴分享</text>
+      </block>
+
+      <view class="invite-close" catchtap="onCloseInvite"><text>关闭</text></view>
+    </view>
+  </view>
+
+  <!-- ===== 收到挑战弹窗 ===== -->
+  <view wx:if="{{showChallengeDialog}}" class="confirm-overlay" catchtap="onChallengeDecline">
+    <view class="confirm-dialog invite-dialog" catchtap="stopPropagation">
+      <text class="invite-emoji">⚔️</text>
+      <text class="confirm-title">对弈挑战</text>
+      <text class="invite-desc">
+        <text class="invite-username">{{challengeData.fromUsername}}</text>
+        向你发起对弈挑战！
+      </text>
+      <view class="invite-detail-row">
+        <text class="invite-detail-label">⏱ 用时</text>
+        <text class="invite-detail-value">{{challengeData.timeLabel}}</text>
+      </view>
+      <view wx:if="{{challengeData.fromRating}}" class="invite-detail-row">
+        <text class="invite-detail-label">📊 等级分</text>
+        <text class="invite-detail-value">{{challengeData.fromRating}}</text>
+      </view>
+      <view class="confirm-actions">
+        <view class="confirm-btn" catchtap="onChallengeAccept">接受</view>
+        <view class="confirm-btn confirm-btn-no" catchtap="onChallengeDecline">拒绝</view>
+      </view>
+    </view>
+  </view>
 </view>

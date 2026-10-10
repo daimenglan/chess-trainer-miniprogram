@@ -170,6 +170,15 @@
   color: #22c55e;
 }
 
+/* 游客提交后的补充说明：告知未登录不留存记录，避免用户以为能查询处理进度 */
+.guest-tip {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx !important;
+  color: #94a3b8 !important;
+  line-height: 1.6;
+}
+
 .feedback-list {
   display: flex;
   flex-direction: column;

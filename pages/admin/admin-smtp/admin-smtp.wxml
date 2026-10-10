@@ -20,5 +20,7 @@
       <view class="btn primary" catchtap="onSave"><text class="btn-text">保存配置</text></view>
       <view class="btn" catchtap="onTest"><text class="btn-text">{{testing ? '测试中...' : '测试连接'}}</text></view>
     </view>
+  <!-- AI生成内容免责声明 -->
+  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
   </scroll-view>
 </view>

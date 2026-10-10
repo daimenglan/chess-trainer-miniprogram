@@ -7,6 +7,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const app = getApp();
 const api = require('../../utils/api');
 const util = require('../../utils/util');
+const { trackEvent } = require('../../utils/analytics');
 Page({
     /** 同步主题 */
     _syncTheme() {
@@ -29,7 +30,12 @@ Page({
         benefitDefs: [],
         benefitTableRows: [],
         currentLevelId: null,
-        simulatedPayEnabled: true,
+        // 微信支付是否就绪（真实扣款）
+        wechatPayConfigured: false,
+        // 模拟支付仅演示环境放开，生产环境微信支付就绪后为 false
+        simulatedPayEnabled: false,
+        // 在线购买入口是否可用：真实支付就绪 或 允许模拟支付
+        purchaseEnabled: false,
         // 会员状态
         status: null,
         expiringSoon: false,
@@ -49,8 +55,14 @@ Page({
         redeemResult: '',
         redeemSuccess: false,
     },
+    // 付费漏斗：定价页曝光每次进页面只记一次（onShow 会因弹窗、后台切换等反复触发）
+    _pricingTracked: false,
     onShow() {
         this._syncTheme();
+        if (!this._pricingTracked) {
+            this._pricingTracked = true;
+            trackEvent('pricing_page_view');
+        }
         this.checkLogin();
     },
     checkLogin() {
@@ -88,7 +100,12 @@ Page({
                     return this.formatBenefitValue(def, val);
                 }),
             }));
-            const simulatedPayEnabled = levelsRes?.data?.simulatedPayEnabled !== false;
+            // 微信支付是否就绪：决定用真实支付还是模拟支付
+            const wechatPayConfigured = !!levelsRes?.data?.wechatPayConfigured;
+            // 模拟支付仅在后端显式放开时才可用（生产环境微信支付就绪后为 false）
+            const simulatedPayEnabled = levelsRes?.data?.simulatedPayEnabled === true;
+            // 在线购买是否可用：真实支付就绪 或 允许模拟支付，任一成立即可购买
+            const purchaseEnabled = wechatPayConfigured || simulatedPayEnabled;
             const graceDays = levelsRes?.data?.graceDays || 0;
             const remindDays = levelsRes?.data?.remindDays || 7;
             let status = null;
@@ -124,6 +141,7 @@ Page({
             }
             this.setData({
                 levels, benefitDefs, currentLevelId, simulatedPayEnabled,
+                wechatPayConfigured, purchaseEnabled,
                 status, expiringSoon, benefitTableRows, loading: false,
             });
         }
@@ -206,6 +224,13 @@ Page({
         const price = this.data.selectedPrice;
         if (!level || !price)
             return;
+        trackEvent('purchase_start', {
+            plan: level.id,
+            levelName: level.name,
+            priceId: price.id,
+            price: price.price,
+            durationDays: price.durationDays || 0,
+        });
         this.setData({ paying: true, purchaseError: '' });
         try {
             const orderRes = await api.createMembershipOrder(level.id, price.id);
@@ -213,40 +238,81 @@ Page({
             if (!order || !order.id) {
                 throw new Error('创建订单失败');
             }
-            // 模拟支付
-            const payRes = await api.payMembershipOrder(order.id);
-            if (payRes?.data) {
-                const membership = payRes.data.membership || payRes.data;
-                const mode = membership.mode || 'new';
-                const levelName = membership.levelName || level.name;
-                const endTime = membership.endTime || membership.expireAt;
-                const creditedDays = membership.creditedDays || 0;
-                let msg = mode === 'renew' ? '续费成功' : '开通成功';
-                msg += `：${levelName}`;
-                if (creditedDays > 0)
-                    msg += `（原等级折算抵扣 ${creditedDays} 天）`;
-                msg += endTime ? `，有效期至 ${endTime.slice(0, 10)}` : '，永久有效';
-                msg += `（${price.durationDays} 天方案，模拟支付）`;
-                this.setData({
-                    selectedLevel: null,
-                    selectedPrice: null,
-                    paymentAmount: 0,
-                    showPaymentConfirm: false,
-                    paying: false,
-                    showSuccess: true,
-                    successMessage: '🎉 ' + msg,
-                    isRenewalSuccess: mode === 'renew',
-                });
-                // 刷新数据
-                this.loadData();
+            // 优先使用真实微信支付（小程序 JSAPI）
+            const payRes = await api.createJSAPIPayOrder(order.id);
+            const payData = payRes?.data;
+            if (!payData || !payData.timeStamp) {
+                throw new Error('微信支付下单失败');
             }
+            // 调起微信支付面板；用户主动取消不算失败，订单保持待支付可稍后继续
+            await this._requestWeChatPayment(payData);
+            // 支付面板返回成功即认为支付完成，会员由微信回调异步激活
+            this._handlePaymentSuccess(level, price, order, 'new');
         }
         catch (err) {
+            const canceled = err?.canceled;
             this.setData({
-                purchaseError: err.message || '支付失败',
+                purchaseError: canceled ? '' : (err.message || '支付失败'),
                 paying: false,
             });
+            if (!canceled) {
+                console.error('[Membership] 支付失败:', err?.message || err);
+            }
         }
+    },
+    /** 调用小程序微信支付 (wx.requestPayment) */
+    _requestWeChatPayment(payData) {
+        return new Promise((resolve, reject) => {
+            wx.requestPayment({
+                timeStamp: payData.timeStamp,
+                nonceStr: payData.nonceStr,
+                package: payData.package,
+                signType: payData.signType || 'RSA',
+                paySign: payData.paySign,
+                success: () => resolve(),
+                fail: (err) => {
+                    const errMsg = err?.errMsg || '';
+                    // 用户主动取消支付不是错误
+                    if (errMsg.includes('cancel')) {
+                        const canceledErr = new Error('已取消支付');
+                        canceledErr.canceled = true;
+                        reject(canceledErr);
+                        return;
+                    }
+                    reject(new Error(err?.errDesc || '支付失败'));
+                },
+            });
+        });
+    },
+    /** 处理支付成功 */
+    _handlePaymentSuccess(level, price, order, mode) {
+        const levelName = level.name;
+        const endTime = order.expireAt ? order.expireAt.slice(0, 10) : '';
+        const creditedDays = order.creditedDays || 0;
+        let msg = mode === 'renew' ? '续费成功' : '开通成功';
+        msg += `：${levelName}`;
+        if (creditedDays > 0)
+            msg += `（原等级折算抵扣 ${creditedDays} 天）`;
+        msg += endTime ? `，有效期至 ${endTime}` : '，永久有效';
+        this.setData({
+            selectedLevel: null,
+            selectedPrice: null,
+            paymentAmount: 0,
+            showPaymentConfirm: false,
+            paying: false,
+            showSuccess: true,
+            successMessage: '🎉 ' + msg,
+            isRenewalSuccess: mode === 'renew',
+        });
+        trackEvent('purchase_success', {
+            plan: level.id,
+            levelName: levelName,
+            priceId: price.id,
+            price: price.price,
+            mode,
+            creditedDays,
+        });
+        this.loadData();
     },
     /** 显示支付确认弹窗 */
     onPurchase() {
@@ -260,6 +326,16 @@ Page({
         });
     },
     onCancelPay() {
+        const level = this.data.selectedLevel;
+        const price = this.data.selectedPrice;
+        if (level && price) {
+            // 只在用户真的选了方案后取消时记录，漏斗里才有意义
+            trackEvent('purchase_cancel', {
+                plan: level.id,
+                priceId: price.id,
+                price: price.price,
+            });
+        }
         this.setData({ showPaymentConfirm: false, paying: false });
     },
     onHideSuccess() {
@@ -287,6 +363,7 @@ Page({
                     redeeming: false,
                     redeemCode: '',
                 });
+                trackEvent('redeem', { levelName: result.levelName || '', days: result.days || 0 });
                 this.loadData();
             }
         }

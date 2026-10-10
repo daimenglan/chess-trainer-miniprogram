@@ -1,0 +1,15 @@
+<!-- 训练对弈提示条（同网页版 TrainingDrillBanner） -->
+<view class="training-drill-banner {{aborted ? 'training-drill-aborted' : 'training-drill-active'}}">
+  <view class="training-drill-inner">
+    <view class="training-drill-header">
+      <text class="training-drill-icon">🎯</text>
+      <text class="training-drill-label">训练对弈</text>
+      <view class="training-drill-badge">
+        <text>主项 · {{focusTitle}}</text>
+      </view>
+      <text class="training-drill-meta">{{openingName}}（{{openingEco}}） · {{sideLabel}}</text>
+      <text wx:if="{{aborted}}" class="training-drill-aborted-text">已脱离开局脚本，AI 转为正常应对</text>
+    </view>
+    <text class="training-drill-goal"><text class="training-drill-goal-label">考察点：</text>{{goal}}</text>
+  </view>
+</view>

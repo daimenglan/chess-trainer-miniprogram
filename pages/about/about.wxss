@@ -6,6 +6,43 @@
   overflow-y: auto;
 }
 
+/* ===== 竖屏模式：头部（同网页版 hero glass） ===== */
+.about-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60rpx 0 40rpx;
+  gap: 8rpx;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ===== 竖屏模式：功能介绍（同网页版 grid md:grid-cols-2） ===== */
+.features-section {
+  flex: 1;
+  padding: 24rpx;
+}
+
+/* ===== 竖屏模式：功能卡片（同网页版 glass rounded-xl p-4） ===== */
+.feature-card {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 20rpx;
+  margin-bottom: 12rpx;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 16rpx;
+  transition: all 0.2s;
+}
+
+.feature-card:active {
+  transform: scale(0.98);
+  background: rgba(255, 255, 255, 0.10);
+}
+
 .about-header {
   display: flex;
   flex-direction: column;
@@ -103,4 +140,31 @@
   font-size: 16rpx;
   color: var(--text-placeholder);
   margin-top: 8rpx;
+}
+/* ===== 协议入口 ===== */
+.legal-links {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  margin: 0 32rpx 8rpx;
+}
+
+.legal-link-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 28rpx;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14rpx;
+}
+
+.legal-link-text {
+  font-size: 26rpx;
+  color: var(--text-secondary);
+}
+
+.legal-link-arrow {
+  font-size: 26rpx;
+  color: var(--text-dim);
 }

@@ -1,6 +1,9 @@
 {
-  "navigationBarTitleText": "训练计划",
+  "navigationBarTitleText": "训练中心",
   "navigationBarBackgroundColor": "#1a1a2e",
   "navigationBarTextStyle": "white",
-  "backgroundColor": "#0f0f23"
+  "backgroundColor": "#0f0f23",
+  "usingComponents": {
+    "line-chart": "../../components/line-chart/line-chart"
+  }
 }

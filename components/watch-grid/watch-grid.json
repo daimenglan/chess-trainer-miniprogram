@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "chess-board": "../chess-board/chess-board"
+  }
+}

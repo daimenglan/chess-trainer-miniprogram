@@ -3,8 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * 教室主页（教师功能入口）
  */
-const app = getApp();
 const api = require('../../../utils/api');
+const util = require('../../../utils/util');
 Page({
     data: {
         __theme__: (typeof getApp === "function" ? (getApp().globalData?.settings?.uiTheme || "dark") : "dark"),
@@ -23,8 +23,7 @@ Page({
     },
     onShow() {
         this._syncTheme();
-        if (!app.globalData.token) {
-            wx.reLaunch({ url: '/pages/login/login' });
+        if (!util.requireLogin('课堂')) {
             return;
         }
         this.loadTeacherStatus();

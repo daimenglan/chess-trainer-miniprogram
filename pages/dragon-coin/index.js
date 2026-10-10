@@ -3,8 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * 龙币兑换页
  */
-const app = getApp();
 const api = require('../../utils/api');
+const util = require('../../utils/util');
+const { trackEvent } = require('../../utils/analytics');
 Page({
     data: {
         __theme__: (typeof getApp === "function" ? (getApp().globalData?.settings?.uiTheme || "dark") : "dark"),
@@ -27,8 +28,7 @@ Page({
     },
     onShow() {
         this._syncTheme();
-        if (!app.globalData.token) {
-            wx.reLaunch({ url: '/pages/login/login' });
+        if (!util.requireLogin('龙币兑换')) {
             return;
         }
         this.loadAll();
@@ -69,6 +69,12 @@ Page({
             wx.showToast({ title: '数量不能小于1', icon: 'none' });
             return;
         }
+        // 用户点了兑换即算发起意图，放在弹窗前，避免「点了又取消」完全无数据
+        trackEvent('coin_exchange', {
+            amount: this.data.amount,
+            config: this.data.selectedConfig.id,
+            configName: this.data.selectedConfig.name,
+        });
         wx.showModal({
             title: '确认兑换',
             content: `确定兑换 ${this.data.amount} 次 ${this.data.selectedConfig.name}？`,

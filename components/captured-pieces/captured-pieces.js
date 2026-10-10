@@ -14,6 +14,19 @@ Component({
             value: '',
             observer: 'computeCaptured',
         },
+        /** 可选文字标签（如「⚫ 吃子」）。为空时保持原有纯棋子列表样式 */
+        label: {
+            type: String,
+            value: '',
+        },
+        /**
+         * 固定占位：无吃子时也渲染，保留等高空间。
+         * 观战/在线对局中棋盘上下各一条吃子栏，若随吃子出现而增删会让棋盘区域高度跳动。
+         */
+        fixed: {
+            type: Boolean,
+            value: false,
+        },
     },
     data: {
         pieces: [],

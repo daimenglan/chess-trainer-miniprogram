@@ -1,0 +1,305 @@
+.board-record-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 24rpx;
+  background: var(--bg-primary);
+  gap: 16rpx;
+  box-sizing: border-box;
+}
+
+.br-topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12rpx;
+  flex-shrink: 0;
+}
+
+.br-btn {
+  flex: 1;
+  padding: 18rpx;
+  font-size: 26rpx;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14rpx;
+}
+
+/* 状态条：走子方 / 复盘进度 / 结果 */
+.br-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+  padding: 10rpx 18rpx;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12rpx;
+  flex-shrink: 0;
+}
+
+.br-status-over {
+  background: var(--danger-bg);
+  border-color: var(--danger);
+}
+
+.br-status-text {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.br-status-over .br-status-text {
+  color: var(--danger);
+}
+
+.br-status-count {
+  font-size: 20rpx;
+  color: var(--text-muted);
+}
+
+/* 棋盘：组件内部用 width:100% + padding-bottom:100% 自撑正方形，
+   所以这里只需给宿主宽度。按可用宽度给满即可，短屏再收窄（见文件末尾媒体查询）。 */
+.br-board-wrap {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.br-board-wrap chess-board {
+  width: 100%;
+  max-width: 100%;
+}
+
+.br-panel {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  min-height: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20rpx;
+  padding: 20rpx;
+}
+
+/* 面板滚动区：AI 推荐展开后内容会超出一屏，靠这里滚动 */
+.br-panel-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 0; /* 触发 scroll-view 内部的 flex 收缩 */
+}
+
+.br-panel-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+/* 底部固定条：保存按钮常驻可见 */
+.br-save-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  flex-shrink: 0;
+}
+
+.br-meta {
+  display: flex;
+  gap: 12rpx;
+}
+
+.br-meta-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.br-meta-label {
+  font-size: 20rpx;
+  color: var(--text-muted);
+}
+
+.br-meta-input {
+  padding: 12rpx;
+  font-size: 24rpx;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 10rpx;
+}
+
+.br-toolbar {
+  display: flex;
+  gap: 10rpx;
+}
+
+.br-tool-btn {
+  padding: 14rpx 20rpx;
+  font-size: 24rpx;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10rpx;
+}
+
+/* 复盘中的「回到最新」按钮高亮 */
+.br-tool-btn-active {
+  color: var(--accent);
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+/* ===== AI 推荐走法 ===== */
+.br-ai {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  padding: 12rpx;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12rpx;
+}
+
+.br-ai-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10rpx;
+}
+
+.br-ai-title {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.br-ai-hint {
+  font-size: 20rpx;
+  color: var(--text-muted);
+}
+
+/* 承重约束：analysis-panel 内部的候选列表是 flex:1 + height:0，
+   必须有确定高度才能撑开并内部滚动；缺了这段列表会塌陷成不可见。
+   同时给宿主节点补 display/height，组件根节点的 height:100% 才有参照。 */
+.br-ai-body {
+  height: 480rpx;
+}
+
+.br-ai-body analysis-panel {
+  display: block;
+  height: 100%;
+}
+
+.br-move-history {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.br-history-title {
+  font-size: 22rpx;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.br-move-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6rpx;
+  padding: 12rpx;
+  background: var(--bg-primary);
+  border-radius: 10rpx;
+  max-height: 200rpx;
+  overflow-y: auto;
+}
+
+.br-move-item {
+  padding: 4rpx 12rpx;
+  font-size: 22rpx;
+  font-family: monospace;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border-radius: 6rpx;
+}
+
+/* 当前正在回看的那一手 */
+.br-move-item-active {
+  color: #fff;
+  background: var(--accent);
+}
+
+.br-move-text {
+  font-size: 22rpx;
+}
+
+.br-save-success {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  padding: 12rpx;
+  border-radius: 10rpx;
+  font-size: 22rpx;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+  text-align: center;
+}
+
+/* 保存成功后直接进入复盘 */
+.br-view-btn {
+  padding: 6rpx 18rpx;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+}
+
+.br-save-error {
+  padding: 12rpx;
+  border-radius: 10rpx;
+  font-size: 22rpx;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  text-align: center;
+}
+
+.br-save-btn {
+  padding: 22rpx;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #6366f1, #ec4899);
+  border-radius: 14rpx;
+  border: none;
+}
+
+.br-save-btn:disabled {
+  background: var(--border-color);
+  color: var(--text-muted);
+}
+
+/* 短屏（如 375×667）：棋盘按宽度撑满正方形后占掉大半屏，
+   面板只剩很小一块可视区。这里收窄棋盘，把空间让给面板与 AI 推荐区。
+   —— 实测即使去掉这段，面板与保存按钮也仍在屏幕内（靠 .br-panel-scroll 滚动可达），
+   所以这是舒适度优化，不是不重叠的前提。 */
+@media (max-height: 720px) {
+  .board-record-page {
+    padding: 16rpx 24rpx;
+    gap: 10rpx;
+  }
+
+  .br-board-wrap chess-board {
+    width: 76%;
+  }
+
+  .br-ai-body {
+    height: 360rpx;
+  }
+}

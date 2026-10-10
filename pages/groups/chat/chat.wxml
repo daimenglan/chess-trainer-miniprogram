@@ -1,28 +1,103 @@
-<view class="page" __theme__="{{__theme__}}">
+<view class="page {{__theme__ ? 'theme-' + __theme__ : ''}}">
   <view class="nav-bar">
-    <view class="nav-back" bindtap="onBack">
+    <view class="nav-back" catchtap="onBack">
       <text class="nav-back-icon">←</text>
       <text class="nav-back-text">返回</text>
     </view>
-    <text class="nav-title">{{groupName}}</text>
-  </view>
-
-  <scroll-view class="messages-container" scroll-y="true">
-    <view class="message-list">
-      <view class="message-item" wx:for="{{messages}}" wx:key="id">
-        <view class="message-bubble">
-          <text class="message-text">{{item.content}}</text>
-          <text class="message-time">{{item.createdAt}}</text>
-        </view>
-      </view>
-      <view class="loading-tip" wx:if="{{loading && messages.length === 0}}">
-        <text>加载中...</text>
+    <text class="nav-title">{{groupName || '群聊'}}</text>
+    <view class="nav-actions">
+      <view class="member-btn" catchtap="onShowMembers">
+        <text>👥</text>
       </view>
     </view>
+  </view>
+
+  <scroll-view class="scroll-content" scroll-y="true" catchtap="onClosePanels">
+
+    <!-- 消息列表 -->
+    <view class="messages-container">
+      <view class="message-item" wx:for="{{messages}}" wx:key="id" wx:for-item="msg">
+        <view class="msg-avatar">
+          <text class="avatar-text">{{formatAvatar(msg.username)}}</text>
+        </view>
+        <view class="msg-body">
+          <text class="msg-username">{{msg.username || '匿名'}}</text>
+          <view class="msg-content">
+            <text wx:if="{{msg.messageType === 'emoji'}}" class="msg-emoji">{{msg.content}}</text>
+            <text wx:elif="{{msg.messageType === 'quick_phrase'}}" class="msg-phrase">「{{msg.content}}」</text>
+            <text wx:else class="msg-text">{{msg.content}}</text>
+          </view>
+        </view>
+      </view>
+      <view wx:if="{{loading && messages.length === 0}}" class="loading-tip"><text>加载中...</text></view>
+    </view>
+
   </scroll-view>
 
-  <view class="input-bar">
-    <input class="input-field" value="{{inputText}}" bindinput="onInput" placeholder="输入群消息" placeholder-class="placeholder" />
-    <view class="send-btn" bindtap="onSend"><text class="send-btn-text">发送</text></view>
+  <!-- 面板区域 -->
+  <view class="panels">
+    <!-- 表情面板 -->
+    <view wx:if="{{showEmojiPanel}}" class="panel">
+      <view class="emoji-grid">
+        <view class="emoji-item" wx:for="{{emojis}}" wx:key="id"
+              catchtap="onSendEmoji" data-emoji="{{item.emoji}}">
+          <text class="emoji-text">{{item.emoji}}</text>
+        </view>
+        <view wx:if="{{emojis.length === 0}}" class="panel-empty">
+          <text>暂无表情</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 快捷短语面板 -->
+    <view wx:if="{{showPhrasePanel}}" class="panel">
+      <view class="phrase-list">
+        <view class="phrase-item" wx:for="{{quickPhrases}}" wx:key="id"
+              catchtap="onSendPhrase" data-text="{{item.text}}">
+          <text class="phrase-text">{{item.text}}</text>
+        </view>
+        <view wx:if="{{quickPhrases.length === 0}}" class="panel-empty">
+          <text>暂无快捷短语</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 分享面板 -->
+    <view wx:if="{{showSharePanel}}" class="panel share-panel">
+      <text class="panel-title">分享到群</text>
+      <view class="share-options">
+        <view class="share-option" catchtap="stopPropagation">
+          <text class="share-opt-icon">🧩</text>
+          <text class="share-opt-label">习题</text>
+        </view>
+        <view class="share-option" catchtap="stopPropagation">
+          <text class="share-opt-icon">♟</text>
+          <text class="share-opt-label">棋谱</text>
+        </view>
+        <view class="share-option" catchtap="stopPropagation">
+          <text class="share-opt-icon">⚔️</text>
+          <text class="share-opt-label">对弈邀请</text>
+        </view>
+      </view>
+      <text class="panel-hint">点击选项选择要分享的内容</text>
+    </view>
+  </view>
+
+  <!-- 工具栏 -->
+  <view class="toolbar">
+    <view class="tool-btn {{showEmojiPanel ? 'tool-active' : ''}}" catchtap="onToggleEmoji">
+      <text>😊</text>
+    </view>
+    <view class="tool-btn {{showPhrasePanel ? 'tool-active' : ''}}" catchtap="onTogglePhrase">
+      <text>💬</text>
+    </view>
+    <view class="tool-btn {{showSharePanel ? 'tool-active' : ''}}" catchtap="onToggleShare">
+      <text>📤</text>
+    </view>
+    <input class="input-field" value="{{inputText}}" bindinput="onInput"
+           placeholder="输入消息" placeholder-class="placeholder" />
+    <view class="send-btn {{inputText ? 'send-active' : ''}}" catchtap="onSend">
+      <text>发送</text>
+    </view>
   </view>
 </view>

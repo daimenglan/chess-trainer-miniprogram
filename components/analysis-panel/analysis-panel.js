@@ -73,26 +73,37 @@ Component({
             type: String,
             value: 'w',
         },
+        /** 手动推演的基准评分（白方视角），用于计算「比推演前」赚亏 */
+        baselineEval: {
+            type: Number,
+            value: 0,
+        },
+        /** 候选卡片上的「推演 / 自动」按钮：页面没有推演能力时传 false 隐藏 */
+        showActions: {
+            type: Boolean,
+            value: true,
+        },
     },
     data: {
         evaluation: 0,
         evaluationFormatted: '0.00',
-        evaluationBarWidth: 50,
-        evaluationText: '均势',
+        evaluationBarLeftWidth: 0,
+        evaluationBarRightWidth: 0,
+        evaluationSubText: '',
         candidates: [],
+        selectedRank: 1,
+        selectedCandidate: null,
         openingEntry: null,
         openingLoading: false,
         openingError: '',
         showOpeningModal: false,
-        scrollTarget: '',
+        baselineDelta: 0,
     },
     observers: {
-        'analysis, turn': function (analysis) {
+        'analysis, turn, playerSide, fen': function (analysis) {
             if (analysis && analysis.length > 0) {
+                // 父页面已把候选分数归一化到玩家视角，这里直接使用
                 const ev = analysis[0].score;
-                // 归一化到 -5..5 范围
-                const clamped = Math.max(-5, Math.min(5, ev));
-                const barWidth = 50 + (clamped / 5) * 50;
                 // WXML 不能调用 JS 函数，评分/颜色全部在 JS 侧预格式化。
                 // 注意：pros/cons/tactics/line 已在父页面（index）通过 keyedList 格式化
                 // 为 [{key, text}] 结构，这里不再重复处理。
@@ -115,28 +126,72 @@ Component({
                         line,
                     };
                 });
+                // 双向评估条：左半「对方优势」红色、右半「己方优势」绿色，±10 兵为满格（同网页版 AnalysisPanel）
+                const leftWidth = Math.min(Math.abs(Math.min(ev, 0)) / 10 * 100, 100);
+                const rightWidth = Math.min(Math.max(ev, 0) / 10 * 100, 100);
+                const sideToMove = (this.properties.fen || '').split(' ')[1] === 'b' ? '黑方' : '白方';
+                // 手动推演：计算比推演前赚亏（当前评分 − 基准评分，己方视角）
+                let baselineDelta = 0;
+                if (this.properties.exploration === 'manual' && this.properties.baselineEval != null && this.properties.baselineEval !== 0) {
+                    const playerSide = this.properties.playerSide === 'b' ? 'b' : 'w';
+                    const toPlayer = (v) => playerSide === 'b' ? -v : v;
+                    baselineDelta = toPlayer(ev) - toPlayer(this.properties.baselineEval);
+                }
+                // 新局面分析到达：默认选中首选走法（1/2/3 切换查看详情）
                 this.setData({
                     evaluation: ev,
                     evaluationFormatted: util.formatScore(ev),
-                    evaluationBarWidth: Math.max(5, Math.min(95, barWidth)),
-                    evaluationText: util.getScoreLabel(ev),
+                    evaluationBarLeftWidth: leftWidth,
+                    evaluationBarRightWidth: rightWidth,
+                    evaluationSubText: `${sideToMove}走棋 · ${util.getPlayerEvalText(ev)}`,
                     candidates,
+                    selectedRank: 1,
+                    selectedCandidate: candidates[0] || null,
+                    baselineDelta,
                 });
             }
             else {
-                this.setData({ candidates: [] });
+                // 分析结果已清空（走子后）：评估条同步归零，避免残留上一步的评分
+                const sideToMove = (this.properties.fen || '').split(' ')[1] === 'b' ? '黑方' : '白方';
+                this.setData({
+                    candidates: [],
+                    selectedRank: 1,
+                    selectedCandidate: null,
+                    evaluation: 0,
+                    evaluationFormatted: '0.00',
+                    evaluationBarLeftWidth: 0,
+                    evaluationBarRightWidth: 0,
+                    evaluationSubText: `${sideToMove}走棋 · 均势`,
+                    baselineDelta: 0,
+                });
             }
         },
     },
     methods: {
         /**
-         * 滚动到指定候选走法
+         * 选中指定编号的候选走法（1/2/3），面板显示其分析内容
+         */
+        selectCandidate(rank) {
+            const candidates = this.data.candidates || [];
+            const target = candidates.find((c) => c.rank === rank) || candidates[0] || null;
+            this.setData({
+                selectedRank: target ? target.rank : 1,
+                selectedCandidate: target,
+            });
+        },
+        /**
+         * 兼容旧调用（棋盘候选标记点击）：现在等价于选中该编号
          */
         scrollToCandidate(rank) {
-            this.setData({ scrollTarget: 'candidate-' + rank });
-            setTimeout(() => {
-                this.setData({ scrollTarget: '' });
-            }, 500);
+            this.selectCandidate(rank);
+        },
+        /**
+         * 点击 1/2/3 编号切换显示对应走法的分析内容
+         */
+        onSelectCandidateTab(e) {
+            const rank = parseInt(e.currentTarget.dataset.rank, 10);
+            if (!isNaN(rank))
+                this.selectCandidate(rank);
         },
         /**
          * 触发推演

@@ -20,6 +20,10 @@ App({
         boardUpdateKey: 0,
         // 从模式选择页跳转到对弈页的标志
         pendingStartAI: false,
+        // 好友页交接给对弈页的「接受挑战」：等对弈页订阅 WS 后再发，避免丢掉随后的开局事件
+        pendingInviteAccept: null,
+        // 好友邀请落地页暂存的 token：未登录时先存这里，登录成功后回跳该页完成兑换
+        pendingFriendInvite: null,
         // 权限配置（与网页版共享：distributionEnabled / membershipEnabled / menuVisibility）
         permissions: null,
     },
@@ -61,6 +65,58 @@ App({
         store_1.store.init(this);
         // 加载权限配置（与网页版共享：分销/会员开关 + 菜单可见性）
         this.loadPermissions();
+        // 行为埋点：启动心跳 + 注入页面级 page_view 自动埋点
+        this.setupAnalytics();
+    },
+    /**
+     * 行为埋点接入
+     *
+     * 用包装全局 Page() 的方式给所有页面自动挂上 page_view（含停留时长结算），
+     * 避免在 70+ 个页面里各写一遍；业务关键事件仍由页面按需调用 trackEvent。
+     * 页面模块是首次进入时才求值并调用全局 Page()，因此这里的替换对其后加载的页面生效。
+     */
+    setupAnalytics() {
+        const analytics = require('./utils/analytics');
+        analytics.initAnalytics();
+        const originalPage = Page;
+        if (!originalPage || originalPage.__mychessAnalyticsPatched)
+            return;
+        // 排除管理后台：管理员的操作不应计入用户行为统计
+        const isExcluded = (route) => typeof route === 'string' && route.indexOf('pages/admin') === 0;
+        const PatchedPage = function (options) {
+            if (options && typeof options === 'object') {
+                const userOnShow = options.onShow;
+                const userOnHide = options.onHide;
+                options.onShow = function (...args) {
+                    try {
+                        // this.route 是当前页面路径，由框架注入
+                        const route = this.route;
+                        if (route && !isExcluded(route)) {
+                            // 进入页面：结算上一页停留，并从此刻开始计时本页
+                            analytics.setCurrentPage(route);
+                        }
+                    }
+                    catch (e) { /* non-critical */ }
+                    return typeof userOnShow === 'function' ? userOnShow.apply(this, args) : undefined;
+                };
+                options.onHide = function (...args) {
+                    try {
+                        const route = this.route;
+                        if (route && !isExcluded(route)) {
+                            // 离开页面：结算本页停留并立即上报，
+                            // 防止小程序切后台被系统回收后缓冲区事件丢失
+                            analytics.leaveCurrentPage();
+                            analytics.flushNow();
+                        }
+                    }
+                    catch (e) { /* non-critical */ }
+                    return typeof userOnHide === 'function' ? userOnHide.apply(this, args) : undefined;
+                };
+            }
+            return originalPage(options);
+        };
+        PatchedPage.__mychessAnalyticsPatched = true;
+        Page = PatchedPage;
     },
     /** 加载权限配置：与网页版 AdminSettings 一致的全局开关 */
     loadPermissions() {
@@ -123,6 +179,9 @@ App({
             boardFlipped: false,
             soundEnabled: true,
             showHints: false,
+            // 习题页独立的 AI 教练开关（默认关闭：先自己思考，需要时在习题页顶栏手动打开）
+            // 与 AI 陪练的 showHints 解耦，避免用户在陪练里关掉教练后习题页推荐也一并消失
+            puzzleHints: false,
             analysisDepth: 10,
             analysisMultiPv: 3,
             aiDifficulty: 5,

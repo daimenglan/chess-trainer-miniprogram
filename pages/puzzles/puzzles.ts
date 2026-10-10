@@ -10,6 +10,7 @@ const app = getApp();
 const api = require('../../utils/api');
 const util = require('../../utils/util');
 const Chess = require('../../utils/chessjs');
+const { trackEvent } = require('../../utils/analytics');
 
 const DIFFICULTY_RANGES: Record<string, [number, number]> = {
   '800': [0, 800], '1200': [800, 1200], '1600': [1200, 1600],
@@ -52,6 +53,8 @@ Page({
     moveResult: null as any, resultTitle: '', resultClass: '', solutionText: '',
     puzzleCompleted: false,
     favorited: false, hintUsed: false,
+    // 习题页独立的 AI 教练开关（与 AI 陪练的 showHints 解耦）
+    puzzleHints: false,
     showExplain: false, explainText: '', explaining: false,
     stats: null as any,
     // 目标进度追踪
@@ -59,6 +62,10 @@ Page({
     puzzleDone: 0,
     puzzleCorrect: 0,
     puzzleWrong: 0,
+    // 本次做题统计：进入本页后累计的对/错（不跨日、不跨页面），
+    // 与「今日」计数区分，做题过程中实时可见
+    sessionCorrect: 0,
+    sessionWrong: 0,
     dailyDate: '',
     motivationBanner: { icon: '', text: '', color: '' },
     progressPct: 0,
@@ -67,12 +74,25 @@ Page({
     showFilters: true,
     _attemptId: '', _explainAbort: null as any, _puzzleChess: null as any, _puzzleId: 0,
     _processingCompletion: false,
+    // 自由推演状态（习题做完后从终局继续推演）
+    _freePlayMode: false, _freePlayChess: null as any, _freePlayFen: '',
   },
 
-  onLoad() {
+onLoad(options: any) {
     this._syncTheme();
     const token = app.globalData.token;
-    this.setData({ token });
+    // 首页「今日题目」等入口带 mode=wrong 进来时直接落到错题本模式
+    //（startPuzzle 依据 this.data.mode === 'wrong' 传 fromWrongBook）
+    const mode = options?.mode;
+    this.setData({
+      token,
+      mode: mode === 'wrong' || mode === 'new' || mode === 'all' ? mode : this.data.mode,
+      // 本次做题统计从 0 开始（页面实例级，离开/重进即重新计数）
+      sessionCorrect: 0,
+      sessionWrong: 0,
+      // 习题页 AI 教练开关：从全局设置读取（与 AI 陪练的 showHints 独立）
+      puzzleHints: app.globalData.settings?.puzzleHints || false,
+    });
     this.loadThemes();
     if (token) {
       this.loadStats();
@@ -308,6 +328,13 @@ Page({
     this.setData({ loading: true, moveResult: null, message: '' });
     try {
       const range = DIFFICULTY_RANGES[this.data.difficulty] || undefined;
+      // 埋点：开始做题（带上当前筛选条件）
+      trackEvent('puzzle_start', {
+        mode: this.data.mode,
+        phase: this.data.phase || undefined,
+        themes: this.data.selectedThemes.length > 0 ? this.data.selectedThemes : undefined,
+        difficulty: this.data.difficulty || undefined,
+      });
       const res = await api.startPuzzle({
         phase: this.data.phase || undefined,
         themes: this.data.selectedThemes.length > 0 ? this.data.selectedThemes : undefined,
@@ -500,6 +527,11 @@ async submitPuzzleMove(from: string, to: string) {
   },
 
   handlePuzzleComplete(result: any) {
+    // 埋点：习题结算（result: 2=完全正确, 1=部分正确, 0=未通过/放弃）
+    trackEvent('puzzle_solve', {
+      correct: result.result === 2 || result.result === 1,
+      result: result.result,
+    });
     this.setData({ puzzleCompleted: true, _processingCompletion: false, moveResult: result, stepIndex: this.data.stepIndex + 1 });
     let title = '未通过', cls = 'result-fail';
     if (result.result === 2) { title = '🎉 完全正确'; cls = 'result-win'; }
@@ -514,12 +546,18 @@ async submitPuzzleMove(from: string, to: string) {
     const done = this.data.puzzleDone + 1;
     let correct = this.data.puzzleCorrect;
     let wrong = this.data.puzzleWrong;
-    if (result.result === 2 || result.result === 1) {
+    const isSolved = result.result === 2 || result.result === 1;
+    if (isSolved) {
       correct += 1;
     } else {
       wrong += 1;
     }
-    this.setData({ puzzleDone: done, puzzleCorrect: correct, puzzleWrong: wrong });
+    this.setData({
+      puzzleDone: done, puzzleCorrect: correct, puzzleWrong: wrong,
+      // 本次做题统计：同一判定口径（部分正确也算对）
+      sessionCorrect: this.data.sessionCorrect + (isSolved ? 1 : 0),
+      sessionWrong: this.data.sessionWrong + (isSolved ? 0 : 1),
+    });
     this.saveDailyCounts();
     this.updateGoalDisplay();
 
@@ -538,6 +576,8 @@ async submitPuzzleMove(from: string, to: string) {
       const res = await api.requestPuzzleHint(this.data._attemptId);
       if (res?.data) {
         const hint = res.data;
+        // 埋点：使用了提示
+        trackEvent('hint_use');
         this.setData({
           hintUsed: true,
           lastMoveFrom: hint.from,
@@ -554,7 +594,11 @@ async submitPuzzleMove(from: string, to: string) {
     if (!this.data._attemptId) return;
     try {
       const res = await api.giveUpPuzzle(this.data._attemptId);
-      if (res?.data) { this.handlePuzzleComplete(res.data); this.showMessage('已放弃', 'info'); }
+      if (res?.data) {
+        // 埋点：中途放弃
+        trackEvent('puzzle_giveup');
+        this.handlePuzzleComplete(res.data); this.showMessage('已放弃', 'info');
+      }
     } catch (err: any) { this.showMessage(err.message || '操作失败', 'error'); }
   },
 
@@ -585,9 +629,106 @@ async submitPuzzleMove(from: string, to: string) {
     this.setData({ _explainAbort: controller });
   },
 
+  /** 切换习题页 AI 教练（独立于 AI 陪练的 showHints） */
+  onTogglePuzzleHints() {
+    const newVal = !this.data.puzzleHints;
+    // 关闭时清空候选走法，避免残留箭头/编号
+    if (!newVal) {
+      this.setData({ puzzleHints: false });
+    } else {
+      this.setData({ puzzleHints: true });
+    }
+    // 同步到全局设置，跨页保持
+    const settings = { ...app.globalData.settings, puzzleHints: newVal };
+    app.globalData.settings = settings;
+    app.saveSettings();
+  },
+
+  /** 习题做完后从终局继续自由推演（双方均可任意走子） */
+  onFreePlay() {
+    if (!this.data._puzzleChess) return;
+    const fen = this.data._puzzleChess.fen();
+    // 用新棋局实例承载推演，避免污染做题状态
+    const Chess = require('../../utils/chessjs');
+    const freeChess = new Chess.Chess(fen);
+    this.setData({
+      _freePlayChess: freeChess,
+      _freePlayFen: fen,
+      _freePlayMode: true,
+      // 推演中棋盘可自由走子，取消完成锁定
+      puzzleCompleted: false,
+    });
+    util.showToast('自由推演：双方均可任意走子');
+  },
+
+  /** 退出自由推演，回到做题结果状态 */
+  onExitFreePlay() {
+    this.setData({ _freePlayMode: false, _freePlayChess: null, _freePlayFen: '' });
+  },
+
+  /** 自由推演中走子 */
+  onFreePlaySquareTap(e: any) {
+    if (!this.data._freePlayMode) return;
+    const square = e.detail.square;
+    const chess = this.data._freePlayChess;
+    if (!chess) return;
+
+    // 取消选中
+    if (this.data.selectedSquare === square) {
+      this.setData({ selectedSquare: '', legalMoves: [] });
+      return;
+    }
+
+    // 走子
+    if (this.data.selectedSquare && this.data.legalMoves.includes(square)) {
+      const uci = this.data.selectedSquare + square;
+      try {
+        chess.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci.length > 4 ? uci.slice(4) : 'q' });
+        this.setData({
+          _freePlayFen: chess.fen(),
+          selectedSquare: '',
+          legalMoves: [],
+        });
+      } catch {}
+      return;
+    }
+
+    // 选中己方棋子
+    const piece = chess.get(square);
+    if (piece) {
+      const moves = chess.moves({ square, verbose: true });
+      this.setData({
+        selectedSquare: square,
+        legalMoves: moves.map((m: any) => m.to),
+      });
+    }
+  },
+
+  /** 自由推演悔棋 */
+  onFreePlayUndo() {
+    const chess = this.data._freePlayChess;
+    if (!chess) return;
+    try {
+      chess.undo();
+      this.setData({ _freePlayFen: chess.fen(), selectedSquare: '', legalMoves: [] });
+    } catch {}
+  },
+
+  /** 自由推演重置到起点 */
+  onFreePlayReset() {
+    const chess = this.data._freePlayChess;
+    if (!chess || !this.data._freePlayFen) return;
+    const Chess = require('../../utils/chessjs');
+    const resetChess = new Chess.Chess(this.data._freePlayFen);
+    // 重置到推演起点：需要找回原始起点 FEN
+    // 简单做法：重新加载原始棋局
+    this.setData({ _freePlayChess: resetChess, selectedSquare: '', legalMoves: [] });
+  },
+
   onCloseExplain() { this.setData({ showExplain: false, explainText: '' }); if (this.data._explainAbort) this.data._explainAbort.abort(); },
   onCloseDiag() { this.setData({ showDiagnosis: false }); },
-  onNextPuzzle() { this.setData({ moveResult: null, showFilters: true, solutionText: '' }); this.onStartPuzzle(); },
+  // 换题时保持筛选面板收起：展开/收起会让棋盘整体上下跳动
+  onNextPuzzle() { this.setData({ moveResult: null, showFilters: false, solutionText: '' }); this.onStartPuzzle(); },
 
   // ===== 工具方法 =====
   phaseLabel(p: string | undefined | null): string {

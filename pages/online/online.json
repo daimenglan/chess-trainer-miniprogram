@@ -2,6 +2,9 @@
   "navigationBarTitleText": "在线对弈",
   "usingComponents": {
     "chess-board": "../../components/chess-board/chess-board",
-    "promotion-dialog": "../../components/promotion-dialog/promotion-dialog"
+    "promotion-dialog": "../../components/promotion-dialog/promotion-dialog",
+    "captured-pieces": "../../components/captured-pieces/captured-pieces",
+    "move-history": "../../components/move-history/move-history",
+    "friend-lobby": "../../components/friend-lobby/friend-lobby"
   }
 }

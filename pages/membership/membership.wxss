@@ -8,6 +8,41 @@
   padding: 0 16rpx 40rpx;
 }
 
+/* ===== 竖屏模式：会员状态卡片（同网页版 glass-strong） ===== */
+.status-card {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20rpx;
+  margin: 16rpx 0;
+  overflow: hidden;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.2);
+}
+
+/* ===== 竖屏模式：等级权益对比（同网页版 glass） ===== */
+.levels-section {
+  margin: 16rpx 0;
+}
+
+.benefit-table {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+/* ===== 竖屏模式：兑换码区域（同网页版 glass） ===== */
+.redeem-section {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 16rpx;
+  padding: 20rpx;
+  margin: 16rpx 0;
+}
+
 .loading-state {
   text-align: center;
   padding: 80rpx 0;

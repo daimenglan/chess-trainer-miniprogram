@@ -1,0 +1,66 @@
+.coach-chatter {
+  position: absolute;
+  bottom: 120rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.coach-chatter-bubble {
+  position: relative;
+  max-width: 85vw;
+  padding: 20rpx 28rpx 20rpx 24rpx;
+  background: linear-gradient(135deg, rgba(108, 99, 255, 0.92), rgba(108, 99, 255, 0.82));
+  border-radius: 24rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  animation: chatterPop 0.35s ease-out;
+}
+
+.coach-chatter-text {
+  font-size: 26rpx;
+  line-height: 1.5;
+  color: #fff;
+  font-weight: 500;
+  display: block;
+  padding-right: 36rpx;
+}
+
+.coach-chatter-close {
+  position: absolute;
+  top: 8rpx;
+  right: 12rpx;
+  width: 32rpx;
+  height: 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.coach-chatter-close:active {
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+}
+
+@keyframes chatterPop {
+  0% {
+    transform: translateX(-50%) scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: translateX(-50%) scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+}

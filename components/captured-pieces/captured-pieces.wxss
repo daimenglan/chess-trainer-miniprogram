@@ -27,3 +27,28 @@
   color: var(--text-muted);
   font-weight: 600;
 }
+
+/* ===== 带文字标签的胶囊样式（观战/在线对局：棋盘上下各一条，居中、等高） =====
+   组件默认 styleIsolation: isolated，全局类名不生效，这里只用可继承的 CSS 变量。
+   棋子是绝对像素（size=32 → 32px，在 320~414pt 屏上约合 58~75rpx），
+   故用 96rpx 的 min-height 兜底，保证任何机型下这条栏都是等高（棋盘不跳）。 */
+.captured-pill {
+  width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
+  align-self: center;
+  justify-content: center;
+  gap: 10rpx;
+  padding: 8rpx 24rpx;
+  min-height: 96rpx;
+  border-radius: 999rpx;
+  background: var(--bg-card-strong);
+  border: 1px solid var(--border-color-strong);
+}
+
+.captured-label {
+  font-size: 22rpx;
+  font-weight: 600;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}

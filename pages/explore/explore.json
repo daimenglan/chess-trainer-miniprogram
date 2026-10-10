@@ -1,0 +1,11 @@
+{
+  "navigationBarTitleText": "自主探究",
+  "navigationBarBackgroundColor": "#1a1a2e",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#0f0f23",
+  "usingComponents": {
+    "chess-board": "../../components/chess-board/chess-board",
+    "promotion-dialog": "../../components/promotion-dialog/promotion-dialog",
+    "analysis-panel": "../../components/analysis-panel/analysis-panel"
+  }
+}

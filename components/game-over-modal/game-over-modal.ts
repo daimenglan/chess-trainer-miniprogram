@@ -70,6 +70,11 @@ Component({
       this.triggerEvent('undo');
     },
 
+    /** 立即复盘：直接带当前棋局进入复盘页 */
+    onReview() {
+      this.triggerEvent('review');
+    },
+
     onNewGame() {
       this.triggerEvent('newgame');
     },

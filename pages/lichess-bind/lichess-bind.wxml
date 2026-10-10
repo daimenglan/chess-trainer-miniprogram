@@ -1,0 +1,134 @@
+<view class="bind-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
+  <!-- 已绑定状态（仅 bind 模式展示） -->
+  <block wx:if="{{bound && mode === 'bind'}}">
+    <view class="bound-card">
+      <view class="bound-header">
+        <view class="bound-avatar-wrap">
+          <image wx:if="{{profile.avatarUrl}}" class="bound-avatar" src="{{profile.avatarUrl}}" mode="aspectFill"></image>
+          <text wx:else class="bound-avatar-fallback">♟</text>
+        </view>
+        <view class="bound-info">
+          <view class="bound-name-row">
+            <text class="bound-name">{{lichessUsername}}</text>
+            <text wx:if="{{profile.title}}" class="bound-title">{{profile.title}}</text>
+            <text class="bound-tag">Lichess</text>
+          </view>
+          <view class="bound-perf-row">
+            <text wx:if="{{profile.perf.blitz.rating}}" class="bound-perf">⚡ {{profile.perf.blitz.rating}}</text>
+            <text wx:if="{{profile.perf.rapid.rating}}" class="bound-perf">⏱ {{profile.perf.rapid.rating}}</text>
+            <text wx:if="{{profile.perf.classical.rating}}" class="bound-perf">🏆 {{profile.perf.classical.rating}}</text>
+            <text wx:if="{{profile.games}}" class="bound-games">{{profile.games}} 局</text>
+          </view>
+        </view>
+      </view>
+      <view class="bound-status">✅ 已绑定，可在线对弈页匹配 Lichess 全球玩家</view>
+    </view>
+
+    <view class="bind-actions">
+      <view class="btn-secondary" catchtap="onUnbind">解除绑定</view>
+    </view>
+
+    <view class="rebind-hint">更换账号：点下方「重新授权」或粘贴新令牌重新绑定</view>
+  </block>
+
+  <!-- ===== 主路径：浏览器 OAuth 授权 ===== -->
+  <view class="guide-card">
+    <view class="guide-title">{{mode === 'login' ? '🌍 使用 Lichess 账号登录' : '🌍 绑定 Lichess 账号'}}</view>
+    <view class="guide-desc">{{mode === 'login' ? '通过 Lichess 官方授权登录本系统：已有本系统账号会直接登录，没有则自动创建。' : '绑定后，在本系统匹配不到对手时会自动为你匹配 Lichess 全球玩家对弈。'}}</view>
+
+    <!-- 未开始：发起授权 -->
+    <block wx:if="{{!oauthStarted}}">
+      <view class="oauth-benefit">使用 Lichess 官方授权，无需手动创建和粘贴令牌</view>
+      <view class="btn-primary {{loading ? 'btn-disabled' : ''}}" catchtap="onStartOAuth">
+        {{loading ? '处理中...' : (mode === 'login' ? '一键授权登录' : '一键授权绑定')}}
+      </view>
+    </block>
+
+    <!-- 已发起：等待浏览器授权 -->
+    <block wx:else>
+      <view class="step-list">
+        <view class="step-item">
+          <text class="step-num">1</text>
+          <view class="step-body">
+            <text class="step-text">授权链接已复制，在手机浏览器中打开</text>
+            <view class="step-btn" catchtap="onCopyOAuthUrl">📋 重新复制链接</view>
+            <text class="step-url">{{oauthUrl}}</text>
+          </view>
+        </view>
+        <view class="step-item">
+          <text class="step-num">2</text>
+          <view class="step-body">
+            <text class="step-text">在 Lichess 页面登录并点击「授权」</text>
+          </view>
+        </view>
+        <view class="step-item">
+          <text class="step-num">3</text>
+          <view class="step-body">
+            <text class="step-text">授权完成后返回小程序，自动完成绑定</text>
+          </view>
+        </view>
+      </view>
+      <view wx:if="{{oauthWaiting}}" class="oauth-waiting">⏳ {{oauthHint || '正在等待授权结果…'}}</view>
+    </block>
+
+    <view wx:if="{{error && !fallbackOpen}}" class="error-text">⚠️ {{error}}</view>
+  </view>
+
+  <!-- ===== 备用路径：手动粘贴令牌 ===== -->
+  <view class="faq-toggle" catchtap="onToggleFallback">
+    {{fallbackOpen ? '▾' : '▸'}} 其他方式：手动粘贴令牌绑定
+  </view>
+
+  <block wx:if="{{fallbackOpen}}">
+    <view class="guide-card">
+      <view class="step-list">
+        <view class="step-item">
+          <text class="step-num">1</text>
+          <view class="step-body">
+            <text class="step-text">在浏览器打开 Lichess 令牌创建页（需先登录 Lichess）</text>
+            <view class="step-btn" catchtap="onCopyUrl">📋 复制链接</view>
+            <text class="step-url">{{tokenUrl}}</text>
+          </view>
+        </view>
+        <view class="step-item">
+          <text class="step-num">2</text>
+          <view class="step-body">
+            <text class="step-text">勾选以下权限后点击创建：</text>
+            <text class="step-scope">{{requiredScopes}}</text>
+          </view>
+        </view>
+        <view class="step-item">
+          <text class="step-num">3</text>
+          <view class="step-body">
+            <text class="step-text">复制生成的令牌，粘贴到下方输入框并提交</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="input-card">
+      <text class="input-label">Lichess 访问令牌</text>
+      <textarea
+        class="token-input"
+        value="{{token}}"
+        placeholder="粘贴 lip_ 开头的令牌"
+        placeholder-class="token-placeholder"
+        maxlength="256"
+        auto-height
+        bindinput="onTokenInput"
+      ></textarea>
+
+      <view wx:if="{{error}}" class="error-text">⚠️ {{error}}</view>
+
+      <view class="btn-primary {{loading ? 'btn-disabled' : ''}}" catchtap="onSubmit">
+        {{loading ? '处理中...' : (mode === 'login' ? '登录 / 注册' : '确认绑定')}}
+      </view>
+    </view>
+  </block>
+
+  <view class="safety-hint">
+    🔒 授权凭证仅保存在本系统服务端用于代理对弈，不会用于其它用途。你可随时在 Lichess 撤销授权。
+  </view>
+  <!-- AI生成内容免责声明 -->
+  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
+</view>

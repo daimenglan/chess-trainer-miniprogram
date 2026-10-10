@@ -1,0 +1,56 @@
+<view class="invite-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
+  <view class="invite-card">
+    <!-- 兑换中 -->
+    <block wx:if="{{status === 'redeeming'}}">
+      <text class="invite-icon">⚔️</text>
+      <text class="invite-title">正在处理邀请…</text>
+      <text class="invite-sub">马上就好</text>
+    </block>
+
+    <!-- 需要登录 -->
+    <block wx:elif="{{status === 'needLogin'}}">
+      <text class="invite-icon">🎁</text>
+      <text class="invite-title">有人邀请你成为好友</text>
+      <text class="invite-sub">登录后会自动成为好友，并可直接开始对弈</text>
+      <view class="invite-btn primary" catchtap="onGoLogin"><text>登录 / 注册</text></view>
+      <view class="invite-btn ghost" catchtap="onBack"><text>稍后再说</text></view>
+    </block>
+
+    <!-- 成功 -->
+    <block wx:elif="{{status === 'success'}}">
+      <text class="invite-icon">🎉</text>
+      <text class="invite-title">已和 {{result.fromUsername}} 成为好友</text>
+      <view class="invite-info">
+        <view class="invite-info-row">
+          <text class="invite-info-label">等级分</text>
+          <text class="invite-info-value">{{result.fromRating}}</text>
+        </view>
+        <view class="invite-info-row">
+          <text class="invite-info-label">对方意向用时</text>
+          <text class="invite-info-value">{{result.timeLabel}}</text>
+        </view>
+      </view>
+      <view class="invite-btn primary" catchtap="onGoPlay"><text>去和 TA 对弈</text></view>
+      <view class="invite-btn ghost" catchtap="onGoFriends"><text>查看好友列表</text></view>
+    </block>
+
+    <!-- 失败 -->
+    <block wx:elif="{{status === 'error'}}">
+      <text class="invite-icon">😕</text>
+      <text class="invite-title">邀请未能生效</text>
+      <text class="invite-sub">{{errorMessage}}</text>
+      <view class="invite-btn primary" catchtap="onRetry"><text>重试</text></view>
+      <view class="invite-btn ghost" catchtap="onGoFriends"><text>去看我的好友</text></view>
+    </block>
+
+    <!-- 参数缺失 -->
+    <block wx:else>
+      <text class="invite-icon">🔗</text>
+      <text class="invite-title">邀请信息不完整</text>
+      <text class="invite-sub">{{errorMessage}}</text>
+      <view class="invite-btn ghost" catchtap="onBack"><text>返回首页</text></view>
+    </block>
+  </view>
+
+  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
+</view>

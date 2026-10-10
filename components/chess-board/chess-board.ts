@@ -58,6 +58,8 @@ Component({
     replayIndex: { type: Number, value: -1 },
     isReplay: { type: Boolean, value: false },
     boardHeight: { type: Number, value: 0 },
+    /** 坐标标签模式：outside（默认）| inline（内嵌在边线格子角上） */
+    labelVariant: { type: String, value: 'outside' },
     canvasHidden: { type: Boolean, value: false,
       observer: function (this: any, hidden: boolean) {
         if (!hidden) {
@@ -363,8 +365,10 @@ Component({
       }).exec();
     },
 
-    /** 最后一步箭头（画在棋子之上） */
+    /** 最后一步箭头（画在棋子之上）。AI教练关闭时不显示：与网页版一致，此时棋盘不显示任何 AI 提示 */
     drawArrowOnCanvas(ctx: any, sqX: number, sqY: number, cell: number) {
+      if (!this.properties.showHints) return;
+
       const lm = this.data.lastMoveSquares;
       if (!lm || lm.length !== 2) return;
 

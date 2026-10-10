@@ -6,15 +6,29 @@
   </view>
 
   <view wx:else class="panel-content">
-    <!-- 评估条 -->
+    <!-- 评估条（双向：左半对方优势红色、右半己方优势绿色，同网页版 AnalysisPanel） -->
     <view class="evaluation-bar-container">
-      <view class="evaluation-bar-bg">
-        <view class="evaluation-bar-fill" style="width: {{evaluationBarWidth}}%; 
-          background: linear-gradient(90deg, #f87171, #facc15, #4ade80);"></view>
+      <view class="eval-row">
+        <view class="eval-bar">
+          <!-- 左半（对方优势 → 红色，从中心向左延伸） -->
+          <view class="eval-bar-half eval-bar-left">
+            <view class="eval-bar-fill-left" style="width: {{evaluationBarLeftWidth}}%;"></view>
+          </view>
+          <!-- 中心分割线 -->
+          <view class="eval-bar-divider"></view>
+          <!-- 右半（己方优势 → 绿色，从中心向右延伸） -->
+          <view class="eval-bar-half eval-bar-right">
+            <view class="eval-bar-fill-right" style="width: {{evaluationBarRightWidth}}%;"></view>
+          </view>
+        </view>
+        <text class="evaluation-score {{evaluation > 0.3 ? 'score-green' : evaluation < -0.3 ? 'score-red' : 'score-neutral'}}">{{evaluationFormatted}}</text>
       </view>
-      <view class="evaluation-score {{evaluation > 0.3 ? 'score-green' : evaluation < -0.3 ? 'score-red' : 'score-neutral'}}">
-        <text>{{evaluationFormatted}}</text>
-        <text class="eval-label">{{evaluationText}}</text>
+      <text class="eval-sub">{{evaluationSubText}}</text>
+      <!-- 手动推演：显示比推演前赚亏 -->
+      <view wx:if="{{exploration === 'manual' && baselineEval != null && baselineEval !== 0}}" class="baseline-delta">
+        <text class="baseline-delta-text" style="{{baselineDelta > 0.3 ? 'color:#16a34a' : baselineDelta < -0.3 ? 'color:#dc2626' : 'color:#6b7280'}}">
+          比推演前 {{baselineDelta > 0 ? '+' : ''}}{{baselineDelta.toFixed(2)}}
+        </text>
       </view>
     </view>
 
@@ -95,52 +109,44 @@
       <text>{{analysisError}}</text>
     </view>
 
-    <!-- 候选走法列表 -->
-    <scroll-view wx:if="{{showHints && candidates.length > 0}}" class="candidates-list" scroll-y enable-flex
-                  scroll-into-view="{{scrollTarget}}" scroll-with-animation>
-      <view class="candidate-item" wx:for="{{candidates}}" wx:for-item="c" wx:key="uci"
-            id="candidate-{{c.rank}}"
-            data-uci="{{c.uci}}" catchtap="onPlayContinuation">
-        <view class="candidate-rank rank-{{c.rank}}">
-          <text>#{{c.rank}}</text>
-        </view>
-        <view class="candidate-info">
+    <!-- 候选走法：1/2/3 编号切换 + 选中走法的分析内容（同网页版候选标记详情） -->
+    <view wx:if="{{showHints && candidates.length > 0}}" class="candidates-block">
+      <view class="candidate-tabs">
+        <view wx:for="{{candidates}}" wx:for-item="c" wx:key="uci"
+              class="candidate-tab rank-{{c.rank}} {{selectedRank === c.rank ? 'candidate-tab-active' : ''}}"
+              data-rank="{{c.rank}}" catchtap="onSelectCandidateTab">#{{c.rank}}</view>
+        <text class="candidate-tabs-hint">点编号看分析</text>
+      </view>
+      <scroll-view wx:if="{{selectedCandidate}}" class="candidate-detail-scroll" scroll-y>
+        <view class="candidate-detail-card rank-border-{{selectedCandidate.rank}}">
           <view class="candidate-header">
-            <text class="candidate-label">{{c.label}}</text>
-            <text class="candidate-score" style="color: {{c.scoreColor}};">
-              {{c.scoreFormatted}}
-            </text>
+            <text class="candidate-label">#{{selectedCandidate.rank}} {{selectedCandidate.label}}</text>
+            <text class="candidate-score" style="color: {{selectedCandidate.scoreColor}};">{{selectedCandidate.scoreFormatted}}</text>
           </view>
           <!-- 优点 -->
-          <view wx:if="{{c.pros && c.pros.length > 0}}" class="candidate-detail">
-            <text wx:for="{{c.pros}}" wx:for-item="pro" wx:key="key" class="detail-pro">✓ {{pro.text}}</text>
+          <view wx:if="{{selectedCandidate.pros.length > 0}}" class="candidate-detail">
+            <text wx:for="{{selectedCandidate.pros}}" wx:for-item="pro" wx:key="key" class="detail-pro">✓ {{pro.text}}</text>
           </view>
           <!-- 缺点 -->
-          <view wx:if="{{c.cons && c.cons.length > 0}}" class="candidate-detail">
-            <text wx:for="{{c.cons}}" wx:for-item="con" wx:key="key" class="detail-con">! {{con.text}}</text>
+          <view wx:if="{{selectedCandidate.cons.length > 0}}" class="candidate-detail">
+            <text wx:for="{{selectedCandidate.cons}}" wx:for-item="con" wx:key="key" class="detail-con">! {{con.text}}</text>
           </view>
           <!-- 战术标签 -->
-          <view wx:if="{{c.tactics && c.tactics.length > 0}}" class="tactics-row">
-            <text wx:for="{{c.tactics}}" wx:for-item="t" wx:key="key" class="tactic-tag">{{t.text}}</text>
+          <view wx:if="{{selectedCandidate.tactics.length > 0}}" class="tactics-row">
+            <text wx:for="{{selectedCandidate.tactics}}" wx:for-item="t" wx:key="key" class="tactic-tag">{{t.text}}</text>
           </view>
           <!-- 续着线 -->
-          <view wx:if="{{c.line && c.line.length > 1}}" class="line-row">
+          <view wx:if="{{selectedCandidate.line.length > 1}}" class="line-row">
             <text class="line-label">预计变化：</text>
-            <text wx:for="{{c.line}}" wx:for-item="mv" wx:key="key" class="line-move">{{mv.text}}</text>
+            <text wx:for="{{selectedCandidate.line}}" wx:for-item="mv" wx:key="key" class="line-move">{{mv.text}}</text>
+          </view>
+          <!-- 推演 / 自动 -->
+          <view wx:if="{{showActions}}" class="detail-actions">
+            <view class="action-pill action-pill-explore" catchtap="onExplorationStart" data-uci="{{selectedCandidate.uci}}">🔍 推演</view>
+            <view class="action-pill action-pill-auto" catchtap="onAutoContinuation" data-uci="{{selectedCandidate.uci}}">▶ 自动</view>
           </view>
         </view>
-        <view class="candidate-action" catchtap="onExplorationStart" data-uci="{{c.uci}}">
-          <text class="action-btn">推演</text>
-        </view>
-        <view class="candidate-action" catchtap="onAutoContinuation" data-uci="{{c.uci}}">
-          <text class="action-btn-auto">自动</text>
-        </view>
-      </view>
-    </scroll-view>
-
-    <!-- 提示已关闭 -->
-    <view wx:if="{{!showHints && gameStarted && !gameOver}}" class="hints-off">
-      <text>🤖 点击"AI教练 Rex"查看候选走法</text>
+      </scroll-view>
     </view>
   </view>
 </view>

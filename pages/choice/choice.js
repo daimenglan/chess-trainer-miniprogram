@@ -1,335 +1,108 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-/**
- * 首页 - 模式选择 + AI定级/棋手档案/训练计划概览 + 训练中心/周计划
- */
-const app = getApp();
-const api = require('../../utils/api');
-const util = require('../../utils/util');
+/** 首页 Tab：小程序壳，内容由 H5 首页渲染。 */
+const choiceApp = getApp();
 Page({
-    _syncTheme() {
-        try {
-            const app = getApp();
-            const theme = app?.globalData?.settings?.uiTheme || 'dark';
-            if (this.data.__theme__ !== theme) {
-                this.setData({ __theme__: theme });
+    data: {
+        WebViewUrl: '',
+        token: '',
+        loading: true,
+        error: '',
+        __theme__: (typeof getApp === 'function' ? (getApp().globalData?.settings?.uiTheme || 'dark') : 'dark'),
+    },
+    _buildUrl() {
+        const baseUrl = (choiceApp && choiceApp.globalData && choiceApp.globalData.baseUrl) || 'https://mychess.com.cn';
+        return baseUrl.replace(/\/$/, '') + '/';
+    },
+    _urlWithToken(token) {
+        const base = this._buildUrl();
+        if (!token)
+            return base;
+        // 放在 hash 里：网页版 App.tsx 从 location.hash 解析 webview_token，
+        // 放在 query 段会解析不到，H5 侧将一直停留在未登录态。
+        // 小程序壳额外附加 ai=disabled，H5 读取后关闭全部 AI 功能。
+        return `${base}#webview_token=${encodeURIComponent(token)}&ai=disabled`;
+    },
+    _readToken(options) {
+        let token = (choiceApp && choiceApp.globalData && choiceApp.globalData.token) || '';
+        if (!token) {
+            try {
+                token = wx.getStorageSync('auth_token') || '';
+            }
+            catch (_) { /* ignore */ }
+        }
+        if (options?.token) {
+            try {
+                token = decodeURIComponent(options.token);
+            }
+            catch (_) {
+                token = options.token;
             }
         }
-        catch (e) { /* non-critical */ }
+        return token;
     },
-    data: {
-        __theme__: (typeof getApp === "function" ? (getApp().globalData?.settings?.uiTheme || "dark") : "dark"),
-        username: '',
-        // AI定级概览
-        assessmentInfo: null,
-        assessmentLoading: true,
-        // 棋手档案概览
-        profileInfo: null,
-        profileLoading: true,
-        // 训练计划概览
-        trainingInfo: null,
-        trainingLoading: true,
-        // 训练中心数据
-        trainingCenter: null,
-        trainingCenterLoading: true,
-        // 周计划
-        weeklyPlan: null,
-        weeklyPlanLoading: true,
-        // 错题本
-        mistakeSummary: null,
-        mistakeLoading: true,
-        // 竞赛状态
-        activeCompetitions: [],
-        competitionsLoading: true,
-        // 权限控制
-        showMembership: true,
-        showDistribution: true,
-        showClassroom: false,
-        showAdmin: false,
-        showFeedback: true,
-        showVideoGeneration: true,
-        showAIAnalysisReport: true,
+    onLoad(options) {
+        const token = this._readToken(options);
+        this.setData({ token, WebViewUrl: this._urlWithToken(token), loading: true, error: '' });
     },
     onShow() {
-        this._syncTheme();
-        if (!app.globalData.token) {
-            wx.reLaunch({ url: '/pages/login/login' });
+        const theme = choiceApp?.globalData?.settings?.uiTheme || 'dark';
+        if (this.data.__theme__ !== theme)
+            this.setData({ __theme__: theme });
+        // 原生登录页登录成功后 switchTab 回本页：onShow 会触发但 onLoad 不会，
+        // 故此处检测全局 token 变化并重建 web-view 地址，把新 token 带给 H5。
+        this._syncTokenFromApp();
+    },
+    /** 全局 token 与当前页面持有的一致则不重建 web-view（避免多余刷新） */
+    _syncTokenFromApp() {
+        const token = (choiceApp && choiceApp.globalData && choiceApp.globalData.token) || '';
+        if (!token || token === this.data.token)
             return;
+        this.setData({ token, WebViewUrl: this._urlWithToken(token) });
+    },
+    _postTokenToWeb() {
+        if (!this.data.token)
+            return;
+        wx.createSelectorQuery().select('.shell-web-view').context((res) => {
+            if (res?.postMessage)
+                res.postMessage({ type: 'setToken', token: this.data.token });
+        }).exec();
+    },
+    onMessage(e) {
+        const msg = e?.detail?.data;
+        if (!msg)
+            return;
+        if (msg.type === 'ready') {
+            this._postTokenToWeb();
+            this.setData({ loading: false, error: '' });
         }
-        this.setData({
-            username: app.globalData.user?.username || app.globalData.token?.substring(0, 8) || '棋手',
-        });
-        this.loadOverviewData();
-        this.loadTrainingCenter();
-        this.loadWeeklyPlan();
-        this.loadMistakeSummary();
-        this.loadCompetitions();
-        this.updatePermissionUI();
-    },
-    onPermissionsChanged() {
-        this.updatePermissionUI();
-    },
-    updatePermissionUI() {
-        const user = app.globalData.user;
-        const perms = app.globalData.permissions;
-        const membershipEnabled = perms ? perms.membershipEnabled !== false : true;
-        const distributionEnabled = perms ? perms.distributionEnabled !== false : true;
-        const videoGenerationEnabled = perms ? perms.videoGenerationEnabled !== false : true;
-        const aiAnalysisReportEnabled = perms ? perms.aiAnalysisReportEnabled !== false : true;
-        const isTeacher = util.isTeacher();
-        const isAdmin = util.isAdminUser();
-        const feedbackVisible = util.isMenuItemVisible('/feedback');
-        this.setData({
-            showMembership: membershipEnabled,
-            showDistribution: distributionEnabled,
-            showVideoGeneration: videoGenerationEnabled,
-            showAIAnalysisReport: aiAnalysisReportEnabled,
-            showClassroom: isTeacher || isAdmin,
-            showAdmin: isAdmin,
-            showFeedback: feedbackVisible,
-        });
-    },
-    /** 并行加载概览数据 */
-    async loadOverviewData() {
-        const [historyRes, profileRes, statsRes] = await Promise.all([
-            api.getAssessmentHistory().catch(() => null),
-            api.getSavedProfileAnalysis().catch(() => null),
-            api.getTrainingStats().catch(() => null),
-        ]);
-        const historyList = historyRes?.data || historyRes || [];
-        const assessmentInfo = historyList.length > 0 ? {
-            ...historyList[0],
-            confidencePct: Math.round((historyList[0].confidence || 0) * 100),
-        } : null;
-        const profileData = profileRes?.data || profileRes || null;
-        const statsData = statsRes?.data || statsRes || null;
-        this.setData({
-            assessmentInfo,
-            assessmentLoading: false,
-            profileInfo: profileData ? {
-                estimatedRating: profileData.stats?.estimatedRating,
-                style: profileData.style?.split('\n')?.[0] || null,
-                winRate: profileData.stats?.winRate,
-            } : null,
-            profileLoading: false,
-            trainingInfo: statsData ? {
-                todayCompleted: statsData.todayCompleted || 0,
-                todayTarget: statsData.todayTarget || 0,
-                currentStreak: statsData.currentStreak || 0,
-                level: statsData.level || 1,
-            } : null,
-            trainingLoading: false,
-        });
-    },
-    /** 加载训练中心数据 */
-    async loadTrainingCenter() {
-        try {
-            const res = await api.getTrainingCenterData();
-            const data = res?.data || res;
-            if (data) {
-                this.setData({
-                    trainingCenter: {
-                        upgradePlan: data.upgradePlan || null,
-                        dashboard: data.dashboard || null,
-                        level: data.level || 1,
-                        streak: data.currentStreak || 0,
-                    },
-                    trainingCenterLoading: false,
-                });
-            }
+        else if (msg.type === 'navigateTo' && msg.url) {
+            wx.navigateTo({ url: msg.url });
         }
-        catch {
-            this.setData({ trainingCenterLoading: false });
+        else if (msg.type === 'navigateBack') {
+            wx.navigateBack({ delta: msg.delta || 1 });
+        }
+        else if (msg.type === 'redirect' && msg.url) {
+            wx.redirectTo({ url: msg.url });
         }
     },
-    /** 加载周计划 */
-    async loadWeeklyPlan() {
-        try {
-            const res = await api.getWeeklyPlan();
-            const data = res?.data || res;
-            if (data) {
-                this.setData({
-                    weeklyPlan: {
-                        weekStart: data.weekStart,
-                        weekEnd: data.weekEnd,
-                        items: (data.items || []).map((item) => ({
-                            ...item,
-                            completedPct: item.total > 0 ? Math.round((item.completed / item.total) * 100) : 0,
-                        })),
-                        overallPct: data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0,
-                    },
-                    weeklyPlanLoading: false,
-                });
-            }
-        }
-        catch {
-            this.setData({ weeklyPlanLoading: false });
-        }
+    onError() {
+        this.setData({ loading: false, error: '网页加载失败，请检查网络连接或稍后重试' });
     },
-    /** 加载错题本摘要 */
-    async loadMistakeSummary() {
-        try {
-            const res = await api.getMistakeSummary();
-            const data = res?.data || res;
-            if (data) {
-                this.setData({
-                    mistakeSummary: {
-                        total: data.total || 0,
-                        unresolved: data.unresolved || 0,
-                        byPhase: data.byPhase || {},
-                        topWeakness: data.topWeakness || null,
-                    },
-                    mistakeLoading: false,
-                });
-            }
-        }
-        catch {
-            this.setData({ mistakeLoading: false });
-        }
+    onRetry() {
+        this.setData({ loading: true, error: '', WebViewUrl: this._urlWithToken(this.data.token) });
     },
-    /** 加载竞赛状态 */
-    async loadCompetitions() {
-        try {
-            const res = await api.getCompetitions({ status: 'registration_open', limit: 3 });
-            const data = res?.data || res;
-            const comps = data?.competitions || data || [];
-            this.setData({
-                activeCompetitions: comps,
-                competitionsLoading: false,
-            });
-        }
-        catch {
-            this.setData({ competitionsLoading: false });
-        }
+    /** 分享给朋友 */
+    onShareAppMessage() {
+        return {
+            title: '♟️ MyChess 国际象棋 · AI 陪练在线对弈',
+            path: '/pages/choice/choice',
+        };
     },
-    /** 刷新周计划 */
-    onRefreshWeeklyPlan() {
-        this.setData({ weeklyPlanLoading: true });
-        api.getWeeklyPlan(true)
-            .then((res) => {
-            const data = res?.data || res;
-            if (data) {
-                this.setData({
-                    weeklyPlan: {
-                        weekStart: data.weekStart,
-                        weekEnd: data.weekEnd,
-                        items: (data.items || []).map((item) => ({
-                            ...item,
-                            completedPct: item.total > 0 ? Math.round((item.completed / item.total) * 100) : 0,
-                        })),
-                        overallPct: data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0,
-                    },
-                    weeklyPlanLoading: false,
-                });
-            }
-        })
-            .catch(() => this.setData({ weeklyPlanLoading: false }));
-    },
-    /** 动态评估 */
-    onDynamicAssessment() {
-        wx.showModal({
-            title: '动态评估',
-            content: '将根据你最近的表现重新评估等级分，约需 2-3 分钟',
-            confirmText: '开始评估',
-            cancelText: '稍后再说',
-            success: (res) => {
-                if (res.confirm) {
-                    util.showLoading('评估中...');
-                    api.triggerDynamicAssessment()
-                        .then(() => {
-                        util.hideLoading();
-                        util.showToast('评估已完成，查看个人中心获取结果', 'success');
-                        this.loadOverviewData();
-                    })
-                        .catch((err) => {
-                        util.hideLoading();
-                        util.showToast(err.message || '评估失败');
-                    });
-                }
-            },
-        });
-    },
-    /** 查看错题本 */
-    onGoWrongBook() {
-        wx.navigateTo({ url: '/pages/puzzles/puzzles?mode=wrong' });
-    },
-    /** 查看竞赛 */
-    onGoCompetitions() {
-        wx.navigateTo({ url: '/pages/competitions/list/list' });
-    },
-    // ===== 导航 =====
-    onAssessment() {
-        wx.navigateTo({ url: '/pages/assessment/assessment' });
-    },
-    onProfile() {
-        wx.switchTab({ url: '/pages/profile/profile' });
-    },
-    onTrainingPlan() {
-        wx.navigateTo({ url: '/pages/training-plan/training-plan' });
-    },
-    onAICoach() {
-        app.globalData.pendingStartAI = true;
-        wx.switchTab({ url: '/pages/index/index' });
-    },
-    onOnlineMatch() {
-        wx.navigateTo({ url: '/pages/online/online' });
-    },
-    onPuzzles() {
-        wx.navigateTo({ url: '/pages/puzzles/puzzles' });
-    },
-    onReview() {
-        wx.switchTab({ url: '/pages/records/records' });
-    },
-    onStudy() {
-        wx.navigateTo({ url: '/pages/study/study' });
-    },
-    onMembership() {
-        wx.navigateTo({ url: '/pages/membership/membership' });
-    },
-    onCompetitions() {
-        wx.navigateTo({ url: '/pages/competitions/list/list' });
-    },
-    onFriends() {
-        wx.navigateTo({ url: '/pages/friends/friends' });
-    },
-    onGroups() {
-        wx.navigateTo({ url: '/pages/groups/list/list' });
-    },
-    onFeedback() {
-        wx.navigateTo({ url: '/pages/feedback/feedback' });
-    },
-    onDistribution() {
-        wx.navigateTo({ url: '/pages/distribution/index' });
-    },
-    onDragonCoin() {
-        wx.navigateTo({ url: '/pages/dragon-coin/index' });
-    },
-    onRewardCenter() {
-        wx.navigateTo({ url: '/pages/reward-center/index' });
-    },
-    onMyPuzzles() {
-        wx.navigateTo({ url: '/pages/my-puzzles/index' });
-    },
-    onClassroom() {
-        wx.navigateTo({ url: '/pages/classroom/home/home' });
-    },
-    onAdmin() {
-        wx.navigateTo({ url: '/pages/admin/admin' });
-    },
-    onSettings() {
-        wx.navigateTo({ url: '/pages/settings/settings' });
-    },
-    onLogout() {
-        wx.showModal({
-            title: '确认退出',
-            content: '退出登录后需要重新登录才能使用在线对弈功能',
-            success: (res) => {
-                if (res.confirm) {
-                    app.setToken(null);
-                    app.globalData.user = null;
-                    wx.reLaunch({ url: '/pages/login/login' });
-                }
-            },
-        });
+    /** 分享到朋友圈 */
+    onShareTimeline() {
+        return {
+            title: '♟️ MyChess 国际象棋 · AI 陪练在线对弈',
+            query: '',
+        };
     },
 });

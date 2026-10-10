@@ -22,6 +22,7 @@ Page({
     __theme__: (typeof getApp === "function" ? (getApp().globalData?.settings?.uiTheme || "dark") : "dark"),
     records: [] as any[],
     loading: false,
+    error: '',
     page: 1,
     limit: 30,
     totalPages: 1,
@@ -36,13 +37,15 @@ Page({
   },
 
   async loadRecords() {
-    this.setData({ loading: true });
+    this.setData({ loading: true, error: '' });
     try {
       const res = await api.listChessRecords({
         page: this.data.page,
         limit: this.data.limit,
         search: this.data.searchQuery,
         eco: this.data.ecoFilter,
+        // 与网页版「打谱」一致：scope=all 列出系统棋谱库全部棋谱（不限录入者）
+        scope: 'all',
       });
       if (res?.data) {
         const records = (res.data.records || []).map((r: any) => ({
@@ -55,8 +58,8 @@ Page({
           loading: false,
         });
       }
-    } catch {
-      this.setData({ loading: false });
+    } catch (err: any) {
+      this.setData({ loading: false, error: err?.message || '加载棋谱失败' });
     }
   },
 

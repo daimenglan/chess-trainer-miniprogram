@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "chess-board": "../../components/chess-board/chess-board",
+    "promotion-dialog": "../../components/promotion-dialog/promotion-dialog",
+    "analysis-panel": "../../components/analysis-panel/analysis-panel"
+  }
+}

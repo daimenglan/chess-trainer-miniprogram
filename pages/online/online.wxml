@@ -1,39 +1,162 @@
 <view class="online-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
+  <!-- 页面新手引导（同网页版 PageGuide） -->
+  <page-guide
+    storageKey="page_online"
+    icon="🌐"
+    title="在线对弈"
+    desc="与本系统在线玩家或 Lichess 全球玩家实时匹配对弈，支持棋桌入座、围观和比赛模式。"
+    hint="点击「匹配对手」开始，3 秒内无本系统对手将自动匹配 Lichess 玩家～"
+  ></page-guide>
+
+  <!-- 连接已断开提示 -->
+  <view wx:if="{{!wsConnected && (status === 'playing' || status === 'idle' || status === 'matching')}}" class="conn-warning">
+    连接已断开，正在尝试重连；恢复前不能落子。
+  </view>
+
   <!-- ===== 空闲/摆桌/匹配状态 ===== -->
   <block wx:if="{{status === 'idle' || status === 'tabling' || status === 'matching'}}">
 
     <!-- 标题区域 -->
     <view class="match-container">
+      <view class="match-hero">♟️</view>
       <view class="match-title">在线对弈</view>
-      <view class="match-desc">摆下棋桌等待挑战，或主动匹配随机对手</view>
+      <view class="match-desc">
+        {{tableLobbyEnabled ? '棋桌入座对弈、与好友对弈、围观他人对局，或随机匹配' : '随机匹配在线棋手，匹配成功后自动开始对局'}}
+      </view>
+
+      <!-- 模式切换（棋桌大厅关闭时隐藏） -->
+      <view wx:if="{{tableLobbyEnabled}}" class="mode-toggle">
+        <view class="mode-tab {{gameMode === 'random' ? 'mode-tab-active' : ''}}"
+              catchtap="onSwitchMode" data-mode="random">
+          🎯 随机匹配
+        </view>
+        <view class="mode-tab {{gameMode === 'friends' ? 'mode-tab-active' : ''}}"
+              catchtap="onSwitchMode" data-mode="friends">
+          👥 好友对弈
+        </view>
+        <view class="mode-tab {{gameMode === 'tables' ? 'mode-tab-active' : ''}}"
+              catchtap="onSwitchMode" data-mode="tables">
+          🪑 棋桌大厅
+        </view>
+      </view>
 
       <!-- 状态提示 -->
       <view wx:if="{{statusMessage}}" class="status-toast {{statusToastType}}">
         <text>{{statusMessage}}</text>
       </view>
 
-      <!-- 匹配/摆桌双按钮 -->
-      <view wx:if="{{status === 'idle'}}" class="table-actions">
-        <view class="table-action-btn card-match" catchtap="onJoinMatch">
-          <text class="table-action-icon">🎯</text>
-          <text class="table-action-label">匹配对手</text>
-          <text class="table-action-desc">系统自动匹配</text>
-        </view>
-        <view class="table-action-btn card-table" catchtap="onOpenTable">
-          <text class="table-action-icon">⚡</text>
-          <text class="table-action-label">摆下棋桌</text>
-          <text class="table-action-desc">等待他人挑战</text>
-        </view>
-      </view>
+      <!-- ===== 随机匹配模式（合并入口：本系统优先，3 秒无对手自动转 Lichess） ===== -->
+      <block wx:if="{{gameMode === 'random'}}">
 
-      <!-- 匹配中 -->
-      <block wx:if="{{status === 'matching'}}">
-        <view class="match-card">
-          <view class="match-icon spinning">🔄</view>
-          <text class="match-label">匹配中...</text>
+        <block wx:if="{{status === 'idle'}}">
+          <!-- Lichess 已绑定：账号资料卡片 -->
+          <view wx:if="{{lichessVisible && lichessBound && lichessProfile}}" class="lichess-card">
+            <image wx:if="{{lichessProfile.avatarUrl}}" class="lichess-avatar" src="{{lichessProfile.avatarUrl}}" mode="aspectFill"></image>
+            <view wx:else class="lichess-avatar lichess-avatar-fallback">♟</view>
+            <view class="lichess-card-body">
+              <view class="lichess-card-row">
+                <text class="lichess-card-name">{{lichessUsername}}</text>
+                <text wx:if="{{lichessProfile.title}}" class="lichess-card-title">{{lichessProfile.title}}</text>
+                <text class="lichess-card-tag">Lichess</text>
+              </view>
+              <view class="lichess-card-perf">
+                <text wx:if="{{lichessProfile.perf.blitz.rating}}">⚡ {{lichessProfile.perf.blitz.rating}}</text>
+                <text wx:if="{{lichessProfile.perf.rapid.rating}}">⏱ {{lichessProfile.perf.rapid.rating}}</text>
+                <text wx:if="{{lichessProfile.perf.classical.rating}}">🏆 {{lichessProfile.perf.classical.rating}}</text>
+                <text wx:if="{{lichessProfile.games}}" class="lichess-card-games">{{lichessProfile.games}} 局</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- Lichess 可见但未绑定：绑定引导 -->
+          <view wx:if="{{lichessVisible && !lichessBound}}" class="lichess-bind-card">
+            <view class="lichess-bind-title">🌍 绑定 Lichess 账号</view>
+            <view class="lichess-bind-desc">
+              绑定后可在无本系统对手时自动匹配 Lichess 全球玩家，并获得更多在线对弈机会
+            </view>
+            <view class="lichess-bind-btn" catchtap="onGoLichessBind">立即绑定</view>
+          </view>
+
+          <!-- 时限选择（本系统匹配与 Lichess 降级共用） -->
+          <view wx:if="{{lichessVisible && lichessBound}}" class="time-preset-wrap">
+            <view class="time-preset-row">
+              <view wx:for="{{lichessTimePresets}}" wx:key="label"
+                    class="time-chip {{lichessTime === item.time && lichessIncrement === item.inc ? 'time-chip-active' : ''}}"
+                    catchtap="onSelectLichessTime" data-idx="{{index}}">
+                {{item.label}}
+              </view>
+            </view>
+          </view>
+
+          <!-- 匹配按钮 -->
+          <view class="match-main-btn {{wsConnected ? '' : 'match-main-btn-disabled'}}" catchtap="onJoinMatch">
+            {{wsConnected ? '🎯 匹配对手' : '⏳ 连接中...'}}
+          </view>
+          <view wx:if="{{!wsConnected}}" class="conn-hint">正在连接到服务器，请稍候...</view>
+
+          <!-- 摆桌按钮（棋桌大厅关闭时隐藏） -->
+          <view wx:if="{{tableLobbyEnabled}}" class="open-table-btn" catchtap="onOpenTable">
+            ⚡ 摆下棋桌，等待挑战
+          </view>
+        </block>
+
+        <!-- 匹配中 -->
+        <block wx:if="{{status === 'matching'}}">
+          <view class="match-card">
+            <view class="match-icon spinning">{{lichessMatching ? '🌍' : '♟'}}</view>
+          </view>
+          <text class="match-label">{{lichessMatching ? '正在匹配 Lichess 全球玩家...' : '正在匹配本系统对手...'}}</text>
+          <text class="match-timer">已等待 {{waitingSeconds}} 秒</text>
+          <text wx:if="{{!lichessMatching && lichessVisible && lichessBound && waitingSeconds < 3}}" class="match-sub-hint">
+            {{3 - waitingSeconds}} 秒后无本系统对手将自动匹配 Lichess 玩家
+          </text>
+          <text wx:if="{{lichessMatching}}" class="match-sub-hint">
+            对手来自 Lichess 全球玩家池，可能需要稍等片刻
+          </text>
+          <view class="match-cancel" catchtap="onCancelMatch">✕ 立即取消匹配</view>
+        </block>
+
+        <!-- Lichess 在线棋手（已绑定才显示） -->
+        <view wx:if="{{status === 'idle' && lichessVisible && lichessBound}}" class="lichess-users-section">
+          <view class="lichess-users-title">🌍 Lichess 棋手（{{lichessOnlineUsers.length}}）</view>
+
+          <!-- 邀请等待中 -->
+          <view wx:if="{{lichessInviteSent}}" class="invite-status-bar">
+            <text class="invite-status-text">
+              ⏳ 正在等待 {{lichessInviteSent.lichessUsername}} 回应（{{lichessInviteSent.time}}+{{lichessInviteSent.increment}}）…
+            </text>
+            <view class="invite-cancel-btn" catchtap="onCancelLichessInvite">取消</view>
+          </view>
+
+          <!-- 邀请错误 -->
+          <view wx:if="{{lichessInviteError}}" class="invite-error-bar">
+            <text class="invite-error-text">❌ {{lichessInviteError}}</text>
+            <text class="invite-error-close" catchtap="onClearLichessInviteError">✕</text>
+          </view>
+
+          <view wx:if="{{lichessOnlineUsers.length === 0}}" class="lichess-users-empty">
+            🌍 暂无其他已绑定 Lichess 的棋手
+          </view>
+          <view wx:else class="lichess-user-list">
+            <view class="lichess-user-item" wx:for="{{lichessOnlineUsers}}" wx:key="lichessUsername">
+              <view class="lichess-user-main">
+                <view class="lichess-user-name-row">
+                  <text class="lichess-user-name">{{item.lichessUsername}}</text>
+                  <text wx:if="{{item.title}}" class="lichess-user-title">{{item.title}}</text>
+                </view>
+                <view class="lichess-user-meta">
+                  <text>♟ {{item.rating}}</text>
+                  <text>{{item.games}} 局</text>
+                  <text class="{{item.online ? 'online-dot-on' : 'online-dot-off'}}">{{item.online ? '● 在线' : '○ 离线'}}</text>
+                </view>
+              </view>
+              <view class="lichess-invite-btn {{(item.online && !lichessInviteSent) ? '' : 'invite-btn-disabled'}}"
+                    catchtap="onInviteLichessUser" data-username="{{item.lichessUsername}}">
+                ✉️ 邀请
+              </view>
+            </view>
+          </view>
         </view>
-        <text class="match-timer">已等待 {{waitingSeconds}} 秒</text>
-        <view class="match-cancel" catchtap="onCancelMatch">✕ 取消匹配</view>
       </block>
 
       <!-- 摆桌等待中 -->
@@ -48,80 +171,143 @@
           <view class="tabling-cancel" catchtap="onCloseTable">✕ 撤下棋桌</view>
         </view>
       </block>
-    </view>
 
-    <!-- ===== 棋桌大厅 ===== -->
-    <view class="table-lobby-section">
-      <view class="lobby-header">
-        <text class="lobby-title">🏆 棋桌大厅</text>
-        <text class="lobby-count">{{activeTables.length}} 张棋桌</text>
-        <view class="lobby-history-btn" catchtap="onToggleHistory">
-          📋 历史记录
-        </view>
-      </view>
+      <!-- ===== 好友对弈（时限 + 生成邀请 + 好友列表挑战 + 搜索加好友） ===== -->
+      <block wx:if="{{gameMode === 'friends' && status === 'idle'}}">
+        <friend-lobby connected="{{wsConnected}}" inGame="{{false}}"
+                      bind:invitechange="onFriendInviteChange"></friend-lobby>
+      </block>
 
-      <!-- 历史面板 -->
-      <view wx:if="{{showHistory}}" class="history-panel">
-        <view wx:if="{{historyLoading}}" class="loading-mini">加载中...</view>
-        <view wx:else class="history-list">
-          <view wx:if="{{gameHistory.length === 0}}" class="history-empty">
-            <text>暂无历史对局</text>
-          </view>
-          <view class="history-item" wx:for="{{gameHistory}}" wx:key="gameId" wx:for-index="idx">
-            <view class="history-players">
-              <text class="history-name">{{item.whiteName}}</text>
-              <text class="history-vs">VS</text>
-              <text class="history-name">{{item.blackName}}</text>
-            </view>
-            <view class="history-meta">
-              <text class="history-result {{item.resultLabel === '白胜' ? 'res-win' : item.resultLabel === '黑胜' ? 'res-loss' : 'res-draw'}}">{{item.resultLabel}}</text>
-              <text wx:if="{{item.dateFormatted}}" class="history-date">{{item.dateFormatted}}</text>
-            </view>
-            <view class="history-actions">
-              <view class="history-replay-btn" catchtap="onReplayGame" data-idx="{{idx}}">▶ 回放</view>
+      <!-- ===== 棋桌大厅（含 Lichess 棋手邀请与桌面列表） ===== -->
+      <block wx:if="{{gameMode === 'tables' && status === 'idle'}}">
+        <!-- Lichess 在线棋手（与网页版一致：大厅内也可直接邀请） -->
+        <view wx:if="{{lichessVisible && lichessBound}}" class="lichess-users-section">
+          <view class="lichess-users-title">🌍 Lichess 棋手（{{lichessOnlineUsers.length}}）</view>
+
+          <view class="time-preset-row lobby-time-row">
+            <view wx:for="{{lichessTimePresets}}" wx:key="label"
+                  class="time-chip time-chip-sm {{lichessTime === item.time && lichessIncrement === item.inc ? 'time-chip-active' : ''}}"
+                  catchtap="onSelectLichessTime" data-idx="{{index}}">
+              {{item.label}}
             </view>
           </view>
-        </view>
-      </view>
 
-      <scroll-view wx:if="{{!showHistory}}" scroll-y class="lobby-scroll">
-        <view wx:if="{{activeTables.length === 0}}" class="lobby-empty">
-          <text class="lobby-empty-icon">🪑</text>
-          <text class="lobby-empty-text">暂无棋桌，快去摆下一张吧</text>
-        </view>
-
-        <view wx:for="{{activeTables}}" wx:key="tableId" class="table-card">
-          <view class="table-card-left">
-            <view class="table-host-row">
-              <text class="table-host-avatar">{{getHostInitial(item)}}</text>
-              <text class="table-host-name">{{getHostName(item)}}</text>
-            </view>
-            <view class="table-meta-row">
-              <text class="table-meta-time">⏱ {{formatTableTime(item)}}</text>
-              <text class="table-meta-wait">🕐 {{formatWaitingTime(item.createdAt)}}</text>
-              <text wx:if="{{getSpectatorCount(item) > 0}}" class="table-meta-spec">👁 {{getSpectatorCount(item)}}</text>
-            </view>
+          <view wx:if="{{lichessInviteSent}}" class="invite-status-bar">
+            <text class="invite-status-text">
+              ⏳ 正在等待 {{lichessInviteSent.lichessUsername}} 回应（{{lichessInviteSent.time}}+{{lichessInviteSent.increment}}）…
+            </text>
+            <view class="invite-cancel-btn" catchtap="onCancelLichessInvite">取消</view>
           </view>
-          <view class="table-card-right">
-            <view class="table-join-btn" catchtap="onChallengeTable" data-tableid="{{item.tableId}}">
-              挑战
-            </view>
-            <view class="table-spectate-btn" catchtap="onSpectateTable" data-tableid="{{item.tableId}}">
-              观战
+
+          <view wx:if="{{lichessInviteError}}" class="invite-error-bar">
+            <text class="invite-error-text">❌ {{lichessInviteError}}</text>
+            <text class="invite-error-close" catchtap="onClearLichessInviteError">✕</text>
+          </view>
+
+          <view wx:if="{{lichessOnlineUsers.length === 0}}" class="lichess-users-empty">
+            🌍 暂无其他已绑定 Lichess 的棋手
+          </view>
+          <view wx:else class="lichess-user-list">
+            <view class="lichess-user-item" wx:for="{{lichessOnlineUsers}}" wx:key="lichessUsername">
+              <view class="lichess-user-main">
+                <view class="lichess-user-name-row">
+                  <text class="lichess-user-name">{{item.lichessUsername}}</text>
+                  <text wx:if="{{item.title}}" class="lichess-user-title">{{item.title}}</text>
+                </view>
+                <view class="lichess-user-meta">
+                  <text>♟ {{item.rating}}</text>
+                  <text>{{item.games}} 局</text>
+                  <text class="{{item.online ? 'online-dot-on' : 'online-dot-off'}}">{{item.online ? '● 在线' : '○ 离线'}}</text>
+                </view>
+              </view>
+              <view class="lichess-invite-btn {{(item.online && !lichessInviteSent) ? '' : 'invite-btn-disabled'}}"
+                    catchtap="onInviteLichessUser" data-username="{{item.lichessUsername}}">
+                ✉️ 邀请
+              </view>
             </view>
           </view>
         </view>
-      </scroll-view>
+
+        <!-- 桌面大厅 -->
+        <view class="table-lobby-section">
+          <view class="lobby-header">
+            <text class="lobby-title">🏆 棋桌大厅</text>
+            <text class="lobby-count">{{activeTables.length}} 张棋桌</text>
+            <view class="lobby-history-btn" catchtap="onToggleHistory">
+              📋 历史记录
+            </view>
+          </view>
+
+          <!-- 历史面板 -->
+          <view wx:if="{{showHistory}}" class="history-panel">
+            <view wx:if="{{historyLoading}}" class="loading-mini">加载中...</view>
+            <view wx:else class="history-list">
+              <view wx:if="{{gameHistory.length === 0}}" class="history-empty">
+                <text>暂无历史对局</text>
+              </view>
+              <view class="history-item" wx:for="{{gameHistory}}" wx:key="gameId" wx:for-index="idx">
+                <view class="history-players">
+                  <text class="history-name">{{item.whiteName}}</text>
+                  <text class="history-vs">VS</text>
+                  <text class="history-name">{{item.blackName}}</text>
+                </view>
+                <view class="history-meta">
+                  <text class="history-result {{item.resultLabel === '白胜' ? 'res-win' : item.resultLabel === '黑胜' ? 'res-loss' : 'res-draw'}}">{{item.resultLabel}}</text>
+                  <text wx:if="{{item.dateFormatted}}" class="history-date">{{item.dateFormatted}}</text>
+                </view>
+                <view class="history-actions">
+                  <view class="history-replay-btn" catchtap="onReplayGame" data-idx="{{idx}}">▶ 回放</view>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <scroll-view wx:if="{{!showHistory}}" scroll-y class="lobby-scroll">
+            <view wx:if="{{activeTables.length === 0}}" class="lobby-empty">
+              <text class="lobby-empty-icon">🪑</text>
+              <text class="lobby-empty-text">暂无棋桌，快去摆下一张吧</text>
+            </view>
+
+            <view wx:for="{{activeTables}}" wx:key="tableId" class="table-card">
+              <view class="table-card-left">
+                <view class="table-host-row">
+                  <text class="table-host-avatar">{{item.kind === 'playing' ? '⚔️' : getHostInitial(item)}}</text>
+                  <text class="table-host-name">{{getTableName(item)}}</text>
+                  <text wx:if="{{item.kind === 'playing'}}" class="table-badge-playing">对弈中</text>
+                  <text wx:elif="{{item.auto}}" class="table-badge-auto">AI</text>
+                  <text wx:elif="{{item.matching}}" class="table-badge-matching">桌主匹配中</text>
+                </view>
+                <view class="table-meta-row">
+                  <text class="table-meta-time">⏱ {{getTableTimeLabel(item)}}</text>
+                  <text wx:if="{{item.kind !== 'playing'}}" class="table-meta-wait">🕐 {{formatWaitingTime(item.createdAt)}}</text>
+                  <text wx:if="{{getSpectatorCount(item) > 0}}" class="table-meta-spec">👁 {{getSpectatorCount(item)}}</text>
+                </view>
+              </view>
+              <view class="table-card-right">
+                <view wx:if="{{item.kind === 'waiting'}}" class="table-join-btn" catchtap="onChallengeTable" data-tableid="{{item.tableId}}">
+                  挑战
+                </view>
+                <view wx:else class="table-spectate-btn" catchtap="onSpectateTable" data-tableid="{{item.tableId}}">
+                  观战
+                </view>
+              </view>
+            </view>
+  <!-- AI生成内容免责声明 -->
+  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
+          </scroll-view>
+        </view>
+      </block>
     </view>
   </block>
 
-  <!-- ===== 对局中 ===== -->
-  <block wx:if="{{status === 'playing'}}">
+  <!-- ===== 对局中（本人参战） ===== -->
+  <block wx:if="{{status === 'playing' && !isSpectating}}">
     <!-- 对手信息 -->
     <view class="opponent-bar">
       <view class="player-info {{!isMyTurn ? 'active-turn' : ''}}">
         <text class="player-color-signal {{opponentColor === 'w' ? 'color-white' : 'color-black'}}"></text>
         <text class="player-name">{{opponentName}}</text>
+        <text wx:if="{{opponentRating}}" class="player-rating">♟ {{opponentRating}}</text>
         <text class="player-time {{opponentTime <= 30 ? 'time-low' : ''}}">
           {{formatTime(opponentTime)}}
         </text>
@@ -135,6 +321,9 @@
       <text class="spectator-count">{{spectatorCount}} 人观战</text>
     </view>
 
+    <!-- Lichess 对局提示 -->
+    <view wx:if="{{gameSource === 'lichess'}}" class="lichess-game-badge">🌍 Lichess 跨平台对局</view>
+
     <!-- 棋盘 -->
     <view class="online-board-area">
       <chess-board id="onlineBoard"
@@ -147,9 +336,20 @@
         lastMoveFrom="{{lastMoveFrom}}"
         lastMoveTo="{{lastMoveTo}}"
         boardColorPreset="blueWhite"
+        labelVariant="inline"
         bind:squaretap="onSquareTap">
       </chess-board>
     </view>
+
+    <!-- Rex 教练闲聊气泡（同网页版 CoachChatter） -->
+    <coach-chatter
+      fen="{{fen}}"
+      moveHistory="{{moveHistory}}"
+      playerSide="{{myColor === 'w' ? 'white' : 'black'}}"
+      gameStarted="{{gameStarted}}"
+      gameOver="{{gameOver}}"
+      enabled="{{true}}"
+    ></coach-chatter>
 
     <!-- 己方信息 -->
     <view class="my-info">
@@ -164,7 +364,7 @@
 
     <!-- 操作按钮 -->
     <view class="action-bar">
-      <view class="action-btn {{isMyTurn ? '' : 'action-disabled'}}" catchtap="onFlipBoard">
+      <view class="action-btn" catchtap="onFlipBoard">
         🔄 翻转
       </view>
       <view class="action-btn {{canOfferDraw ? '' : 'action-disabled'}}" catchtap="onDrawOffer">
@@ -172,6 +372,9 @@
       </view>
       <view class="action-btn {{canTakeback ? '' : 'action-disabled'}}" catchtap="onTakebackRequest">
         ↩ 悔棋
+      </view>
+      <view class="action-btn {{exploreMode ? 'action-active' : ''}}" catchtap="{{exploreMode ? 'onExitExploration' : 'onStartManualExploration'}}">
+        {{exploreMode ? '✕ 退出' : '📝 推演'}}
       </view>
       <view class="action-btn action-danger" catchtap="onResign">
         🏳️ 认输
@@ -196,6 +399,138 @@
     </view>
   </block>
 
+  <!-- ===== 观战中（围观他人对局，布局对齐网页版移动端） ===== -->
+  <block wx:if="{{status === 'playing' && isSpectating}}">
+    <!-- 计时器行 + 右上角操作菜单 -->
+    <view class="spec-timer-row">
+      <view class="spec-timer-inner">
+        <view class="spec-pill {{activeSide === 'white' ? 'spec-pill-active' : ''}}">
+          <text class="spec-pill-name">{{whiteName}}</text>
+          <text class="spec-pill-time {{whiteLow ? 'spec-time-low' : ''}}">{{whiteTimeLabel}}</text>
+        </view>
+        <text class="spec-vs">vs</text>
+        <view class="spec-pill {{activeSide === 'black' ? 'spec-pill-active' : ''}}">
+          <text class="spec-pill-name">{{blackName}}</text>
+          <text class="spec-pill-time {{blackLow ? 'spec-time-low' : ''}}">{{blackTimeLabel}}</text>
+        </view>
+      </view>
+      <view class="spec-menu-btn" catchtap="onToggleSpectateMenu">
+        <text class="spec-menu-icon">⚙️</text>
+      </view>
+    </view>
+
+    <!-- 棋盘区域：上吃子栏 + 棋盘 + 下吃子栏 -->
+    <view class="spec-board-area">
+      <captured-pieces side="top" fen="{{displayFen}}" fixed label="⚫ 吃子"></captured-pieces>
+
+      <view class="spec-board-wrap">
+        <chess-board id="spectateBoard"
+          fen="{{displayFen}}"
+          isCheck="{{isCheck}}"
+          interactive="{{false}}"
+          flipped="{{flipped}}"
+          selectedSquare=""
+          legalMoves="{{[]}}"
+          lastMoveFrom="{{displayLastFrom}}"
+          lastMoveTo="{{displayLastTo}}"
+          boardColorPreset="{{boardColorPreset}}"
+          labelVariant="inline"
+          canvasHidden="{{showSpectateMenu}}">
+        </chess-board>
+      </view>
+
+      <captured-pieces side="bottom" fen="{{displayFen}}" fixed label="⚪ 吃子"></captured-pieces>
+    </view>
+
+    <!-- 回看导航（回看历史局面时显示） -->
+    <view wx:if="{{viewPly !== null}}" class="spec-replay-bar">
+      <view class="spec-replay-btn" catchtap="onSpectateGoStart">⏮</view>
+      <view class="spec-replay-btn spec-replay-main" catchtap="onSpectatePrev">◀</view>
+      <text class="spec-replay-info">{{viewPly}}/{{spectateTotal}}</text>
+      <view class="spec-replay-btn spec-replay-main" catchtap="onSpectateNext">▶</view>
+      <view class="spec-replay-btn" catchtap="onSpectateLive">⏭</view>
+      <view class="spec-replay-live" catchtap="onSpectateLive">当前</view>
+    </view>
+
+    <!-- 状态行 -->
+    <view class="spec-status {{viewPly !== null ? 'spec-status-history' : ''}}">
+      {{viewPly !== null ? '📜 回看中（不能落子）' : (gameOver ? '🏁 对局已结束' : '👀 观战中 · 轮到' + turnSideName + '走棋')}}
+    </view>
+
+    <!-- 信息区：棋盘信息 / 走法记录 -->
+    <view class="spec-tab-body">
+      <block wx:if="{{spectateTab === 'board'}}">
+        <!-- 双方玩家卡 -->
+        <view class="spec-player-grid">
+          <view class="spec-player-card">
+            <text class="spec-player-label">⬜ 白方</text>
+            <view class="spec-player-main">
+              <view class="spec-avatar spec-avatar-white">{{whiteInitial}}</view>
+              <view class="spec-player-text">
+                <text class="spec-player-name">{{whiteName}}</text>
+                <text class="spec-player-rating">♟ {{whiteRating}}</text>
+              </view>
+            </view>
+          </view>
+          <view class="spec-player-card">
+            <text class="spec-player-label">⬛ 黑方</text>
+            <view class="spec-player-main">
+              <view class="spec-avatar spec-avatar-black">{{blackInitial}}</view>
+              <view class="spec-player-text">
+                <text class="spec-player-name">{{blackName}}</text>
+                <text class="spec-player-rating">♟ {{blackRating}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 对局信息 -->
+        <view class="spec-info-card">
+          <text class="spec-info-title">ℹ️ 对局信息</text>
+          <view class="spec-info-row">
+            <text class="spec-info-key">时限</text>
+            <text class="spec-info-value">{{timeControlLabel}}</text>
+          </view>
+          <view class="spec-info-row">
+            <text class="spec-info-key">回合</text>
+            <text class="spec-info-value">{{roundCount}}</text>
+          </view>
+          <view class="spec-info-row">
+            <text class="spec-info-key">👀 观战</text>
+            <text class="spec-info-value">{{spectatorCount}} 人</text>
+          </view>
+          <view wx:if="{{gameOver}}" class="spec-info-row spec-info-result">
+            <text class="spec-info-key">结果</text>
+            <text class="spec-info-value">{{resultText}}</text>
+          </view>
+        </view>
+      </block>
+
+      <block wx:if="{{spectateTab === 'moves'}}">
+        <move-history
+          moveHistory="{{moveHistory}}"
+          replayIndex="{{viewPly === null ? -1 : viewPly - 1}}"
+          bind:gotomove="onSpectateGoToMove"
+        ></move-history>
+      </block>
+    </view>
+
+    <!-- 操作菜单面板（同首页 ☰ 下拉） -->
+    <view wx:if="{{showSpectateMenu}}" class="spec-menu-mask" catchtap="onToggleSpectateMenu"></view>
+    <view wx:if="{{showSpectateMenu}}" class="spec-menu-panel">
+      <view class="spec-menu-item" catchtap="onFlipBoard">🔄 翻转棋盘</view>
+      <view class="spec-menu-item {{spectateTab === 'moves' ? 'spec-menu-item-active' : ''}}" catchtap="onToggleSpectateTab">
+        📝 {{spectateTab === 'moves' ? '返回棋盘信息' : '走法记录'}}
+      </view>
+      <view class="spec-menu-item spec-menu-item-danger" catchtap="onExitGame">🏠 回到大厅</view>
+    </view>
+
+    <!-- 状态提示 -->
+    <view wx:if="{{statusMessage}}" class="status-toast {{statusToastType}}">
+      <text>{{statusMessage}}</text>
+    </view>
+  </block>
+
   <!-- ===== 回放模式 ===== -->
   <block wx:if="{{status === 'replay'}}">
     <view class="replay-bar-inline">
@@ -209,10 +544,10 @@
       <chess-board
         fen="{{fen}}"
         isCheck="{{isCheck}}"
-        interactive="false"
+        interactive="{{false}}"
         flipped="{{flipped}}"
         selectedSquare=""
-        legalMoves="[]"
+        legalMoves="{{[]}}"
         lastMoveFrom=""
         lastMoveTo=""
         boardColorPreset="blueWhite">
@@ -225,6 +560,32 @@
     </view>
   </block>
 
+  <!-- ===== Lichess 挑战弹窗（对方邀请我对弈） ===== -->
+  <view wx:if="{{lichessChallenges.length > 0}}" class="confirm-overlay">
+    <view class="confirm-dialog invite-dialog" catchtap="stopPropagation">
+      <text class="invite-emoji">🌍</text>
+      <text class="confirm-title">Lichess 对弈挑战</text>
+      <view wx:for="{{lichessChallenges}}" wx:key="id" class="challenge-item">
+        <text class="invite-desc">
+          <text class="invite-username">{{item.opponent.name || 'Lichess 玩家'}}</text>
+          向你发起挑战！
+        </text>
+        <view class="invite-detail-row">
+          <text class="invite-detail-label">⏱ 时限</text>
+          <text class="invite-detail-value">{{item.speed}} · {{item.perf.name}}</text>
+        </view>
+        <view wx:if="{{item.opponent.rating}}" class="invite-detail-row">
+          <text class="invite-detail-label">📊 等级分</text>
+          <text class="invite-detail-value">{{item.opponent.rating}}</text>
+        </view>
+        <view class="confirm-actions">
+          <view class="confirm-btn" catchtap="onAcceptLichessChallenge" data-id="{{item.id}}">接受</view>
+          <view class="confirm-btn confirm-btn-no" catchtap="onDeclineLichessChallenge" data-id="{{item.id}}">拒绝</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
   <!-- ===== 对局结束弹窗 ===== -->
   <view wx:if="{{showGameOver}}" class="overlay">
     <view class="gameover-dialog">
@@ -232,13 +593,27 @@
       <text class="gameover-title">{{gameOverTitle}}</text>
       <text class="gameover-desc">{{gameOverDesc}}</text>
       <view class="gameover-actions">
-        <view class="btn-primary" catchtap="onRematch">🔁 再来一局</view>
+        <view class="btn-secondary" catchtap="onGameOverReview">🔍 立即复盘</view>
+        <view class="btn-secondary" catchtap="onShareGame">📤 分享</view>
+        <view wx:if="{{!isSpectating}}" class="btn-primary" catchtap="onRematch">🔁 再来一局</view>
         <view class="btn-secondary" catchtap="onBackToLobby">🏠 回到大厅</view>
       </view>
     </view>
   </view>
 
-  <!-- ===== 邀请弹窗 ===== -->
+  <!-- 分享弹窗 -->
+  <view wx:if="{{showShareModal}}" class="confirm-overlay">
+    <view class="confirm-dialog" catchtap="stopPropagation">
+      <text class="confirm-title">分享对局</text>
+      <text class="confirm-desc">复制链接发送给好友，对方点开即可复盘这盘棋</text>
+      <view class="confirm-actions">
+        <view class="confirm-btn" catchtap="onCopyShareLink">📋 复制链接</view>
+        <view class="confirm-btn confirm-btn-no" catchtap="onCloseShareModal">取消</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ===== 邀请弹窗（本系统玩家入座挑战） ===== -->
   <view wx:if="{{showInviteDialog}}" class="confirm-overlay">
     <view class="confirm-dialog invite-dialog" catchtap="stopPropagation">
       <text class="invite-emoji">🤺</text>

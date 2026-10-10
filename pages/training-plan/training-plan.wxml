@@ -1,218 +1,440 @@
-<view class="plan-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
-  <scroll-view scroll-y class="page-scroll">
+<view class="tc-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
 
-    <!-- ===== 页头 ===== -->
-    <view class="page-header">
-      <view class="header-text">
-        <text class="header-title">🏋️ 训练中心</text>
-        <text class="header-desc">个性化训练计划·棋手档案·进步追踪</text>
+  <!-- ===== 未登录 ===== -->
+  <view wx:if="{{needLogin}}" class="tc-center">
+    <text class="tc-center-icon">🔐</text>
+    <text class="tc-center-title">请先登录</text>
+    <text class="tc-center-desc">登录后即可查看个性化训练计划与棋手档案</text>
+    <view class="btn-brand" catchtap="onGoLogin">去登录</view>
+  </view>
+
+  <!-- ===== 加载中 ===== -->
+  <view wx:elif="{{loading}}" class="tc-center">
+    <view class="tc-spinner"></view>
+    <text class="tc-center-desc">正在加载训练中心...</text>
+  </view>
+
+  <!-- ===== 加载失败 ===== -->
+  <view wx:elif="{{error}}" class="tc-center">
+    <text class="tc-center-icon">⚠️</text>
+    <text class="tc-center-title">加载失败</text>
+    <text class="tc-center-desc">{{error}}</text>
+    <view class="btn-brand" catchtap="onReload">重试</view>
+  </view>
+
+  <!-- ===== 无计划状态（未设定等级目标） ===== -->
+  <view wx:elif="{{!hasGradeSettings}}" class="tc-no-plan">
+    <text class="noplan-icon">🏁</text>
+    <text class="noplan-title">开始你的升级之旅</text>
+    <text class="noplan-desc">设定当前等级和目标等级，AI 将为你定制专属训练方案，包含每周训练计划（弱点诊断 → 主项 → 每日 45 分钟）与周日评估。</text>
+    <view class="btn-generate" catchtap="onToggleGradeEditor">📈 生成训练计划 →</view>
+
+    <!-- 等级设定表单 -->
+    <view wx:if="{{showGradeSettings}}" class="grade-editor">
+      <view class="ge-row">
+        <text class="ge-label">当前等级</text>
+        <picker mode="selector" range="{{gradeOptions}}" value="{{gradeIndex}}" bindchange="onCurrentGradeChange">
+          <view class="ge-picker">{{gradeOptions[gradeIndex] || '请选择'}}</view>
+        </picker>
       </view>
-      <text class="header-refresh" catchtap="loadData">🔄 刷新</text>
+      <view class="ge-row">
+        <text class="ge-label">目标等级</text>
+        <picker mode="selector" range="{{targetGradeOptions}}" value="{{targetGradeIndex}}" bindchange="onTargetGradeChange">
+          <view class="ge-picker">{{targetGradeOptions[targetGradeIndex] || '请选择'}}</view>
+        </picker>
+      </view>
+      <view class="ge-assessment">
+        <text class="ge-assessment-icon">🎯</text>
+        <text class="ge-assessment-text">不确定该选哪个等级？用 AI 定级测评，一局对弈或几道题就能测出你的真实水平</text>
+        <view class="ge-assessment-btn" catchtap="onGoAssessment">马上定级 →</view>
+      </view>
+      <text wx:if="{{gradeError}}" class="ge-error">⚠️ {{gradeError}}</text>
+      <view class="ge-actions">
+        <view class="btn-brand {{savingGrades ? 'btn-disabled' : ''}}" catchtap="onSaveGrades">
+          {{savingGrades ? '⏳ 重新生成中...' : '💾 保存并重新生成计划'}}
+        </view>
+        <view class="btn-ghost" catchtap="onToggleGradeEditor">取消</view>
+      </view>
+      <text class="ge-note">保存后本周训练计划将立即按新等级重新生成；历史周计划与周评估不受影响，习题难度会随目标等级调整。</text>
     </view>
+  </view>
 
-    <!-- ===== 棋手档案摘要 ===== -->
-    <view wx:if="{{plan}}" class="profile-summary-card">
-      <view class="profile-summary-header">
-        <text class="profile-summary-title">👤 我的棋手档案</text>
-        <text class="profile-summary-more" catchtap="onGoProfile">查看完整档案 →</text>
-      </view>
-      <view class="profile-summary-grid">
-        <view class="profile-summary-item">
-          <text class="ps-icon">📊</text>
-          <text class="ps-value">{{plan.estimatedRating > 0 ? plan.estimatedRating : plan.puzzleRating}}</text>
-          <text class="ps-label">{{plan.estimatedRating > 0 ? '对局等级分' : '习题等级分'}}</text>
-        </view>
-        <view class="profile-summary-item">
-          <text class="ps-icon">🎭</text>
-          <text class="ps-value">{{profileStyle || '未知'}}</text>
-          <text class="ps-label">棋风</text>
-        </view>
-        <view class="profile-summary-item">
-          <text class="ps-icon">🏆</text>
-          <text class="ps-value">{{winRateStr}}%</text>
-          <text class="ps-label">胜率</text>
-        </view>
-        <view class="profile-summary-item">
-          <text class="ps-icon">♟️</text>
-          <text class="ps-value">{{plan.basedOnGames}}</text>
-          <text class="ps-label">对局数</text>
-        </view>
-      </view>
-      <!-- 优劣势摘要 -->
-      <view wx:if="{{profile}}" class="sw-row">
-        <view wx:if="{{profile.strengths}}" class="sw-box sw-strength">
-          <text class="sw-box-title">🏅 优势</text>
-          <text class="sw-box-text">{{strengthsShort}}</text>
-        </view>
-        <view wx:if="{{profile.weaknesses}}" class="sw-box sw-weakness">
-          <text class="sw-box-title">🎯 待改进</text>
-          <text class="sw-box-text">{{weaknessesShort}}</text>
-        </view>
-      </view>
-      <view wx:else class="profile-empty">
-        <text wx:if="{{plan.basedOnGames == 0}}" class="profile-empty-text">暂无对局数据，完成几局人机对弈后将生成您的专属棋手档案</text>
-        <text wx:else class="profile-empty-text">棋手档案尚未生成</text>
-        <view wx:if="{{plan.basedOnGames > 0}}" class="btn-small-indigo" catchtap="onGoProfile">去生成棋手档案 →</view>
-      </view>
-    </view>
+  <!-- ===== 正常内容 ===== -->
+  <block wx:else>
 
-    <!-- ===== 训练统计 + 激励 ===== -->
-    <view wx:if="{{stats}}" class="stats-grid">
-      <view class="stats-card-item">
-        <view class="stats-card-header">
-          <text class="stats-card-label">等级</text>
-          <text class="stats-card-emoji">⭐</text>
-        </view>
-        <text class="stats-card-value blue">Lv.{{stats.level}}</text>
-        <view class="xp-bar-wrap">
-          <view class="xp-bar-bg">
-            <view class="xp-bar-fill" style="width: {{xpPct}}%"></view>
+      <view class="tc-body" id="tc-top">
+
+        <!-- ===== ① 页头 ===== -->
+        <view class="tc-header">
+          <view class="tc-header-text">
+            <text class="tc-title">🏋️ 训练中心</text>
+            <text class="tc-subtitle">个性化训练计划 · 棋手档案 · 进步追踪</text>
           </view>
-          <text class="xp-text">{{stats.xp}} XP · 还需 {{stats.xpToNextLevel}} XP</text>
-        </view>
-      </view>
-      <view class="stats-card-item">
-        <view class="stats-card-header">
-          <text class="stats-card-label">连续打卡</text>
-          <text class="stats-card-emoji">🔥</text>
-        </view>
-        <text class="stats-card-value orange">{{stats.currentStreak}} 天</text>
-        <text class="stats-card-hint">{{stats.currentStreak > 0 ? '再坚持 ' + (7 - stats.currentStreak) + ' 天可解锁成就' : '今日开始训练，开启连续打卡'}}</text>
-        <view class="streak-bar">
-          <view class="streak-dot {{i < stats.currentStreak ? 'streak-active' : ''}}" wx:for="{{7}}" wx:key="*this"></view>
-        </view>
-      </view>
-      <view class="stats-card-item">
-        <view class="stats-card-header">
-          <text class="stats-card-label">今日进度</text>
-          <text class="stats-card-emoji">✅</text>
-        </view>
-        <text class="stats-card-value green">{{stats.todayCompleted}}/{{stats.todayTarget}}</text>
-        <view class="xp-bar-bg">
-          <view class="xp-bar-fill green-fill" style="width: {{todayPct}}%"></view>
-        </view>
-        <text class="stats-card-hint">{{stats.todayTarget > 0 ? (stats.todayCompleted >= stats.todayTarget ? '🎉 今日目标已完成！' : '还需 ' + (stats.todayTarget - stats.todayCompleted) + ' 题') : '今日暂无目标'}}</text>
-      </view>
-      <view class="stats-card-item">
-        <view class="stats-card-header">
-          <text class="stats-card-label">成就</text>
-          <text class="stats-card-emoji">🏆</text>
-        </view>
-        <text class="stats-card-value purple">{{unlockedCount}}/{{stats.achievements.length}}</text>
-        <text class="stats-card-hint">{{achievementsHint}}</text>
-        <view class="achievement-preview">
-          <view class="ach-preview-item {{a.unlocked ? '' : 'ach-locked'}}" wx:for="{{achievementsPreview}}" wx:key="code" title="{{a.unlocked ? a.name : a.condition}}">
-            <text>{{a.unlocked ? a.icon : '🔒'}}</text>
-          </view>
-        </view>
-      </view>
-    </view>
-
-    <!-- 激励横幅 -->
-    <view wx:if="{{stats && plan}}" class="motivation-banner {{motivationBanner.color}}">
-      <text class="mb-icon">{{motivationBanner.icon}}</text>
-      <text class="mb-text">{{motivationBanner.text}}</text>
-    </view>
-
-    <!-- ===== 加载/错误状态 ===== -->
-    <view wx:if="{{loadingPlan}}" class="loading-state">正在生成训练计划...</view>
-    <view wx:if="{{profileError}}" class="error-state">{{profileError}}</view>
-
-    <!-- ===== 训练计划内容 ===== -->
-    <view wx:if="{{plan && !loadingPlan}}" class="plan-content">
-
-      <!-- 人机对局难度推荐 -->
-      <view class="section-card">
-        <view class="section-header">
-          <text class="section-title">🤖 人机对局难度推荐</text>
-          <view class="btn-small-green" catchtap="onGoGame">开始对弈 →</view>
-        </view>
-        <view class="difficulty-row">
-          <view class="diff-badge">
-            <text class="diff-num">{{plan.gameDifficulty.recommended}}</text>
-            <text class="diff-label">推荐难度</text>
-          </view>
-          <view class="diff-info">
-            <text class="diff-range">建议区间：{{plan.gameDifficulty.min}} - {{plan.gameDifficulty.max}} 级</text>
-            <text class="diff-elo">对应 Elo：{{plan.gameDifficulty.eloRange[0]}} - {{plan.gameDifficulty.eloRange[1]}}</text>
-            <text wx:if="{{plan.gameDifficulty.maxAllowed < 10}}" class="diff-warn">⚠️ 当前会员等级最高支持难度 {{plan.gameDifficulty.maxAllowed}} 级</text>
-          </view>
-        </view>
-        <text wx:if="{{plan.gameDifficulty.reason}}" class="diff-reason">{{plan.gameDifficulty.reason}}</text>
-      </view>
-
-      <!-- 习题训练计划 -->
-      <view wx:if="{{plan.puzzlePlan && plan.puzzlePlan.length > 0}}">
-        <text class="section-title">🧩 习题训练计划
-          <text class="section-title-sub">（共 {{plan.puzzlePlan.length}} 项 · 每日 {{getTotalDaily(plan.puzzlePlan)}} 题）</text>
-        </text>
-        <view class="plan-item" wx:for="{{plan.puzzlePlan}}" wx:for-item="item" wx:key="id">
-          <view class="plan-item-header">
-            <view class="plan-item-num">{{index + 1}}</view>
-            <view class="plan-item-info">
-              <view class="plan-item-title-row">
-                <text class="plan-item-title">{{item.title}}</text>
-                <text class="plan-item-tag {{getSourceTag(item.source).cls}}">{{getSourceTag(item.source).label}}</text>
-                <text wx:if="{{item.phase}}" class="plan-item-phase">{{getPhaseLabel(item.phase)}}</text>
+          <view class="tc-header-actions">
+            <view wx:if="{{weeklyPlan}}" class="btn-today" catchtap="onScrollToToday">
+              <view class="ring">
+                <view class="ring-fill" style="width: {{todayProgress.percent}}%"></view>
               </view>
-              <text class="plan-item-reason">{{item.reason}}</text>
+              <text class="btn-today-text">今天</text>
+            </view>
+            <view class="btn-icon" catchtap="onReload">🔄</view>
+          </view>
+        </view>
+
+        <!-- ===== ② 升级目标卡片 ===== -->
+        <view wx:if="{{gradeView}}" class="card card-grade">
+          <!-- 头：标题 + 达标概率 + 调整等级 -->
+          <view class="card-head">
+            <text class="card-title">📈 升级目标</text>
+            <view class="card-head-right">
+              <text wx:if="{{gradeView.hasMetrics}}" class="prob-badge {{gradeView.probCls}}">达标概率 {{gradeView.successProbability}}%</text>
+              <view class="btn-chip" catchtap="onToggleGradeEditor">{{showGradeSettings ? '✕ 收起' : '✏️ 调整等级'}}</view>
             </view>
           </view>
-          <view class="plan-item-meta">
-            <text>难度 {{item.minDifficulty}} - {{item.maxDifficulty}} Elo</text>
-            <text>每日 {{item.dailyCount}} 题</text>
-          </view>
-          <view class="btn-small-blue" catchtap="onJumpPuzzles" data-phase="{{item.phase}}" data-themes="{{item.themes}}" data-min="{{item.minDifficulty}}" data-max="{{item.maxDifficulty}}">开始练习 →</view>
-        </view>
-      </view>
 
-      <!-- 弱点追踪 -->
-      <view wx:if="{{mistakeSummary && mistakeSummary.activeCount > 0}}" class="section-card warn-border">
-        <text class="section-title">🎯 弱点追踪
-          <text class="section-title-sub">（{{mistakeSummary.activeCount}} 个活跃 · {{mistakeSummary.solvedCount}} 个已解决）</text>
-        </text>
-        <view class="mistake-item" wx:for="{{recentMistakesPreview}}" wx:for-item="m" wx:key="id">
-          <text class="mi-icon">{{m.classification == 'blunder' ? '💥' : '❌'}}</text>
-          <view class="mi-info">
-            <text class="mi-theme">{{m.inferredTheme || '战术'}} · {{m.phase || '全局'}} · 亏损 {{m.lossFixed}} 兵</text>
-            <text class="mi-meta">{{m.classification == 'blunder' ? '大错' : '失误'}} · 第 {{m.moveIndex + 1}} 步</text>
-          </view>
-          <text class="mi-status {{m.isActive ? 'mi-tracking' : 'mi-solved'}}">{{m.isActive ? '追踪中' : '已解决'}}</text>
-        </view>
-        <view class="mistake-action">
-          <view class="btn-small-amber" catchtap="onGoPuzzles">🎯 针对性做题 →</view>
-          <text class="mistake-action-hint">AI 教练会在相近局面刻意考察这些弱点</text>
-        </view>
-      </view>
-
-      <!-- 成就墙 -->
-      <view wx:if="{{stats && stats.achievements.length > 0}}" class="section-card">
-        <text class="section-title">🏆 成就墙
-          <text class="section-title-sub">（{{unlockedCount}}/{{stats.achievements.length}} 已解锁）</text>
-        </text>
-        <view class="achievement-grid">
-          <view class="ach-item {{a.unlocked ? 'ach-unlocked' : 'ach-locked-full'}}" wx:for="{{stats.achievements}}" wx:for-item="a" wx:key="code" title="{{a.unlocked ? a.name + ': ' + a.description : '未解锁 - ' + a.condition}}">
-            <view class="ach-icon-wrap {{a.unlocked ? 'ach-icon-glow' : ''}}">
-              <text class="ach-icon">{{a.unlocked ? a.icon : '🔒'}}</text>
+          <!-- 等级编辑面板 -->
+          <view wx:if="{{showGradeSettings}}" class="grade-editor inline">
+            <view class="ge-row">
+              <text class="ge-label">当前等级</text>
+              <picker mode="selector" range="{{gradeOptions}}" value="{{gradeIndex}}" bindchange="onCurrentGradeChange">
+                <view class="ge-picker">{{gradeOptions[gradeIndex] || '请选择'}}</view>
+              </picker>
             </view>
-            <text class="ach-name">{{a.name}}</text>
-            <text wx:if="{{a.unlocked && a.unlockedAt}}" class="ach-date">{{a.unlockedAtShort}}</text>
+            <view class="ge-row">
+              <text class="ge-label">目标等级</text>
+              <picker mode="selector" range="{{targetGradeOptions}}" value="{{targetGradeIndex}}" bindchange="onTargetGradeChange">
+                <view class="ge-picker">{{targetGradeOptions[targetGradeIndex] || '请选择'}}</view>
+              </picker>
+            </view>
+            <text wx:if="{{gradeError}}" class="ge-error">⚠️ {{gradeError}}</text>
+            <view class="ge-actions">
+              <view class="btn-brand {{savingGrades ? 'btn-disabled' : ''}}" catchtap="onSaveGrades">
+                {{savingGrades ? '⏳ 重新生成中...' : '💾 保存并重新生成计划'}}
+              </view>
+              <view class="btn-ghost" catchtap="onToggleGradeEditor">取消</view>
+            </view>
+            <text class="ge-note">保存后本周训练计划将立即按新等级重新生成；历史周计划与周评估不受影响，习题难度会随目标等级调整。</text>
+          </view>
+
+          <!-- 当前 → 目标 -->
+          <view class="grade-arrow-row">
+            <view class="ga-side">
+              <text class="ga-grade cur">{{gradeView.currentGradeLabel}}</text>
+              <text class="ga-elo">{{gradeView.currentRatingText}}</text>
+            </view>
+            <text class="ga-arrow">→</text>
+            <view class="ga-side">
+              <text class="ga-grade tgt">{{gradeView.targetGradeLabel}}</text>
+              <text class="ga-elo">目标 ≥ {{gradeView.targetElo}} Elo</text>
+            </view>
+            <view wx:if="{{gradeView.hasMetrics}}" class="ga-gap">
+              <text class="ga-gap-value">{{gradeView.gapText}}</text>
+              <text class="ga-gap-label">差距</text>
+            </view>
+          </view>
+
+          <!-- 进度条 -->
+          <view class="prog-block">
+            <view class="prog-labels">
+              <text>{{gradeView.baselineElo}} Elo</text>
+              <text class="prog-pct">{{gradeView.progress}}%</text>
+              <text>{{gradeView.targetElo}} Elo</text>
+            </view>
+            <view class="prog-track">
+              <view class="prog-fill" style="width: {{gradeView.progress}}%"></view>
+            </view>
+          </view>
+
+          <!-- 指标行：近期速度 / 预计达标 / 置信区间 -->
+          <view wx:if="{{gradeView.hasMetrics}}" class="metrics-grid">
+            <view class="metric-item">
+              <text class="metric-label">近期速度</text>
+              <text class="metric-value">{{gradeView.velocityText}}</text>
+            </view>
+            <view class="metric-item">
+              <text class="metric-label">{{gradeView.etaLabel}}</text>
+              <text class="metric-value">{{gradeView.etaText}}</text>
+            </view>
+            <view class="metric-item">
+              <text class="metric-label">置信区间</text>
+              <text class="metric-value small">[{{gradeView.confidenceLo}}, {{gradeView.confidenceHi}}]</text>
+            </view>
+          </view>
+          <text wx:if="{{gradeView.etaNote}}" class="metric-note">{{gradeView.etaNote}}</text>
+
+          <!-- 等级分轨迹 -->
+          <view class="chart-card">
+            <view class="chart-head">
+              <text class="chart-title">📊 等级分轨迹</text>
+              <text class="chart-sub">近14天 · 含 95% 置信带</text>
+            </view>
+            <line-chart wx:if="{{trendLabels.length > 0}}" labels="{{trendLabels}}" series="{{trendSeries}}" theme="{{__theme__}}"></line-chart>
+            <view wx:else class="chart-empty">训练数据不足</view>
+          </view>
+
+          <!-- 今日有效训练量 -->
+          <view wx:if="{{todayLoad}}" class="today-load">
+            <text class="tl-title">📋 今日有效训练</text>
+            <view class="tl-values">
+              <text class="tl-item">习题 {{todayLoad.puzzleLoad}}</text>
+              <text class="tl-item">复习 {{todayLoad.reviewLoad}}</text>
+              <text class="tl-item">对弈 {{todayLoad.gameLoad}}</text>
+              <text class="tl-item">复盘 {{todayLoad.analysisCount}} 次</text>
+              <text class="tl-item tl-total">总计 {{todayLoad.total}}</text>
+            </view>
+          </view>
+
+          <!-- 当前/下一阶段目标摘要 -->
+          <view class="stage-grid">
+            <view class="stage-item">
+              <text class="stage-title">🎯 当前阶段</text>
+              <text class="stage-line">习题目标：{{gradeView.currentTarget.puzzleRatingTarget}}</text>
+              <text class="stage-line">每日 {{gradeView.currentTarget.dailyPuzzleCount}} 题</text>
+            </view>
+            <view class="stage-item next">
+              <text class="stage-title">🏆 下一阶段</text>
+              <text class="stage-line">习题目标：{{gradeView.nextTarget.puzzleRatingTarget}}</text>
+              <text class="stage-line">每日 {{gradeView.nextTarget.dailyPuzzleCount}} 题</text>
+            </view>
           </view>
         </view>
+
+        <!-- ===== ③ 动态评估卡片 ===== -->
+        <view class="card {{assessmentMode ? 'card-assessment active' : 'card-assessment'}}">
+          <view class="card-head">
+            <text class="card-title">🔬 动态评估</text>
+            <view class="card-head-right">
+              <view wx:if="{{assessmentMode}}" class="btn-chip" catchtap="onSwitchToStandard">📋 切换至既定计划</view>
+              <view class="btn-assess {{assessmentMode ? 'green' : ''}} {{assessing ? 'btn-disabled' : ''}}" catchtap="onDynamicAssessment">
+                {{assessing ? '⏳ 分析中...' : (assessmentMode ? '🔄 重新评估' : '🔄 动态评估')}}
+              </view>
+            </view>
+          </view>
+
+          <view wx:if="{{assessing}}" class="assessing-row">
+            <view class="tc-spinner small"></view>
+            <text class="assessing-text">正在分析近3天对弈和习题表现...</text>
+          </view>
+
+          <block wx:if="{{assessmentResult}}">
+            <!-- 评估摘要 -->
+            <view class="assess-grid">
+              <view class="assess-cell">
+                <text class="ac-value">{{assessmentResult.recentPuzzles}}</text>
+                <text class="ac-label">近3天习题</text>
+              </view>
+              <view class="assess-cell">
+                <text class="ac-value">{{assessmentResult.recentGames}}</text>
+                <text class="ac-label">近3天对局</text>
+              </view>
+              <view class="assess-cell">
+                <text class="ac-value {{assessmentResult.puzzleAccuracy >= 70 ? 'ok' : (assessmentResult.puzzleAccuracy >= 50 ? 'warn' : 'bad')}}">{{assessmentResult.puzzleAccuracy}}%</text>
+                <text class="ac-label">习题正确率</text>
+              </view>
+            </view>
+
+            <!-- 趋势 -->
+            <view class="trend-row">
+              <text class="trend-label">表现趋势：</text>
+              <text class="trend-value {{assessmentResult.performanceTrend === 'improving' ? 'up' : (assessmentResult.performanceTrend === 'declining' ? 'down' : 'flat')}}">
+                {{assessmentResult.performanceTrend === 'improving' ? '📈 上升' : (assessmentResult.performanceTrend === 'declining' ? '📉 下降' : '➡️ 稳定')}}
+              </text>
+            </view>
+
+            <!-- 优势 / 待改进 -->
+            <view wx:if="{{assessmentResult.strengths.length > 0}}" class="tag-group">
+              <text class="tag-group-title green">✅ 优势</text>
+              <view class="tag-wrap">
+                <text class="tag-pill green" wx:for="{{assessmentResult.strengths}}" wx:key="*this">{{item}}</text>
+              </view>
+            </view>
+            <view wx:if="{{assessmentResult.weaknesses.length > 0}}" class="tag-group">
+              <text class="tag-group-title warm">🎯 待改进</text>
+              <view class="tag-wrap">
+                <text class="tag-pill warm" wx:for="{{assessmentResult.weaknesses}}" wx:key="*this">{{item}}</text>
+              </view>
+            </view>
+
+            <view wx:if="{{assessmentResult.adjustedWeeklyPlan}}" class="assess-synced">
+              <text class="as-title">📋 训练计划已同步</text>
+              <text class="as-text">已根据本次评估识别的近期弱项调整本周主项重点，下方「本周训练计划」已同步；如需重新生成整周安排，可点击「重新诊断」。</text>
+            </view>
+          </block>
+
+          <view wx:if="{{assessmentError}}" class="assess-error">
+            <text class="ae-title">⚠️ 动态评估失败</text>
+            <text class="ae-text">{{assessmentError}}</text>
+          </view>
+
+          <text wx:if="{{!assessing && !assessmentResult}}" class="assess-hint">
+            点击「动态评估」分析您近3天的对弈和习题表现，AI 将自动识别您的优势和待改进之处，
+            {{assessmentMode ? '并在必要时调整训练计划。' : '生成针对性训练建议。'}}
+          </text>
+        </view>
+
+        <!-- ===== ④ 本周训练计划 ===== -->
+        <view wx:if="{{weeklyPlan}}" class="card card-weekly">
+          <view class="card-head">
+            <view class="weekly-title-wrap">
+              <text class="card-title">🗓️ 本周训练计划</text>
+              <text class="week-badge">第 {{weeklyPlan.weekNumber}} 周 · {{weekRange}}</text>
+            </view>
+            <view class="card-head-right">
+              <view class="btn-chip" catchtap="onTogglePlanExpanded">{{planExpanded ? '收起' : '展开'}}</view>
+              <view class="btn-chip {{weeklyRefreshing ? 'btn-disabled' : ''}}" catchtap="onRefreshWeeklyPlan">
+                {{weeklyRefreshing ? '诊断中...' : '🔄 重新诊断'}}
+              </view>
+            </view>
+          </view>
+
+          <!-- 反馈横幅 -->
+          <view wx:if="{{planNotice}}" class="notice {{planNotice.kind === 'error' ? 'notice-error' : 'notice-info'}}">
+            <text class="notice-icon">{{planNotice.kind === 'error' ? '⚠️' : 'ℹ️'}}</text>
+            <text class="notice-text">{{planNotice.text}}</text>
+            <view wx:if="{{planNotice.upgrade}}" class="notice-action" catchtap="onGoMembership">{{planNotice.upgradeLabel}}</view>
+          </view>
+
+          <text class="weekly-summary">{{weeklyPlan.summary}}</text>
+
+          <!-- 主项 / 副项 / 强项 -->
+          <view class="focus-grid">
+            <view class="focus-item primary">
+              <text class="focus-label">🔥 本周主项（重点补）</text>
+              <text class="focus-title">{{weeklyPlan.primaryFocus.title}}</text>
+              <text class="focus-desc">{{weeklyPlan.primaryFocus.description}}</text>
+              <text class="focus-content">📋 {{weeklyPlan.primaryFocus.trainingContent}}</text>
+            </view>
+            <view class="focus-item secondary">
+              <text class="focus-label">⚖️ 副项（穿插练）</text>
+              <text class="focus-title">{{weeklyPlan.secondaryFocus.title}}</text>
+              <text class="focus-desc">{{weeklyPlan.secondaryFocus.description}}</text>
+              <text class="focus-content">📋 {{weeklyPlan.secondaryFocus.trainingContent}}</text>
+            </view>
+            <view class="focus-item maintain">
+              <text class="focus-label">✅ 强项（只维持）</text>
+              <block wx:if="{{weeklyPlan.maintainedItems.length > 0}}">
+                <view class="maintain-row" wx:for="{{weeklyPlan.maintainedItems}}" wx:key="id">
+                  <text class="focus-title">{{item.title}}</text>
+                  <text class="focus-desc">{{item.trainingContent}}</text>
+                </view>
+              </block>
+              <text wx:else class="focus-desc muted">暂无明显强项，完成更多对局后自动识别</text>
+            </view>
+          </view>
+
+          <!-- 本周进度 -->
+          <view class="week-progress">
+            <view class="wp-head">
+              <text class="wp-title">📊 本周进度</text>
+              <text class="wp-value">{{weekProgress.completed}}/{{weekProgress.total}} 分钟 · {{weekProgress.percent}}%</text>
+            </view>
+            <view class="wp-track">
+              <view class="wp-fill" style="width: {{weekProgress.percent}}%"></view>
+            </view>
+          </view>
+
+          <!-- 7 天清单 -->
+          <block wx:if="{{planExpanded}}">
+            <view class="days-card">
+              <view class="days-head">
+                <text class="days-title">📅 每日 45 分钟清单（主项专项在周二/周四/周六）</text>
+                <text class="days-sub">点击时间块直达对应功能</text>
+              </view>
+
+              <view wx:for="{{dailyPlanData}}" wx:for-item="day" wx:key="dayOfWeek"
+                    id="day-{{day.dayOfWeek}}"
+                    class="day-card {{day.isToday ? 'today' : ''}}">
+                <!-- 头行：星期 + 类型 + 今天 + 总分钟 -->
+                <view class="day-head">
+                  <text class="day-label {{day.isToday ? 'today' : ''}}">{{day.dayLabel}}</text>
+                  <text class="day-type {{day.typeCls}}">{{day.typeIcon}} {{day.typeLabel}}</text>
+                  <text wx:if="{{day.isToday}}" class="day-today-tag">今天</text>
+                  <text class="day-total">共 {{day.totalMinutes}} 分钟</text>
+                </view>
+
+                <!-- 当日进度 -->
+                <view class="day-progress">
+                  <view class="dp-head">
+                    <text class="dp-label">当日进度</text>
+                    <text class="dp-value {{day.progressPct >= 100 ? 'done' : (day.progressPct > 0 ? 'active' : '')}}">
+                      {{day.completedMin}}/{{day.totalMinutes}}′ · {{day.progressPct}}%
+                    </text>
+                  </view>
+                  <view class="dp-track">
+                    <view class="dp-fill {{day.progressPct >= 100 ? 'done' : (day.progressPct > 0 ? 'active' : '')}}"
+                          style="width: {{day.progressPct > 4 ? day.progressPct : 4}}%"></view>
+                  </view>
+                </view>
+
+                <!-- 时间块 -->
+                <view class="blocks">
+                  <view class="block-row" wx:for="{{day.blocks}}" wx:for-item="block" wx:key="key">
+                    <view class="block-main {{block.hasLink ? 'linkable' : ''}}"
+                          catchtap="onTimeBlockTap" data-link="{{block.link}}">
+                      <view class="block-dur {{block.isDone ? 'done' : (block.hasProg ? 'prog' : '')}}">{{block.duration}}′</view>
+                      <view class="block-body">
+                        <view class="block-title-row">
+                          <text class="block-activity">{{block.activity}}</text>
+                          <text wx:if="{{block.target}}" class="block-target {{block.targetCls}}">{{block.target}}</text>
+                        </view>
+                        <view class="block-desc-row">
+                          <text class="block-desc">{{block.description}}</text>
+                          <text wx:if="{{block.hasProg}}" class="block-prog {{block.isDone ? 'done' : ''}}">
+                            {{block.progCurrent}}/{{block.progTarget}} 题 · {{block.progPct}}%
+                          </text>
+                        </view>
+                      </view>
+                      <text wx:if="{{block.hasLink}}" class="block-go">开始 →</text>
+                    </view>
+                    <!-- 完成标记：由当天真实训练数据自动判定，不可手动点击 -->
+                    <view class="block-check {{block.isDone ? 'done' : ''}}">{{block.isDone ? '✓' : '☐'}}</view>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </block>
+        </view>
+
+        <!-- ===== ⑤ AI 训练周报 ===== -->
+        <view wx:if="{{reportWeek}}" class="card card-report">
+          <view class="card-head">
+            <text class="card-title">🤖 AI 训练周报（{{reportWeekLabel}}）</text>
+            <view wx:if="{{report && !reportGenerating}}" class="btn-chip" catchtap="onGenerateReport" data-refresh="{{true}}">🔄 重新生成</view>
+          </view>
+
+          <text wx:if="{{!report}}" class="report-intro">由 AI 依据本周真实训练数据（计划完成度、习题正确率、对局表现、等级分变化）生成一份点评与下周建议。</text>
+          <text wx:if="{{reportGenerating && report}}" class="report-working">AI 正在重新分析本周数据（约 10-30 秒）…</text>
+
+          <!-- 报告正文（Markdown 解析为块级结构，块内按 **加粗** 切成多个行内 text） -->
+          <view wx:if="{{report}}" class="report-body">
+            <block wx:for="{{reportBlocks}}" wx:for-item="blk" wx:key="key">
+              <view wx:if="{{blk.type === 'h'}}" class="md-h">
+                <text wx:for="{{blk.runs}}" wx:for-item="run" wx:key="key" class="{{run.bold ? 'md-bold' : ''}}">{{run.text}}</text>
+              </view>
+              <view wx:elif="{{blk.type === 'li'}}" class="md-li">
+                <text class="md-bullet">•</text>
+                <view class="md-li-text">
+                  <text wx:for="{{blk.runs}}" wx:for-item="run" wx:key="key" class="{{run.bold ? 'md-bold' : ''}}">{{run.text}}</text>
+                </view>
+              </view>
+              <view wx:else class="md-p">
+                <text wx:for="{{blk.runs}}" wx:for-item="run" wx:key="key" class="{{run.bold ? 'md-bold' : ''}}">{{run.text}}</text>
+              </view>
+            </block>
+          </view>
+
+          <view wx:else class="btn-generate-report {{(reportGenerating || reportLoading) ? 'btn-disabled' : ''}}" catchtap="onGenerateReport">
+            {{reportLoading ? '读取中…' : (reportGenerating ? 'AI 正在分析本周数据（约 10-30 秒）…' : '🤖 AI 生成周训练报告')}}
+          </view>
+
+          <text wx:if="{{reportError}}" class="report-error">{{reportError}}</text>
+          <text wx:if="{{report}}" class="report-meta">{{report.model ? report.model + ' · ' : ''}}生成于 {{report.createdAt}}</text>
+        </view>
+
       </view>
+    
+  </block>
 
-      <!-- 快捷跳转 -->
-      <view class="quick-actions">
-        <view class="quick-btn" catchtap="onGoPuzzles">🧩 去刷题</view>
-        <view class="quick-btn" catchtap="onGoGame">♟ 去对弈</view>
-        <view class="quick-btn" catchtap="onGoProfile">📊 棋手档案</view>
-      </view>
-    </view>
-
-    <!-- 初始占位 -->
-    <view wx:if="{{!plan && !loadingPlan && !profileError}}" class="loading-state">
-      <text>暂无训练数据，先去下几局棋吧</text>
-    </view>
-
-  </scroll-view>
+  <!-- AI生成内容免责声明 -->
+  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
 </view>

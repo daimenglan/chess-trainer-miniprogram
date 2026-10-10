@@ -8,6 +8,7 @@ const api = require('../../utils/api');
 const util = require('../../utils/util');
 const localAI = require('../../utils/localAI');
 const notation = require('../../utils/chessNotation');
+const { trackEvent } = require('../../utils/analytics');
 
 const CLASSIFICATION_META: Record<string, { icon: string; color: string; label: string }> = {
   best: { icon: '⭐', color: 'text-green', label: '最佳' },
@@ -46,12 +47,18 @@ Page({
     isStalemate: false,
     flipped: false,
     playerSide: 'w',
+    gameStarted: true,
+    gameOver: false,
 
     // 复盘分析
     reviewLoading: false,
     reviewProgress: 0,
     reviewDone: false,
     reviewError: false,
+    // 复盘失败原因（配额用尽/未登录等），仅在 reviewError 时展示
+    reviewErrorText: '',
+    // 因未登录而失败：分析线区域改显引导登录文案，不当作一般加载失败
+    reviewNeedLogin: false,
     summary: null as any,
     moveReviewCount: 0,
     moveReviewList: [] as any[],
@@ -64,6 +71,9 @@ Page({
 
     // 局面分析
     analysisCandidates: [] as any[],
+    // 上面这批推荐走法对应的 FEN：与 displayFen 一致时才在棋盘标注，
+    // 避免切换步数/进入推演时把上一局的推荐画到当前局面
+    analysisFen: '',
     openingName: '',
     openingNameCN: '',
     ecoCode: '',
@@ -76,6 +86,12 @@ Page({
     exploreAutoPaused: false,
     selectedSquare: '',
     legalMoves: [] as string[],
+    // 手动推演「比推演前赚亏」：当前局面评分 − 进入推演时基准评分（己方视角）。
+    // exploreDelta 为数值（正=赚 / 负=亏），exploreDeltaLabel 为预格式化文案；
+    // 仅在手动推演且基准已就绪时显示，退出推演即清空。
+    exploreDelta: null as number | null,
+    exploreDeltaLabel: '',
+    exploreDeltaColor: '',
 
     // AI 分析弹窗
     showAiAnalysis: false,
@@ -106,6 +122,21 @@ Page({
     chartLineExpanded: true,
     phaseMovesExpanded: true,
     panelExpanded: true,
+
+    // ===== 深度复盘（引擎 + LLM 战略战术解析，对齐网页版 DeepReviewPanel）=====
+    deepOpen: false,              // 抽屉展开状态
+    deepResults: [] as any[],     // 逐步结果（已补充展示字段）
+    deepList: [] as any[],        // 过滤后的展示列表
+    deepSummary: null as any,     // 整局总结
+    deepLoading: false,
+    deepProgress: 0,
+    deepError: '',
+    deepLlmFailed: '',
+    deepExpanded: {} as Record<number, boolean>, // 单步卡片展开状态
+    deepOnlyMine: false,          // 仅看我方走法
+    deepClassFilter: [] as string[], // 分类过滤（空=不过滤）
+    deepFilterMap: {} as Record<string, boolean>, // 同上，供 WXML 判断选中态
+    deepStats: null as any,
   },
 
   _chess: null as any,
@@ -114,6 +145,19 @@ Page({
   _analysisAbort: null as any,
   _analysisTimer: null as any,
   _exploreAutoTimer: null as any,
+  // 手动推演「比推演前」基准：进入推演时当前局面的白方视角评分（null = 尚未取到）
+  _exploreBaselineWhite: null as number | null,
+  // 当前显示局面的白方视角评分（每次走子/切步后刷新）
+  _exploreCurrentWhite: null as number | null,
+  // 基准评分对应的进入局面 FEN：只有仍停在入口局面时才认这次基准
+  _exploreBaseFen: '',
+  // 推演会话序号：进入/退出推演自增，用于丢弃上一次推演的迟到评分
+  _exploreSession: 0,
+  _deepAbort: null as any,
+  _deepLoaded: false,
+  // 整局复盘是配额权益，每个页面实例只自动跑一次，避免重复扣减
+  _autoReviewStarted: false,
+  _autoReviewTimer: null as any,
 
   onLoad(options: any) {
     this._syncTheme();
@@ -161,6 +205,8 @@ Page({
   onUnload() {
     if (this._reviewAbort) { this._reviewAbort.abort(); }
     if (this._analysisAbort) { this._analysisAbort.abort(); }
+    if (this._deepAbort) { this._deepAbort.abort(); }
+    clearTimeout(this._autoReviewTimer);
     this.clearExploreAutoTimer();
   },
 
@@ -214,6 +260,33 @@ Page({
     });
     // 自动分析首局面
     this.triggerAnalysis();
+    // 自动跑整局复盘（生成分析线），无需用户点菜单
+    this.scheduleAutoReview();
+  },
+
+  /**
+   * 棋谱就绪后自动开始整局复盘，用户无需再点菜单「复盘」。
+   * 延后 800ms 等首局面分析稳定，避免两个请求竞争；每个页面实例只触发一次。
+   */
+  scheduleAutoReview(delay: number = 800) {
+    if (this._autoReviewStarted) return;
+    if (this.data.moves.length === 0) return;
+    // 未登录不自动发起整局复盘：接口必然 401，只会换来一个错误态，
+    // 改为在分析线区域直接提示登录
+    let loggedIn = true;
+    try {
+      loggedIn = !!(wx as any).getStorageSync('auth_token');
+    } catch (e) { /* 取不到按已登录处理，交由接口判定 */ }
+    if (!loggedIn) {
+      this.setData({ reviewError: true, reviewNeedLogin: true, reviewErrorText: '登录后才能加载分析线' });
+      return;
+    }
+    this._autoReviewStarted = true;
+    clearTimeout(this._autoReviewTimer);
+    this._autoReviewTimer = setTimeout(() => {
+      if (this.data.moveReviewCount > 0 || this.data.reviewLoading) return;
+      this.startReview();
+    }, delay);
   },
 
   // ===== 导航 =====
@@ -296,19 +369,21 @@ Page({
   },
 
   /**
-   * 将引擎分数归一化到玩家视角
-   * API返回的分数始终是白方视角（正数=白方有利）
-   * 如果玩家执黑，分数取反使正数始终代表对玩家有利
+   * 将引擎分数归一化到玩家视角（与网页版 toPlayerView 一致）
+   * 引擎分数是「走子方视角」（正数=对走子方有利），先换算为白方视角，
+   * 再根据玩家执方翻转，使正数始终代表对玩家有利
    */
-  normalizeScore(score: number): number {
+  normalizeScore(score: number, fen: string): number {
     if (score === undefined || score === null) return score;
-    const playerSide = this.data.playerSide;
-    if (!playerSide) return score;
-    return playerSide === 'w' ? score : -score;
+    return util.toPlayerView(score, fen, this.data.playerSide);
   },
 
   // ===== 局面分析 =====
-  triggerAnalysis() {
+  /**
+   * 引擎分析当前局面，结果同时供棋盘标注（#1/#2/#3 圆点 + 箭头）与下方「局面分析」面板使用。
+   * @param immediate 立即发起请求，跳过防抖（点「AI推荐」时用）
+   */
+  triggerAnalysis(immediate: boolean = false) {
     const fen = this._chess?.fen();
     if (!fen) return;
     // 延迟触发，避免频繁请求
@@ -321,7 +396,7 @@ Page({
               ...c,
               rank: i + 1,
               // 分数归一化到玩家视角
-              score: typeof c.score === 'number' ? this.normalizeScore(c.score) : 0,
+              score: typeof c.score === 'number' ? this.normalizeScore(c.score, fen) : 0,
               scoreFormatted: '', // 下面重新计算
               scoreColor: '',
               pros: util.keyedList(c.pros, 'p' + (i + 1)),
@@ -336,6 +411,7 @@ Page({
             });
             this.setData({
               analysisCandidates: candidates,
+              analysisFen: fen,
               openingName: res.data.openingName || '',
               openingNameCN: res.data.openingNameCN || '',
               ecoCode: res.data.ecoCode || '',
@@ -343,7 +419,26 @@ Page({
           }
         })
         .catch(() => {});
-    }, 300);
+    }, immediate ? 0 : 300);
+  },
+
+  /**
+   * 点击棋盘上的推荐编号圆点：展开「局面分析」面板并滚动到对应条目
+   */
+  onBoardCandidateTap(e: any) {
+    const rank = e.detail?.rank;
+    if (!rank) return;
+    // 面板折叠时内容为 display:none，必须等展开渲染完成后再滚动
+    const scroll = () => {
+      const panel = this.selectComponent('#analysisPanel');
+      if (panel?.scrollToCandidate) panel.scrollToCandidate(rank);
+    };
+    if (!this.data.panelExpanded) {
+      this.setData({ panelExpanded: true });
+      setTimeout(scroll, 100);
+    } else {
+      scroll();
+    }
   },
 
   // ===== 复盘分析（SSE流式）=====
@@ -372,11 +467,15 @@ Page({
   },
 
   startReview() {
+    // 埋点：发起逐着法 AI 复盘
+    trackEvent('analysis', { mode: 'review' });
     this.setData({
       reviewLoading: true,
       reviewProgress: 0,
       reviewDone: false,
       reviewError: false,
+      reviewErrorText: '',
+      reviewNeedLogin: false,
       moveReviews: {},
       moveReviewList: [],
       moveReviewCount: 0,
@@ -452,9 +551,17 @@ Page({
           this.setData({ chartData });
         }
       },
-      onError: () => {
-        this.setData({ reviewLoading: false, reviewError: true });
-        util.showToast('复盘分析中断');
+      onError: (err: any) => {
+        // 自动复盘后配额/登录失败会变常见，给出可操作的提示而非笼统「中断」
+        const msg = this.friendlyReviewError(err);
+        this.setData({
+          reviewLoading: false,
+          reviewError: true,
+          reviewErrorText: msg,
+          // 未登录单独处理：分析线区域改为引导登录，而不是提示「加载失败」
+          reviewNeedLogin: this.isLoginError(err),
+        });
+        util.showToast(msg);
       },
       onDone: () => {
         const summary = this.computeSummary(reviews);
@@ -464,6 +571,11 @@ Page({
           reviewLoading: false,
           reviewDone: Object.keys(reviews).length > 0,
           reviewProgress: 100,
+          // 成功结束时必须一并清掉错误标记，否则 reviewError=true + 文案为空
+          // 会让 WXML 落到兜底的「分析加载失败」
+          reviewError: false,
+          reviewErrorText: '',
+          reviewNeedLogin: false,
           summary,
           moveReviewList: reviewList,
           moveReviewCount: reviewList.length,
@@ -473,6 +585,37 @@ Page({
         this.drawChart();
       },
     }, 10, 300);
+  },
+
+  /**
+   * 是否属于「未登录」错误。
+   * SSE 层拿不到后端 JSON 正文，只能拿到状态码；401 之外，
+   * 本地没有 auth_token 时同样视为未登录（后端可能已清理过期 token）。
+   */
+  isLoginError(err: any): boolean {
+    const msg = err?.message || '';
+    if (/401/.test(msg)) return true;
+    try {
+      return !(wx as any).getStorageSync('auth_token');
+    } catch (e) {
+      return false;
+    }
+  },
+
+  /**
+   * 把 SSE 的裸状态码转成可操作的提示。
+   * 整局复盘是配额权益（daily_game_review），进入页面自动触发时会直接消耗额度，
+   * 配额用尽或未登录时后端返回非 200 JSON，SSE 层只能拿到状态码。
+   */
+  friendlyReviewError(err: any): string {
+    if (this.isLoginError(err)) {
+      return '登录后才能加载分析线';
+    }
+    const msg = err?.message || '';
+    if (/40[3]/.test(msg)) {
+      return '今日复盘次数已用完，可在「我的 → 会员中心」升级后重试';
+    }
+    return msg || '复盘分析中断';
   },
 
   computeSummary(reviews: Record<number, any>): any {
@@ -1026,6 +1169,88 @@ Page({
     }
   },
 
+  // ===== 手动推演「比推演前赚亏」 =====
+  /**
+   * 取某局面的白方视角评分并刷新「比推演前赚亏」。
+   * 引擎分是「走子方视角」，先换算为白方视角（与网页版 updatePositionEval 一致）；
+   * 引擎不可用时退化为本地子力估算，保证离线也有值。
+   * @param alsoBaseline 进入手动推演的首个请求传 true —— 该评分同时记为基准，
+   *                     与实时评分共用一次计算，起点差值恰为 0，也不多消耗一次引擎调用。
+   */
+  _fetchEvalWhite(fen: string, alsoBaseline: boolean = false) {
+    if (!fen) return;
+    const session = this._exploreSession;
+    const done = (whiteEval: number) => {
+      // 推演会话已变化（退出/重进）或已退出推演：丢弃过期结果
+      if (session !== this._exploreSession || !this.data.explorationMode) return;
+      if (alsoBaseline && this._exploreBaseFen === fen) {
+        this._exploreBaselineWhite = whiteEval;
+      }
+      // 棋盘仍停在该局面才写入实时评分（用户已走子/切步则不覆盖新局面的值）
+      if (this.data.displayFen === fen) {
+        this._exploreCurrentWhite = whiteEval;
+      }
+      this._refreshExploreDelta();
+    };
+    api.analyzePosition({ fen, depth: 8, multiPv: 1, movetime: 300 })
+      .then((res: any) => {
+        const raw = res?.data?.candidates?.[0]?.score;
+        if (typeof raw !== 'number') {
+          done(this._localEvalWhite(fen));
+          return;
+        }
+        done(fen.split(' ')[1] === 'b' ? -raw : raw);
+      })
+      .catch(() => done(this._localEvalWhite(fen)));
+  },
+
+  /** 离线兜底：本地子力评估换算为白方视角（单位：兵） */
+  _localEvalWhite(fen: string): number {
+    try {
+      return localAI.evaluate(new Chess.Chess(fen)) / 100;
+    } catch (e) {
+      return 0;
+    }
+  },
+
+  /**
+   * 重算「比推演前赚亏」：当前局面评分 − 推演前基准评分（同一口径，均换算为己方视角）。
+   * 仅手动推演且基准已就绪时显示；其余情况清空，避免残留。
+   */
+  _refreshExploreDelta() {
+    const base = this._exploreBaselineWhite;
+    const cur = this._exploreCurrentWhite;
+    if (this.data.explorationMode !== 'manual' || base === null || cur === null) {
+      if (this.data.exploreDelta !== null || this.data.exploreDeltaLabel) {
+        this.setData({ exploreDelta: null, exploreDeltaLabel: '', exploreDeltaColor: '' });
+      }
+      return;
+    }
+    const toPlayer = (v: number) => (this.data.playerSide === 'b' ? -v : v);
+    const delta = toPlayer(cur) - toPlayer(base);
+    this.setData({
+      exploreDelta: delta,
+      exploreDeltaLabel: this._formatExploreDelta(delta),
+      exploreDeltaColor: util.getScoreColor(delta),
+    });
+  },
+
+  /** 赚亏文案（己方视角）：正为赚、负为亏 */
+  _formatExploreDelta(delta: number | null): string {
+    if (delta === null || typeof delta !== 'number' || isNaN(delta)) return '';
+    if (delta > 0.05) return `比推演前 +${delta.toFixed(2)}`;
+    if (delta < -0.05) return `比推演前 ${delta.toFixed(2)}`;
+    return '比推演前 0.00';
+  },
+
+  /** 清空手动推演赚亏状态（进入/退出推演时调用） */
+  _resetExploreDelta(entryFen: string = '') {
+    this._exploreBaseFen = entryFen;
+    this._exploreBaselineWhite = null;
+    this._exploreCurrentWhite = null;
+    this.setData({ exploreDelta: null, exploreDeltaLabel: '', exploreDeltaColor: '' });
+  },
+
   // ===== 推演模式 =====
   onToggleExploration() {
     this.closeMoreMenu();
@@ -1034,8 +1259,12 @@ Page({
       return;
     }
     // 从当前局面开始手动推演
-    const chess = new Chess.Chess(this._chess.fen());
+    const fen = this._chess.fen();
+    const chess = new Chess.Chess(fen);
     this._exploreChess = chess;
+    // 新推演会话：基准取进入时的当前局面，退出/重进都会作废上一次的迟到评分
+    this._exploreSession++;
+    this._resetExploreDelta(fen);
     this.setData({
       explorationMode: 'manual',
       exploreSteps: [],
@@ -1043,6 +1272,8 @@ Page({
       selectedSquare: '',
       legalMoves: [],
     });
+    // 进入即算入口局面评分，并记为「比推演前」基准
+    this._fetchEvalWhite(fen, true);
     util.showToast('请在棋盘上自由走子推演（可操作黑白双方）');
   },
 
@@ -1067,6 +1298,9 @@ Page({
     const fen = this._chess.fen();
     const chess = new Chess.Chess(fen);
     this._exploreChess = chess;
+    // 自动推演没有「比推演前」基准，清掉可能残留的手动推演赚亏
+    this._exploreSession++;
+    this._resetExploreDelta();
     this.setData({
       explorationMode: 'auto',
       exploreSteps: [],
@@ -1192,6 +1426,9 @@ Page({
     const fen = this._chess.fen();
     const chess = new Chess.Chess(fen);
     this._exploreChess = chess;
+    // 新推演会话：基准为推演起点（走子前）局面
+    this._exploreSession++;
+    this._resetExploreDelta(fen);
     const steps: any[] = [];
     if (uci) {
       try {
@@ -1209,6 +1446,9 @@ Page({
       selectedSquare: '',
       legalMoves: [],
     });
+    // 起点局面评分记为基准，再评首步后的局面 → 显示相对推演前的赚亏
+    this._fetchEvalWhite(fen, true);
+    if (steps.length > 0) this._fetchEvalWhite(steps[0].fen);
   },
 
   /** 手动推演时点击棋盘格子 */
@@ -1257,6 +1497,8 @@ Page({
             isCheckmate: chess.isCheckmate(),
             isStalemate: chess.isStalemate(),
           });
+          // 走子后重算当前局面评分 → 刷新「比推演前赚亏」
+          this._fetchEvalWhite(chess.fen());
         }
       } catch (e) { /* non-critical */ }
     } else {
@@ -1306,11 +1548,16 @@ Page({
     } catch (e) {
       this.setData({ exploreStepIndex: index, displayFen: fen });
     }
+    // 切到该步：重算该局面评分 → 刷新「比推演前赚亏」
+    this._fetchEvalWhite(fen);
   },
 
   onExitExploration() {
     this.clearExploreAutoTimer();
     this._exploreChess = null;
+    // 退出即作废推演会话，丢弃在途评分，并清空赚亏显示
+    this._exploreSession++;
+    this._resetExploreDelta();
     this.setData({
       explorationMode: '',
       exploreSteps: [],
@@ -1323,9 +1570,15 @@ Page({
     });
   },
 
-  // ===== AI 局面分析弹窗 =====
+  // ===== AI 推荐走法：棋盘标注 + 文字讲解弹窗 =====
+  /**
+   * 点击「AI推荐」：先刷新棋盘上的推荐走法标注（引擎分析），再打开文字讲解弹窗。
+   * 讲解依赖大模型配额，失败也不影响棋盘标注。
+   */
   onShowAiAnalysis() {
     this.closeMoreMenu();
+    // 立即重跑引擎分析，刷新棋盘上的 #1/#2/#3 标注（跳过防抖）
+    this.triggerAnalysis(true);
     this.setData({ showAiAnalysis: true, aiAnalysisLoading: true, aiAnalysisText: '' });
     const fen = this._chess.fen();
     api.getDetailedAnalysis(fen, 12, 3)
@@ -1335,7 +1588,7 @@ Page({
       })
       .catch((err: any) => {
         this.setData({
-          aiAnalysisText: '分析失败: ' + (err.message || ''),
+          aiAnalysisText: '讲解生成失败（' + (err.message || '网络异常') + '）\n\n棋盘上的推荐走法仍然可用，可在下方「局面分析」面板查看每步的优缺点。',
           aiAnalysisLoading: false,
         });
       });
@@ -1373,6 +1626,316 @@ Page({
 
   stopPropagation() {},
 
+  // ===== 深度复盘（引擎分析 + LLM 战略战术解析）=====
+  // 与网页版 DeepReviewPanel 对齐：进入时读取已持久化结果，未分析过则由用户手动触发。
+
+  /** 打开/收起深度复盘抽屉 */
+  onToggleDeepReview() {
+    this.closeMoreMenu();
+    const open = !this.data.deepOpen;
+    this.setData({ deepOpen: open });
+    if (open) this.loadDeepReviewCache();
+  },
+
+  onCloseDeepReview() {
+    this.setData({ deepOpen: false });
+  },
+
+  /** 读取服务端已保存的深度复盘结果（不触发新的 LLM 分析） */
+  loadDeepReviewCache() {
+    if (this._deepLoaded) return;
+    const { gameId, recordId } = this.data;
+    if (!gameId && !recordId) return;
+    this._deepLoaded = true;
+    api.loadDeepReview(gameId, recordId)
+      .then((res: any) => {
+        const data = res?.data;
+        const moveReviews = data?.moveReviews || [];
+        if (moveReviews.length === 0) return;
+        this.applyDeepResults(moveReviews, data?.gameSummary || null);
+      })
+      .catch(() => { /* 无缓存时静默忽略 */ });
+  },
+
+  /** 归一化并写入深度复盘结果 */
+  applyDeepResults(moveReviews: any[], summary: any) {
+    const results = (moveReviews || [])
+      .map((r: any) => this.decorateDeepReview(r))
+      .sort((a: any, b: any) => a.index - b.index);
+    this.setData({
+      deepResults: results,
+      deepSummary: summary || null,
+      deepStats: this.computeDeepStats(results, this.data.deepOnlyMine),
+      deepList: this.buildDeepList(results, this.data.deepOnlyMine, this.data.deepClassFilter),
+    });
+  },
+
+  /**
+   * 为单步结果补充 WXML 需要的展示字段（WXML 不能调用方法）
+   */
+  decorateDeepReview(review: any): any {
+    const meta = CLASSIFICATION_META[review.classification] || CLASSIFICATION_META.good;
+    const move = (this.data.moves || [])[review.index];
+    const side = this.deepMoveSide(review);
+    return {
+      ...review,
+      san: review.san || move?.san || '',
+      classIcon: meta.icon,
+      classColor: meta.color,
+      classLabel: meta.label,
+      playedScoreFormatted: util.formatScore(review.playedScore),
+      bestScoreFormatted: util.formatScore(review.bestScore),
+      sideIsWhite: side === 'w',
+      playerMoveNumber: Math.floor(review.index / 2) + 1,
+      bestMoveText: review.bestUci && review.bestUci.length >= 4
+        ? `${review.bestUci.slice(0, 2)}→${review.bestUci.slice(2, 4)}`
+        : '',
+      hasDetail: !!(review.strategicCommentary || review.mistakeReason || review.alternativePlan || review.strategicTag),
+    };
+  },
+
+  /** 按「仅看我方」+ 分类过滤生成展示列表 */
+  buildDeepList(results: any[], onlyMine: boolean, classFilter: string[]): any[] {
+    let list = [...(results || [])].sort((a, b) => a.index - b.index);
+    if (onlyMine) list = list.filter((r) => this.deepMoveSide(r) === this.data.playerSide);
+    if (classFilter && classFilter.length > 0) list = list.filter((r) => classFilter.includes(r.classification));
+    return list;
+  },
+
+  /** 重算统计与展示列表（过滤条件变化时调用） */
+  refreshDeepViews(overrides: any = {}) {
+    const onlyMine = overrides.deepOnlyMine !== undefined ? overrides.deepOnlyMine : this.data.deepOnlyMine;
+    const classFilter = overrides.deepClassFilter !== undefined ? overrides.deepClassFilter : this.data.deepClassFilter;
+    const results = this.data.deepResults;
+    // WXML 不能调用 indexOf，用 map 表达「该分类是否被选中」
+    const deepFilterMap: Record<string, boolean> = {};
+    for (const c of classFilter || []) deepFilterMap[c] = true;
+    this.setData({
+      deepStats: this.computeDeepStats(results, onlyMine),
+      deepList: this.buildDeepList(results, onlyMine, classFilter),
+      deepFilterMap,
+      ...overrides,
+    });
+  },
+
+  /** 统计各分类数量（跟随「仅看我方」口径） */
+  computeDeepStats(results: any[], onlyMine: boolean): any {
+    if (!results || results.length === 0) return null;
+    const scoped = onlyMine ? results.filter((r) => this.deepMoveSide(r) === this.data.playerSide) : results;
+    const count = (cls: string) => scoped.filter((r) => r.classification === cls).length;
+    return {
+      best: count('best'),
+      good: count('good'),
+      inacc: count('inaccuracy'),
+      mistake: count('mistake'),
+      blunder: count('blunder'),
+      total: scoped.length,
+    };
+  },
+
+  /** 该步由哪一方走出：fenBefore 的行棋方即本步走子方 */
+  deepMoveSide(review: any): string {
+    const turn = (review?.fenBefore || '').split(' ')[1];
+    return turn === 'b' ? 'b' : 'w';
+  },
+
+  /** 开始深度复盘（SSE 流式） */
+  onStartDeepReview() {
+    if (this.data.deepLoading) return;
+    if (this.data.moves.length === 0) {
+      util.showToast('没有走法可供分析');
+      return;
+    }
+    const moveInputs: any[] = [];
+    const replay = new Chess.Chess();
+    for (const m of this.data.moves) {
+      moveInputs.push({ uci: m.from + m.to + (m.promotion || ''), fenBefore: replay.fen() });
+      try {
+        replay.move({ from: m.from, to: m.to, promotion: m.promotion || 'q' });
+      } catch (e) { break; }
+    }
+    if (moveInputs.length === 0) {
+      util.showToast('没有走法可供分析');
+      return;
+    }
+
+    this.setData({
+      deepLoading: true,
+      deepProgress: 0,
+      deepError: '',
+      deepLlmFailed: '',
+      deepResults: [],
+      deepList: [],
+      deepSummary: null,
+      deepStats: null,
+      deepExpanded: {},
+      deepFilterMap: {},
+      deepOnlyMine: false,
+      deepClassFilter: [],
+    });
+    this._deepLoaded = true;
+
+    // 埋点：发起深度复盘（带上棋谱来源）
+    trackEvent('deep_review', {
+      recordId: this.data.recordId || undefined,
+      gameId: this.data.gameId || undefined,
+      moveCount: moveInputs.length,
+      playerSide: this.data.playerSide,
+    });
+
+    const collected: any[] = [];
+    /** 合并同一 index 的引擎/LLM 结果并刷新视图 */
+    const mergeReview = (review: any) => {
+      const existing = collected.findIndex((r) => r.index === review.index);
+      if (existing >= 0) {
+        collected[existing] = { ...collected[existing], ...review };
+      } else {
+        collected.push({ ...review });
+      }
+      const decorated = collected.map((r) => this.decorateDeepReview(r)).sort((a, b) => a.index - b.index);
+      this.setData({
+        deepResults: decorated,
+        deepList: this.buildDeepList(decorated, this.data.deepOnlyMine, this.data.deepClassFilter),
+        deepStats: this.computeDeepStats(decorated, this.data.deepOnlyMine),
+      });
+    };
+
+    this._deepAbort = api.deepReviewGameStream(moveInputs, {
+      onEngine: (review: any) => {
+        // 引擎结果先到：立即展示分类与分数，LLM 文本随后补齐
+        mergeReview(review);
+        this.setData({ deepProgress: review.progress || 0 });
+      },
+      onLLM: (review: any) => {
+        mergeReview(review);
+      },
+      onSummary: (summary: any) => {
+        this.setData({ deepSummary: summary });
+      },
+      onLlmError: (message: string) => {
+        this.onDeepLlmFailed(message);
+      },
+      onDone: () => {
+        this.setData({ deepLoading: false, deepProgress: 100 });
+        if (collected.length > 0) this.saveDeepReviewCache(this.data.deepResults, this.data.deepSummary);
+      },
+      onError: (err: Error) => {
+        this.setData({ deepLoading: false, deepError: this.friendlyDeepError(err) });
+      },
+    }, 12, 250, this.data.playerSide === 'b' ? 'b' : 'w');
+  },
+
+  /**
+   * 把 SSE 的裸状态码转成可操作的提示。
+   * 深度复盘是会员权益（daily_deep_review），配额不足时后端返回非 200 JSON，
+   * SSE 层只能拿到状态码。
+   */
+  friendlyDeepError(err: Error): string {
+    const msg = err?.message || '';
+    if (/401/.test(msg)) {
+      return '请先登录后再使用深度复盘';
+    }
+    if (/40[3]/.test(msg)) {
+      return '今日深度复盘次数已用完或需要会员权限，可在「我的 → 会员中心」升级后重试';
+    }
+    return msg || '深度复盘失败';
+  },
+
+  /** 分析完成后持久化，下次进入直接读取 */
+  saveDeepReviewCache(moveReviews: any[], summary: any) {
+    if (!moveReviews || moveReviews.length === 0) return;
+    const { gameId, recordId } = this.data;
+    if (!gameId && !recordId) return;
+    // 只存后端字段，避免把 WXML 展示用的派生字段（图标/格式化分数等）写进数据库
+    const payload = moveReviews.map((r: any) => ({
+      index: r.index,
+      uci: r.uci,
+      san: r.san,
+      fenBefore: r.fenBefore,
+      playedScore: r.playedScore,
+      bestUci: r.bestUci,
+      bestScore: r.bestScore,
+      loss: r.loss,
+      isBest: r.isBest,
+      classification: r.classification,
+      strategicCommentary: r.strategicCommentary,
+      strategicTag: r.strategicTag,
+      alternativePlan: r.alternativePlan,
+      mistakeReason: r.mistakeReason,
+    }));
+    api.saveDeepReview(gameId, recordId, payload, summary || null).catch(() => { /* 保存失败不影响本地展示 */ });
+  },
+
+  /** LLM 战略分析失败时的提示（引擎结果仍有效） */
+  onDeepLlmFailed(message: string) {
+    this.setData({ deepLlmFailed: message || 'LLM 战略分析未生成' });
+  },
+
+  /** 清除已保存的深度复盘结果 */
+  onClearDeepReview() {
+    const { gameId, recordId } = this.data;
+    wx.showModal({
+      title: '清除深度复盘',
+      content: '将删除已保存的深度复盘结果，需要重新分析。确定继续吗？',
+      success: (res: any) => {
+        if (!res.confirm) return;
+        api.deleteDeepReview(gameId, recordId)
+          .then(() => {
+            this._deepLoaded = false;
+            this.setData({
+              deepResults: [],
+              deepList: [],
+              deepSummary: null,
+              deepStats: null,
+              deepProgress: 0,
+              deepLlmFailed: '',
+              deepExpanded: {},
+              deepFilterMap: {},
+            });
+            util.showToast('已清除', 'success');
+          })
+          .catch(() => util.showToast('清除失败'));
+      },
+    });
+  },
+
+  /** 切换「仅看我方」 */
+  onToggleDeepOnlyMine() {
+    this.refreshDeepViews({ deepOnlyMine: !this.data.deepOnlyMine });
+  },
+
+  /** 点击分类标签过滤 */
+  onDeepClassTap(e: any) {
+    const cls = e.currentTarget.dataset.cls;
+    if (!cls) return;
+    const current = this.data.deepClassFilter || [];
+    const next = current.includes(cls) ? current.filter((c: string) => c !== cls) : [...current, cls];
+    this.refreshDeepViews({ deepClassFilter: next });
+  },
+
+  onDeepClearFilters() {
+    this.refreshDeepViews({ deepOnlyMine: false, deepClassFilter: [] });
+  },
+
+  /** 展开/收起单步分析卡片 */
+  onDeepToggleMove(e: any) {
+    const index = e.currentTarget.dataset.index;
+    const expanded = { ...this.data.deepExpanded };
+    expanded[index] = !expanded[index];
+    this.setData({ deepExpanded: expanded });
+  },
+
+  /** 跳转到该步并展开内联详情（同时高亮列表项） */
+  onDeepGoToMove(e: any) {
+    const index = Number(e.currentTarget.dataset.index);
+    if (isNaN(index)) return;
+    this.goToMove(index);
+    this.setData({
+      reviewDetailIndex: index,
+      deepExpanded: { ...this.data.deepExpanded, [index]: true },
+    });
+  },
+
   /** 根据全局权限状态更新功能可见性 */
   updatePermissionUI() {
     const app = getApp();
@@ -1401,6 +1964,8 @@ Page({
       return;
     }
     this.setData({ videoGenerating: true, videoStatus: '正在准备素材...' });
+    // 埋点：发起讲解视频生成
+    trackEvent('video_generate', { recordId: recordId || undefined, gameId: gameId || undefined });
     api.generateGameVideo({ recordId, gameId }).then((res: any) => {
       const taskId = res?.data?.taskId || res?.taskId;
       if (taskId) {

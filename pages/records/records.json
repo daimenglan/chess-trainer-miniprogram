@@ -1,5 +1,4 @@
 {
-  "usingComponents": {
-    "chess-board": "../../components/chess-board/chess-board"
-  }
+  "navigationBarTitleText": "棋谱",
+  "disableScroll": true
 }

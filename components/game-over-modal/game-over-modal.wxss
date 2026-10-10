@@ -47,6 +47,12 @@
 
 .actions {
   display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.actions-row {
+  display: flex;
   gap: 20rpx;
   justify-content: center;
 }
@@ -71,4 +77,9 @@
   color: #fff;
   border: none;
   box-shadow: 0 4rpx 20rpx rgba(108, 99, 255, 0.3);
+}
+
+.action-full {
+  align-self: center;
+  min-width: 240rpx;
 }

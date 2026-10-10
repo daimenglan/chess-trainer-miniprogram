@@ -33,44 +33,88 @@
   padding: 12rpx;
 }
 
-/* 评估条 */
+/* 评估条（双向，同网页版 flex-1 h-1.5 + 左右半区） */
 .evaluation-bar-container {
   display: flex;
   flex-direction: column;
   gap: 6rpx;
 }
 
-.evaluation-bar-bg {
-  height: 20rpx;
-  background: var(--bg-card-hover);
-  border-radius: 8rpx;
-  overflow: hidden;
-  position: relative;
+.eval-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
 }
 
-.evaluation-bar-fill {
+.eval-bar {
+  flex: 1;
+  height: 16rpx;
+  display: flex;
+  align-items: center;
+  position: relative;
+  min-width: 0;
+}
+
+.eval-bar-half {
+  flex: 1;
   height: 100%;
-  border-radius: 8rpx;
+  background: var(--bg-card-hover);
+  overflow: hidden;
+  display: flex;
+}
+
+.eval-bar-left {
+  border-top-left-radius: 999rpx;
+  border-bottom-left-radius: 999rpx;
+  justify-content: flex-end;
+}
+
+.eval-bar-right {
+  border-top-right-radius: 999rpx;
+  border-bottom-right-radius: 999rpx;
+  justify-content: flex-start;
+}
+
+/* 左半填充从中心向左延伸（对方优势 → 红色） */
+.eval-bar-fill-left {
+  height: 100%;
+  border-top-left-radius: 999rpx;
+  border-bottom-left-radius: 999rpx;
+  background: linear-gradient(90deg, #ef4444, #fca5a5);
   transition: width 0.3s ease;
 }
 
+/* 右半填充从中心向右延伸（己方优势 → 绿色） */
+.eval-bar-fill-right {
+  height: 100%;
+  border-top-right-radius: 999rpx;
+  border-bottom-right-radius: 999rpx;
+  background: linear-gradient(270deg, #22c55e, #86efac);
+  transition: width 0.3s ease;
+}
+
+.eval-bar-divider {
+  width: 2rpx;
+  height: 100%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
 .evaluation-score {
-  display: flex;
-  align-items: center;
-  gap: 10rpx;
-  font-size: 36rpx;
+  font-size: 28rpx;
   font-weight: 700;
   font-family: 'Courier New', monospace;
+  white-space: nowrap;
 }
 
 .score-green { color: var(--success); }
 .score-red { color: var(--danger); }
 .score-neutral { color: var(--warning); }
 
-.eval-label {
-  font-size: 26rpx;
-  font-weight: 500;
-  opacity: 0.7;
+.eval-sub {
+  font-size: 22rpx;
+  color: var(--text-muted);
 }
 
 /* 开局名称 */
@@ -130,50 +174,69 @@
   color: var(--danger);
 }
 
-/* 候选走法列表 */
-.candidates-list {
+/* 候选走法：1/2/3 编号切换 + 选中走法详情（同网页版候选标记详情） */
+.candidates-block {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 10rpx;
-  height: 0; /* triggers flex shrink in scroll-view */
+  min-height: 0;
 }
 
-.candidate-item {
+.candidate-tabs {
   display: flex;
-  align-items: flex-start;
-  gap: 10rpx;
-  padding: 16rpx;
-  background: var(--bg-card);
-  border-radius: 12rpx;
-  border: 1px solid var(--border-color-light);
+  align-items: center;
+  gap: 12rpx;
+  flex-shrink: 0;
 }
 
-.candidate-item:active {
-  background: var(--bg-card-hover);
-}
-
-.candidate-rank {
-  width: 48rpx;
-  height: 48rpx;
+.candidate-tab {
+  width: 56rpx;
+  height: 56rpx;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24rpx;
+  font-size: 26rpx;
   font-weight: 700;
   color: #fff;
+  opacity: 0.45;
   flex-shrink: 0;
+  border: 3rpx solid transparent;
+}
+
+.candidate-tab-active {
+  opacity: 1;
+  border-color: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 0 12rpx rgba(108, 99, 255, 0.55);
+}
+
+.candidate-tabs-hint {
+  font-size: 22rpx;
+  color: var(--text-placeholder);
 }
 
 .rank-1 { background: #2563eb; box-shadow: 0 0 10rpx rgba(37, 99, 235, 0.4); }
 .rank-2 { background: #ea580c; }
 .rank-3 { background: #64748b; }
 
-.candidate-info {
+.candidate-detail-scroll {
   flex: 1;
-  min-width: 0;
+  height: 0;
+  min-height: 0;
 }
+
+.candidate-detail-card {
+  padding: 16rpx;
+  background: var(--bg-card);
+  border-radius: 12rpx;
+  border: 1px solid var(--border-color-light);
+  border-left-width: 6rpx;
+}
+
+.rank-border-1 { border-left-color: #2563eb; }
+.rank-border-2 { border-left-color: #ea580c; }
+.rank-border-3 { border-left-color: #64748b; }
 
 .candidate-header {
   display: flex;
@@ -246,28 +309,33 @@
   font-family: 'Courier New', monospace;
 }
 
-.candidate-action {
-  flex-shrink: 0;
-  padding: 8rpx 16rpx;
+.detail-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 10rpx;
 }
 
-.action-btn {
-  font-size: 28rpx;
-  color: var(--accent);
-  font-weight: 600;
-}
-
-.action-btn-auto {
-  font-size: 28rpx;
-  color: var(--success);
-  font-weight: 600;
-}
-
-.hints-off {
-  text-align: center;
-  padding: 24rpx;
+.action-pill {
+  padding: 10rpx 28rpx;
+  border-radius: 12rpx;
   font-size: 26rpx;
-  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.action-pill:active {
+  opacity: 0.7;
+}
+
+.action-pill-explore {
+  background: rgba(108, 99, 255, 0.18);
+  border: 1rpx solid rgba(108, 99, 255, 0.4);
+  color: var(--accent);
+}
+
+.action-pill-auto {
+  background: rgba(34, 197, 94, 0.14);
+  border: 1rpx solid rgba(34, 197, 94, 0.35);
+  color: var(--success);
 }
 
 @keyframes pulse {

@@ -1,7 +1,7 @@
 <view class="about-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
   <view class="about-header">
     <text class="app-icon">♟</text>
-    <text class="app-name">mychess AI</text>
+    <text class="app-name">Mychess</text>
     <text class="app-version">v{{version}}</text>
     <text class="app-desc">AI 国际象棋陪练系统</text>
   </view>
@@ -17,10 +17,23 @@
     </view>
   </view>
 
+  <view class="legal-links">
+    <view class="legal-link-row" catchtap="onOpenAgreement" data-doc="service">
+      <text class="legal-link-text">《用户服务协议》</text>
+      <text class="legal-link-arrow">→</text>
+    </view>
+    <view class="legal-link-row" catchtap="onOpenAgreement" data-doc="privacy">
+      <text class="legal-link-text">《隐私政策》</text>
+      <text class="legal-link-arrow">→</text>
+    </view>
+  </view>
+
   <view class="about-footer">
     <text class="footer-text">Powered by Stockfish + DeepSeek</text>
     <text class="footer-text">基于 chess.js</text>
-    <text class="footer-copy">© 2026 mychess</text>
+    <text class="footer-copy">© 2026 Mychess</text>
   </view>
   
+  <!-- AI生成内容免责声明 -->
+  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
 </view>

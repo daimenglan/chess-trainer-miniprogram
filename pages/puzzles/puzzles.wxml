@@ -1,15 +1,15 @@
 <view class="puzzles-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
   <scroll-view scroll-y class="page-scroll">
 
-    <!-- 顶部统计 -->
-    <view wx:if="{{stats}}" class="stats-bar">
+    <!-- 顶部统计（做题时隐藏） -->
+    <view wx:if="{{stats && !attemptState}}" class="stats-bar">
       <text class="stat-cell">等级分 <text class="stat-val">{{stats.puzzleRating}}</text></text>
       <text class="stat-cell">已做 <text class="stat-val">{{stats.totalAttempts}}</text></text>
       <text class="stat-cell">正确率 <text class="stat-val">{{stats.solvedRatePct}}%</text></text>
     </view>
 
-    <!-- 目标进度卡 -->
-    <view wx:if="{{trainingTarget > 0}}" class="goal-card">
+    <!-- 目标进度卡（做题时隐藏） -->
+    <view wx:if="{{trainingTarget > 0 && !attemptState}}" class="goal-card">
       <view class="goal-header">
         <text class="goal-title">🎯 今日目标：{{trainingTarget}} 题</text>
         <text class="goal-progress-text">{{puzzleDone}}/{{trainingTarget}}</text>
@@ -26,8 +26,8 @@
       </view>
     </view>
 
-    <!-- 激励横幅 -->
-    <view wx:if="{{motivationBanner.text}}" class="motivation-banner {{motivationBanner.color}}">
+    <!-- 激励横幅（做题时隐藏） -->
+    <view wx:if="{{motivationBanner.text && !attemptState}}" class="motivation-banner {{motivationBanner.color}}">
       <text class="mb-icon">{{motivationBanner.icon}}</text>
       <text class="mb-text">{{motivationBanner.text}}</text>
     </view>
@@ -35,18 +35,18 @@
     <!-- 消息 -->
     <view wx:if="{{message}}" class="msg-bar {{'msg-' + msgType}}">{{message}}</view>
 
-<!-- 搜索栏 -->
-    <view class="search-bar" wx:if="{{showSearch || searchQuery}}">
+<!-- 搜索栏（做题时隐藏） -->
+    <view class="search-bar" wx:if="{{(showSearch || searchQuery) && !attemptState}}">
       <input class="search-input" placeholder="搜索棋谱/习题..." value="{{searchQuery}}" bindinput="onSearchInput" />
       <view class="search-btn" catchtap="onSearchPuzzles">搜索</view>
       <view class="search-close" catchtap="onToggleSearch">✕</view>
     </view>
-    <view class="search-toggle" wx:if="{{!showSearch}}" catchtap="onToggleSearch">
+    <view class="search-toggle" wx:if="{{!showSearch && !attemptState}}" catchtap="onToggleSearch">
       <text>🔍 搜索棋谱</text>
     </view>
 
-    <!-- 搜索结果 -->
-    <view wx:if="{{searchResults.length > 0}}" class="search-results">
+    <!-- 搜索结果（做题时隐藏） -->
+    <view wx:if="{{searchResults.length > 0 && !attemptState}}" class="search-results">
       <text class="search-results-title">搜索结果</text>
       <view class="search-result-item" wx:for="{{searchResults}}" wx:key="id" wx:for-index="idx">
         <view class="search-result-info">
@@ -139,16 +139,24 @@
     <view wx:if="{{attemptState}}" class="puzzle-area glass">
       <!-- 棋盘（用 chess-board 组件） -->
       <chess-board id="puzzleBoard"
-        fen="{{puzzleFen}}"
-        interactive="{{!puzzleCompleted}}"
+        fen="{{_freePlayMode ? _freePlayFen : puzzleFen}}"
+        interactive="{{_freePlayMode || !puzzleCompleted}}"
         flipped="{{puzzleFlipped}}"
         selectedSquare="{{selectedSquare}}"
         legalMoves="{{legalMoves}}"
         lastMoveFrom="{{lastMoveFrom}}"
         lastMoveTo="{{lastMoveTo}}"
+        showHints="{{puzzleHints}}"
         boardColorPreset="blueWhite"
-        bind:squaretap="onPuzzleSquareTap">
+        bind:squaretap="{{_freePlayMode ? 'onFreePlaySquareTap' : 'onPuzzleSquareTap'}}">
       </chess-board>
+
+      <!-- 本次做题统计：本次对了/错了多少，做题过程中实时可见 -->
+      <view class="session-stats">
+        <text class="session-stats-label">本次</text>
+        <text class="session-stat-correct">✅ 对了 {{sessionCorrect}}</text>
+        <text class="session-stat-wrong">❌ 错了 {{sessionWrong}}</text>
+      </view>
 
       <!-- 步数信息 -->
       <view class="puzzle-info">
@@ -165,6 +173,10 @@
           {{favorited ? '❤️' : '🤍'}}
         </view>
         <view class="action-small" catchtap="onExplain">🤖 讲解</view>
+        <!-- AI 教练开关：本页独立，不影响 AI 陪练 -->
+        <view class="action-small {{puzzleHints ? 'action-active' : ''}}" catchtap="onTogglePuzzleHints">
+          {{puzzleHints ? '🤖 关闭' : '🤖 教练'}}
+        </view>
       </view>
     </view>
 
@@ -184,9 +196,13 @@
     <!-- AI 讲解 -->
     <view wx:if="{{showExplain}}" class="explain-card glass">
       <view class="explain-header">
-        <text class="explain-title">🤖 AI 教练讲解</text>
+        <view class="explain-title-wrap">
+          <text class="explain-title">🤖 AI 教练讲解</text>
+          <text class="ai-gen-flag">AI生成</text>
+        </view>
         <text class="explain-close" catchtap="onCloseExplain">✕</text>
       </view>
+      <view class="ai-gen-notice"><text>以下讲解由人工智能（AI）自动生成，仅供参考</text></view>
       <scroll-view class="explain-body" scroll-y>
         <text wx:if="{{explainText}}" class="explain-text">{{explainText}}</text>
         <text wx:if="{{explaining}}" class="explain-thinking">🤔 AI 正在生成...</text>
@@ -203,7 +219,33 @@
       <text wx:if="{{moveResult.solutionMoves}}" class="result-solution">
         完整解法：{{solutionText}}
       </text>
-      <view class="btn-primary" catchtap="onNextPuzzle">下一题 →</view>
+    </view>
+
+    <!-- 对方上一步提示条 + 下一题按钮（同网页版 849f27f：下一题移至对方上一步提示条旁） -->
+    <view wx:if="{{moveResult && moveResult.completed}}" class="next-move-bar">
+      <view class="next-move-hint">
+        <text class="next-move-label">对方上一步：</text>
+        <text class="next-move-san">{{moveResult.lastMoveSan || '—'}}</text>
+        <text class="next-move-turn">轮到你走棋</text>
+      </view>
+      <view class="btn-primary next-move-btn" catchtap="onNextPuzzle">下一题 →</view>
+    </view>
+
+    <!-- 自由推演：习题做完后从终局继续推演（双方均可任意走子） -->
+    <view wx:if="{{moveResult && moveResult.completed && !_freePlayMode}}" class="free-play-bar">
+      <view class="btn-primary free-play-btn" catchtap="onFreePlay">
+        <text>✍️ 从终局继续推演</text>
+      </view>
+    </view>
+
+    <!-- 自由推演中：操作按钮栏 -->
+    <view wx:if="{{_freePlayMode}}" class="free-play-bar">
+      <view class="free-play-info"><text>✍️ 自由推演中：双方均可任意走子</text></view>
+      <view class="free-play-actions">
+        <view class="action-small" catchtap="onFreePlayUndo">↩ 悔棋</view>
+        <view class="action-small" catchtap="onFreePlayReset">🔄 重置</view>
+        <view class="action-small action-active" catchtap="onExitFreePlay">✕ 退出推演</view>
+      </view>
     </view>
 
     <!-- 空状态 -->
@@ -229,6 +271,8 @@
       </view>
     </view>
 
+  <!-- AI生成内容免责声明 -->
+  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
   </scroll-view>
   
 </view>

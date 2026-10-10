@@ -1,8 +1,9 @@
 /**
  * 分销中心页
  */
-const app = getApp();
 const api = require('../../utils/api');
+const util = require('../../utils/util');
+const { trackEvent } = require('../../utils/analytics');
 
 Page({
   data: {
@@ -26,8 +27,7 @@ Page({
 
   onShow() {
     this._syncTheme();
-    if (!app.globalData.token) {
-      wx.reLaunch({ url: '/pages/login/login' });
+    if (!util.requireLogin('分销推广')) {
       return;
     }
     this.loadAll();
@@ -57,6 +57,7 @@ Page({
   },
 
   onActivate() {
+    trackEvent('distributor_activate');
     wx.showModal({
       title: '确认激活',
       content: '确定要激活成为分销员吗？',

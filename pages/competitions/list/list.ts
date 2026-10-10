@@ -1,7 +1,6 @@
 /**
  * 竞赛列表页
  */
-const app = getApp();
 const api = require('../../../utils/api');
 
 Page({
@@ -26,10 +25,8 @@ Page({
 
   onShow() {
     this._syncTheme();
-    if (!app.globalData.token) {
-      wx.reLaunch({ url: '/pages/login/login' });
-      return;
-    }
+    // 赛事列表是公开内容（后端 competitionRoutes 的 GET / 不挂 requireAuth），
+    // 游客可直接浏览；只有报名参赛才需要账号。
     this.loadCompetitions();
   },
 

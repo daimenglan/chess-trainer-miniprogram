@@ -1,4 +1,4 @@
-<view class="page" __theme__="{{__theme__}}">
+<view class="page {{__theme__ ? 'theme-' + __theme__ : ''}}">
   <view class="nav-bar">
     <view class="nav-back" bindtap="onBack">
       <text class="nav-back-icon">←</text>
@@ -34,5 +34,7 @@
         <text>—— 已加载全部 ——</text>
       </view>
     </view>
+  <!-- AI生成内容免责声明 -->
+  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
   </scroll-view>
 </view>

@@ -1,4 +1,7 @@
-<view wx:if="{{visible}}" class="captured-pieces {{side === 'top' ? 'captured-top' : 'captured-bottom'}}">
+<!-- fixed=true 时无吃子也渲染，保留等高占位（避免棋盘区域高度跳动） -->
+<view wx:if="{{visible || fixed}}"
+      class="captured-pieces {{side === 'top' ? 'captured-top' : 'captured-bottom'}} {{label ? 'captured-pill' : ''}}">
+  <text wx:if="{{label}}" class="captured-label">{{label}}</text>
   <block wx:for="{{pieces}}" wx:key="type">
     <view class="captured-group">
       <chess-piece piece="{{item.type}}" size="32"></chess-piece>

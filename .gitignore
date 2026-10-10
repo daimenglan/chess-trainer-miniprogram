@@ -29,3 +29,10 @@ mychess.pem
 
 # 测试产物
 test-output/
+# 训练中心回归测试的样本数据（本地导出，不入库）
+.tmp-tc.json
+.tmp-wp.json
+
+# 预览产物（每次 npm run preview 重新生成）
+.preview-qr.png
+.preview-info.json

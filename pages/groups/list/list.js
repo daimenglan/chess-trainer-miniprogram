@@ -3,8 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * 群组列表页
  */
-const app = getApp();
 const api = require('../../../utils/api');
+const util = require('../../../utils/util');
+const { trackEvent } = require('../../../utils/analytics');
 Page({
     data: {
         __theme__: (typeof getApp === "function" ? (getApp().globalData?.settings?.uiTheme || "dark") : "dark"),
@@ -23,8 +24,7 @@ Page({
     },
     onShow() {
         this._syncTheme();
-        if (!app.globalData.token) {
-            wx.reLaunch({ url: '/pages/login/login' });
+        if (!util.requireLogin('群组')) {
             return;
         }
         this.loadGroups();
@@ -45,6 +45,7 @@ Page({
         wx.navigateTo({ url: `/pages/groups/chat/chat?id=${id}` });
     },
     onCreateGroup() {
+        trackEvent('group_create');
         wx.showModal({
             title: '创建群组',
             content: '请输入群名称',

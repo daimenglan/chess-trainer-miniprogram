@@ -1,0 +1,12 @@
+<!-- 页面新手指引横幅（同网页版 PageGuide） -->
+<view class="page-guide" wx:if="{{show}}">
+  <view class="page-guide-inner">
+    <view class="page-guide-icon"><text>{{icon}}</text></view>
+    <view class="page-guide-body">
+      <text class="page-guide-title">{{title}}</text>
+      <text class="page-guide-desc">{{desc}}</text>
+      <text wx:if="{{hint}}" class="page-guide-hint">💡 {{hint}}</text>
+    </view>
+    <view class="page-guide-dismiss" catchtap="onDismiss">不再提示</view>
+  </view>
+</view>

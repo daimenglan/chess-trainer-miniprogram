@@ -26,10 +26,8 @@ Page({
     this._syncTheme();
     const id = parseInt(e.id) || 0;
     this.setData({ competitionId: id });
-    if (!app.globalData.token) {
-      wx.reLaunch({ url: '/pages/login/login' });
-      return;
-    }
+    // 赛事详情是公开内容（后端 GET /competitions/:id 不挂 requireAuth），
+    // 游客可直接浏览赛事信息、积分榜与对阵表；报名参赛才需账号。
     this.loadDetail();
   },
 
@@ -45,6 +43,20 @@ Page({
   },
 
   onJoin() {
+    // 报名要写入参赛记录（后端 POST /:id/register 挂 requireAuth），需账号；
+    // 未登录时给出登录引导并允许取消，取消则留在本页继续浏览赛事信息。
+    if (!app.globalData.token) {
+      wx.showModal({
+        title: '登录提示',
+        content: '报名参赛需要登录后使用，是否前往登录？',
+        confirmText: '去登录',
+        cancelText: '再逛逛',
+        success: (res: any) => {
+          if (res.confirm) wx.navigateTo({ url: '/pages/login/login' });
+        },
+      });
+      return;
+    }
     wx.showModal({
       title: '确认报名',
       content: '确定要报名参加这个竞赛吗？',

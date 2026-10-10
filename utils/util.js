@@ -7,6 +7,8 @@ exports.formatTime = formatTime;
 exports.formatDate = formatDate;
 exports.formatScore = formatScore;
 exports.getScoreLabel = getScoreLabel;
+exports.getPlayerEvalText = getPlayerEvalText;
+exports.toPlayerView = toPlayerView;
 exports.getScoreColor = getScoreColor;
 exports.getScoreBg = getScoreBg;
 exports.getResultBadge = getResultBadge;
@@ -20,6 +22,7 @@ exports.throttle = throttle;
 exports.deepClone = deepClone;
 exports.keyedList = keyedList;
 exports.navigateBackSafe = navigateBackSafe;
+exports.requireLogin = requireLogin;
 exports.parseJwtPayload = parseJwtPayload;
 exports.isAdminUser = isAdminUser;
 exports.isTeacherUser = isTeacherUser;
@@ -88,6 +91,33 @@ function getScoreLabel(score) {
     if (score > -3)
         return '劣势';
     return '败势';
+}
+/**
+ * 评分文字描述（己方视角，与网页版 getPlayerEvalText 一致）
+ * 正分 = 己方优，负分 = 对方优
+ */
+function getPlayerEvalText(score) {
+    const abs = Math.abs(score);
+    if (abs > 3)
+        return score > 0 ? '己方胜势' : '对方胜势';
+    if (abs > 1.5)
+        return score > 0 ? '己方优势' : '对方优势';
+    if (abs > 0.5)
+        return score > 0 ? '己方稍优' : '对方稍优';
+    return '均势';
+}
+/**
+ * 将局面评分归一化到玩家视角（与网页版 AnalysisPanel.toPlayerView 一致）。
+ * Stockfish 评分 = 当前走子方视角（正分 = 对走子方有利），
+ * 先换算为白方视角，再根据玩家执方翻转。
+ */
+function toPlayerView(score, fen, playerSide) {
+    if (score === undefined || score === null)
+        return score;
+    // fen 中 active color 为走子方：w 表示评分是白方视角，b 表示是黑方视角
+    const asWhite = (fen || '').split(' ')[1] === 'b' ? -score : score;
+    const side = playerSide === 'white' ? 'w' : playerSide === 'black' ? 'b' : playerSide;
+    return side === 'b' ? -asWhite : asWhite;
 }
 /**
  * 获取评分颜色
@@ -364,4 +394,36 @@ function isMenuItemVisible(menuPath) {
     if (!user)
         return false;
     return (config.visibleToUserIds || []).includes(user.userId);
+}
+/**
+ * 游客守卫：功能需账号时统一弹窗引导登录，登录页可取消并留在原页继续体验。
+ * 未登录返回 false，调用方需立即 return，避免继续触发未授权请求。
+ */
+function requireLogin(featureName = '该功能') {
+    let token = null;
+    try {
+        const app = typeof getApp === 'function' ? getApp() : null;
+        token = (app && app.globalData && app.globalData.token) || null;
+    }
+    catch { }
+    if (!token) {
+        try {
+            token = wx.getStorageSync('auth_token') || null;
+        }
+        catch { }
+    }
+    if (token)
+        return true;
+    wx.showModal({
+        title: '登录提示',
+        content: `${featureName}需要登录后使用，是否前往登录？`,
+        confirmText: '去登录',
+        cancelText: '再逛逛',
+        success: (res) => {
+            if (res.confirm) {
+                wx.navigateTo({ url: '/pages/login/login' });
+            }
+        },
+    });
+    return false;
 }

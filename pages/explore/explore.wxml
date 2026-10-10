@@ -1,0 +1,133 @@
+<view class="explore-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
+  <!-- 顶栏：返回 + 标题 + 步数 + 棋谱操作 -->
+  <view class="ex-topbar">
+    <view class="ex-topbar-left">
+      <view class="ex-back" catchtap="onBack">← 返回</view>
+      <text class="ex-badge">🎯 自主探究</text>
+    </view>
+    <view class="ex-topbar-right">
+      <text class="ex-step-count">{{moveCount}} 步</text>
+      <view class="ex-tb-btn" catchtap="onOpenLoad">📂 选择棋谱</view>
+      <view class="ex-tb-btn {{(!moveCount || saving || exploreActive) ? 'ex-tb-disabled' : ''}}"
+            catchtap="onSave">{{saving ? '保存中…' : (justSaved ? '✓ 已保存' : '💾 保存棋谱')}}</view>
+    </view>
+  </view>
+
+  <!-- 推演中：常驻退出入口，否则推演分支会接管整页且无路可退 -->
+  <view wx:if="{{exploreActive}}" class="ex-explore-bar">
+    <view class="ex-explore-nav">
+      <view class="ex-explore-nav-btn {{exploreIndex <= 0 ? 'ex-disabled' : ''}}" catchtap="onExplorePrev">◀</view>
+      <text class="ex-explore-label">📝 推演 {{exploreIndex + 1}}/{{exploreSteps.length}}</text>
+      <view class="ex-explore-nav-btn {{exploreIndex >= exploreSteps.length - 1 ? 'ex-disabled' : ''}}" catchtap="onExploreNext">▶</view>
+    </view>
+    <view class="ex-explore-exit" catchtap="onExitExplore">✕ 退出推演</view>
+  </view>
+
+  <scroll-view class="ex-scroll" scroll-y enable-flex>
+    <!-- 棋盘 -->
+    <view class="ex-board-wrap">
+      <chess-board
+        fen="{{fen}}"
+        boardColorPreset="{{__theme__ === 'light' ? 'wood' : 'blueWhite'}}"
+        labelVariant="inline"
+        flipped="{{boardFlip}}"
+        interactive="{{true}}"
+        selectedSquare="{{selectedSquare}}"
+        legalMoves="{{legalMoves}}"
+        lastMoveFrom="{{lastMoveFrom}}"
+        lastMoveTo="{{lastMoveTo}}"
+        showHints="{{showHints}}"
+        analysis="{{showHints && analysisFen === fen ? analysis : []}}"
+        canvasHidden="{{canvasHidden || showPromotion}}"
+        bind:squaretap="onSquareTap"
+        bind:scrolltocandidate="onScrollToCandidate">
+      </chess-board>
+    </view>
+
+    <!-- 局面状态 -->
+    <view class="ex-status">
+      <text class="ex-status-text">{{turn === 'w' ? '白方走棋' : '黑方走棋'}}</text>
+      <text wx:if="{{isCheckmate}}" class="ex-status-tag ex-tag-over">将死</text>
+      <text wx:elif="{{isStalemate}}" class="ex-status-tag ex-tag-over">逼和</text>
+      <text wx:elif="{{isCheck}}" class="ex-status-tag ex-tag-check">将军</text>
+      <text class="ex-status-hint">黑白轮流走子 · 每步引擎分析</text>
+    </view>
+
+    <!-- 悔棋 / 重做 / 翻转 / 推荐走法开关 -->
+    <view class="ex-controls">
+      <view class="ex-ctrl-btn {{(!undoDepth || exploreActive) ? 'ex-disabled' : ''}}" catchtap="onUndo">◀ 悔棋</view>
+      <view class="ex-ctrl-btn {{(!redoDepth || exploreActive) ? 'ex-disabled' : ''}}" catchtap="onRedo">重做 ▶</view>
+      <view class="ex-ctrl-btn" catchtap="onFlipBoard">🔄 翻转</view>
+      <view class="ex-ctrl-btn {{showHints ? 'ex-ctrl-on' : ''}}" catchtap="onToggleHints">
+        {{showHints ? '🤖 推荐开' : '🤖 推荐关'}}
+      </view>
+    </view>
+
+    <!-- 推演线：可回看的着法序列 -->
+    <view wx:if="{{exploreActive}}" class="ex-steps">
+      <view class="ex-steps-head">
+        <text class="ex-steps-title">推演着法</text>
+        <text wx:if="{{exploreEvalText}}" class="ex-steps-eval">{{exploreEvalText}}</text>
+      </view>
+      <scroll-view class="ex-steps-scroll" scroll-x>
+        <view class="ex-steps-row">
+          <view class="ex-step {{exploreIndex === -1 ? 'ex-step-cur' : ''}}"
+                data-index="-1" catchtap="onExploreGoToStep">起始</view>
+          <view wx:for="{{exploreSteps}}" wx:key="uci"
+                class="ex-step {{index === exploreIndex ? 'ex-step-cur' : ''}}"
+                data-index="{{index}}" catchtap="onExploreGoToStep">{{item.san}}</view>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 局面分析 -->
+    <view class="ex-panel">
+      <analysis-panel
+        id="analysisPanel"
+        gameStarted="{{true}}"
+        fen="{{fen}}"
+        analysis="{{analysis}}"
+        analysisError="{{analysisError}}"
+        openingName="{{openingName}}"
+        openingNameCN="{{openingNameCN}}"
+        ecoCode="{{ecoCode}}"
+        showHints="{{showHints}}"
+        analysisDepth="8"
+        playerSide="w"
+        turn="{{turn}}"
+        showActions="{{!exploreActive}}"
+        bind:startexploration="onStartExploration"
+        bind:playcontinuation="onPlayContinuation"
+        bind:autocontinuation="onAutoContinuation">
+      </analysis-panel>
+    </view>
+  </scroll-view>
+
+  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
+
+  <!-- 升变选择 -->
+  <promotion-dialog show="{{showPromotion}}" color="{{promotionColor}}"
+                    bind:select="onPromotionSelect" bind:cancel="onPromotionCancel"></promotion-dialog>
+
+  <!-- 选择已保存棋谱 -->
+  <view wx:if="{{showLoadModal}}" class="ex-modal-overlay" catchtap="onCloseLoad">
+    <view class="ex-modal" catchtap="stopPropagation">
+      <view class="ex-modal-head">
+        <text class="ex-modal-title">选择棋谱继续研究</text>
+        <text class="ex-modal-close" catchtap="onCloseLoad">✕</text>
+      </view>
+      <view wx:if="{{loadLoading}}" class="ex-modal-empty">加载中…</view>
+      <view wx:elif="{{loadList.length === 0}}" class="ex-modal-empty">还没有保存的棋谱</view>
+      <scroll-view wx:else class="ex-modal-list" scroll-y>
+        <view wx:for="{{loadList}}" wx:key="gameId" class="ex-modal-item"
+              data-id="{{item.gameId}}" catchtap="onSelectGame">
+          <view class="ex-modal-item-main">
+            <text class="ex-modal-item-title">{{item.title}}</text>
+            <text class="ex-modal-item-meta">{{item.date}} · {{item.result}}</text>
+          </view>
+          <text class="ex-modal-item-go">载入 →</text>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+</view>
