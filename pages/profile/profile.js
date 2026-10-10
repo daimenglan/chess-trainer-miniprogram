@@ -20,7 +20,7 @@ Page({
     } return token; },
     onLoad(options) { const token = this._readToken(options); this.setData({ token, WebViewUrl: this._urlWithToken(token), loading: true, error: '' }); },
     onShow() { const theme = profileApp?.globalData?.settings?.uiTheme || 'dark'; if (this.data.__theme__ !== theme)
-        this.setData({ __theme__: theme }); },
+        this.setData({ __theme__: theme }); this._syncTokenFromApp(); },
     /** 原生登录页登录成功后 switchTab 回本页：onShow 触发但 onLoad 不会，故检测全局 token 变化重建 web-view 地址 */
     _syncTokenFromApp() { const token = (profileApp && profileApp.globalData && profileApp.globalData.token) || ''; if (!token || token === this.data.token)
         return; this.setData({ token, WebViewUrl: this._urlWithToken(token) }); },

@@ -6,7 +6,7 @@ Page({
   _urlWithToken(token: string): string { const base = this._buildUrl(); return token ? `${base}#webview_token=${encodeURIComponent(token)}&ai=disabled` : base; },
   _readToken(options: any): string { let token = indexApp?.globalData?.token || ''; if (!token) { try { token = (wx as any).getStorageSync('auth_token') || ''; } catch (_) {} } if (options?.token) { try { token = decodeURIComponent(options.token); } catch (_) { token = options.token; } } return token; },
   onLoad(options: any) { const token = this._readToken(options); this.setData({ token, WebViewUrl: this._urlWithToken(token), loading: true, error: '' }); },
-  onShow() { const theme = indexApp?.globalData?.settings?.uiTheme || 'dark'; if (this.data.__theme__ !== theme) this.setData({ __theme__: theme }); },
+  onShow() { const theme = indexApp?.globalData?.settings?.uiTheme || 'dark'; if (this.data.__theme__ !== theme) this.setData({ __theme__: theme }); this._syncTokenFromApp(); },
   /** 原生登录页登录成功后 switchTab 回本页：onShow 触发但 onLoad 不会，故检测全局 token 变化重建 web-view 地址 */
   _syncTokenFromApp() { const token = (indexApp && indexApp.globalData && indexApp.globalData.token) || ''; if (!token || token === this.data.token) return; this.setData({ token, WebViewUrl: this._urlWithToken(token) }); },
   _postTokenToWeb() { if (!this.data.token) return; wx.createSelectorQuery().select('.shell-web-view').context((res: any) => { if (res?.postMessage) res.postMessage({ type: 'setToken', token: this.data.token }); }).exec(); },
