@@ -439,6 +439,16 @@ function changePassword(oldPassword: string, newPassword: string): Promise<any> 
   return request('PUT', '/api/profile/password', { oldPassword, newPassword });
 }
 
+/**
+ * 首次设置账号密码（微信一键登录用户免旧密码）。
+ *
+ * 后端 PUT /api/profile/password 在 password_hash 为空时会跳过旧密码校验，
+ * 因此只传 newPassword 即可，无需 oldPassword。
+ */
+function setProfilePassword(newPassword: string): Promise<any> {
+  return request('PUT', '/api/profile/password', { newPassword });
+}
+
 function analyzeProfile(): Promise<any> {
   return request('POST', '/api/profile/analyze');
 }
@@ -2339,6 +2349,7 @@ export {
   updateProfile,
   uploadAvatar,
   changePassword,
+  setProfilePassword,
   analyzeProfile,
   askCoachStream,
   getOpeningEncyclopedia,

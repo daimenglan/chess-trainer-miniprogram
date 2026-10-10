@@ -91,7 +91,7 @@ function clearPendingTicket() {
  * 发起 OAuth 授权：取票据 → 复制授权入口到剪贴板 → 返回票据信息供页面轮询
  *
  * @param mode bind = 绑定到当前登录账号；login = 用 Lichess 登录/注册本系统
- * @returns 票据信息，或 { error }
+ * @returns 票据信息，或 { error, code }
  */
 async function startOAuth(mode) {
     try {
@@ -114,7 +114,8 @@ async function startOAuth(mode) {
         return pending;
     }
     catch (err) {
-        return { error: err?.message || '获取授权链接失败，请检查网络' };
+        // 透传后端错误码（如 PROFILE_INCOMPLETE），供上层判断是否引导用户先设密码
+        return { error: err?.message || '获取授权链接失败，请检查网络', code: err?.code };
     }
 }
 /**
@@ -152,7 +153,7 @@ async function bindWithToken(token) {
         };
     }
     catch (err) {
-        return { success: false, error: err?.message || '绑定失败，请检查令牌是否正确' };
+        return { success: false, error: err?.message || '绑定失败，请检查令牌是否正确', code: err?.code };
     }
 }
 /** 解绑 */

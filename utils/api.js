@@ -73,6 +73,7 @@ exports.getProfile = getProfile;
 exports.updateProfile = updateProfile;
 exports.uploadAvatar = uploadAvatar;
 exports.changePassword = changePassword;
+exports.setProfilePassword = setProfilePassword;
 exports.analyzeProfile = analyzeProfile;
 exports.askCoachStream = askCoachStream;
 exports.getOpeningEncyclopedia = getOpeningEncyclopedia;
@@ -765,6 +766,15 @@ function recognizeBoardImage(filePath) {
 }
 function changePassword(oldPassword, newPassword) {
     return request('PUT', '/api/profile/password', { oldPassword, newPassword });
+}
+/**
+ * 首次设置账号密码（微信一键登录用户免旧密码）。
+ *
+ * 后端 PUT /api/profile/password 在 password_hash 为空时会跳过旧密码校验，
+ * 因此只传 newPassword 即可，无需 oldPassword。
+ */
+function setProfilePassword(newPassword) {
+    return request('PUT', '/api/profile/password', { newPassword });
 }
 function analyzeProfile() {
     return request('POST', '/api/profile/analyze');

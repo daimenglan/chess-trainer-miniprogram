@@ -30,6 +30,8 @@ export interface LichessBindResult {
   lichessUsername?: string;
   profile?: any;
   error?: string;
+  /** 后端错误码（如 PROFILE_INCOMPLETE），供上层判断是否引导用户先设密码 */
+  code?: string;
 }
 
 /** 票据轮询返回结构 */
@@ -115,9 +117,9 @@ export function clearPendingTicket(): void {
  * 发起 OAuth 授权：取票据 → 复制授权入口到剪贴板 → 返回票据信息供页面轮询
  *
  * @param mode bind = 绑定到当前登录账号；login = 用 Lichess 登录/注册本系统
- * @returns 票据信息，或 { error }
+ * @returns 票据信息，或 { error, code }
  */
-export async function startOAuth(mode: 'bind' | 'login'): Promise<PendingTicket | { error: string }> {
+export async function startOAuth(mode: 'bind' | 'login'): Promise<PendingTicket | { error: string; code?: string }> {
   try {
     const res: any = mode === 'login'
       ? await api.lichessMiniAppLoginTicket()
@@ -139,7 +141,8 @@ export async function startOAuth(mode: 'bind' | 'login'): Promise<PendingTicket 
     await copyToClipboard(pending.url);
     return pending;
   } catch (err: any) {
-    return { error: err?.message || '获取授权链接失败，请检查网络' };
+    // 透传后端错误码（如 PROFILE_INCOMPLETE），供上层判断是否引导用户先设密码
+    return { error: err?.message || '获取授权链接失败，请检查网络', code: err?.code };
   }
 }
 
@@ -177,7 +180,7 @@ export async function bindWithToken(token: string): Promise<LichessBindResult> {
       profile: data.profile || null,
     };
   } catch (err: any) {
-    return { success: false, error: err?.message || '绑定失败，请检查令牌是否正确' };
+    return { success: false, error: err?.message || '绑定失败，请检查令牌是否正确', code: err?.code };
   }
 }
 

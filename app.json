@@ -68,6 +68,7 @@
     "pages/classroom/review/review",
     "pages/reward-center/index",
     "pages/reset-password/index",
+    "pages/set-password/set-password",
     "pages/agreement/agreement",
     "pages/daily-challenge/index",
     "pages/dragon-coin-shop/index",

@@ -108,6 +108,11 @@ Page({
             });
         })
             .catch((err) => {
+            // 账号未完成（微信用户未设密码）：引导先设密码，设完自动回来继续绑定
+            if (err?.code === 'PROFILE_INCOMPLETE') {
+                wx.navigateTo({ url: `/pages/set-password/set-password?returnTo=/pages/lichess-bind/lichess-bind?from=${this.data.from}` });
+                return;
+            }
             // 灰度未放行 / 未配置时给出明确提示，而不是静默空白
             this.setData({ error: err?.message || '' });
         });
@@ -120,6 +125,12 @@ Page({
         trackEvent('lichess_bind_start', { mode: this.data.mode });
         this.setData({ loading: true, error: '' });
         bind.startOAuth(this.data.mode).then((result) => {
+            // 账号未完成（微信用户未设密码）：引导先设密码，设完自动回来继续绑定
+            if (result?.code === 'PROFILE_INCOMPLETE') {
+                this.setData({ loading: false });
+                wx.navigateTo({ url: `/pages/set-password/set-password?returnTo=/pages/lichess-bind/lichess-bind?from=${this.data.from}` });
+                return;
+            }
             if (result?.error) {
                 this.setData({ loading: false, error: result.error });
                 return;
@@ -281,6 +292,10 @@ Page({
             if (result.success) {
                 this.setData({ loading: false, token: '', error: '' });
                 this._applyBindResult(result.lichessUsername || '');
+            }
+            else if (result.code === 'PROFILE_INCOMPLETE') {
+                this.setData({ loading: false });
+                wx.navigateTo({ url: `/pages/set-password/set-password?returnTo=/pages/lichess-bind/lichess-bind?from=${this.data.from}` });
             }
             else {
                 this.setData({ loading: false, error: result.error || '绑定失败' });
