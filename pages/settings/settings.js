@@ -6,6 +6,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const app = getApp();
 const api = require('../../utils/api');
 const util = require('../../utils/util');
+const subscribeMessage = require('../../utils/subscribeMessage');
+/** 四类服务通知的 key → 展示名（toast 提示用）。
+ *  用 as const 让 key 收敛为字面量联合类型，后续索引 pushPrefs 才类型安全 */
+const PUSH_LABELS = {
+    puzzle: '每日习题提醒',
+    opening: '每日开局提醒',
+    review: '每日复盘提醒',
+    play: '每日对弈提醒',
+};
 const BOARD_THEMES = [
     { key: 'blueWhite', label: '蓝白', colors: { light: '#ffffff', dark: '#5a7d9a' } },
     { key: 'wood', label: '木质', colors: { light: '#f0d9b5', dark: '#b58863' } },
@@ -29,6 +38,16 @@ Page({
         passwordLoading: false,
         // 通知设置
         showNotificationSettings: false,
+        // 微信服务通知（每日习题/开局/复盘/对弈）
+        pushLoaded: false,
+        pushLoading: false,
+        pushEnabled: false,
+        pushShowSwitches: false,
+        pushPrefs: { puzzle: true, opening: true, review: true, play: true },
+        pushTemplates: {},
+        pushMiniappReady: false,
+        pushOfficialReady: false,
+        pushHint: '',
         // 隐私设置
         showPrivacySettings: false,
         // 数据管理
@@ -56,6 +75,137 @@ Page({
             settings: app.globalData.settings || app.getDefaultSettings(),
             appSettings: { ...app.globalData.settings },
             __theme__: app.globalData.settings?.uiTheme || 'dark',
+        });
+        this.loadPushPreferences();
+    },
+    // ===== 微信服务通知 =====
+    /**
+     * 拉取推送偏好与通道状态。
+     *
+     * 未登录时后端返回 401：此时不显示四类开关（pushLoaded 保持 false），
+     * 也不弹错误——设置页的其它区块同样是登录态才有效。
+     */
+    loadPushPreferences() {
+        if (!app.globalData.token) {
+            this.setData({ pushLoaded: false });
+            return;
+        }
+        api.getPushPreferences()
+            .then((res) => {
+            const d = res?.data || res || {};
+            const prefs = d.preferences || {};
+            const templates = d.miniappTemplates || {};
+            const miniappReady = !!d.miniappReady;
+            const officialReady = !!d.officialReady;
+            const enabled = !!d.enabled;
+            this.setData({
+                pushLoaded: true,
+                pushEnabled: enabled,
+                // 总开关关闭时不显示四类开关，只展示「功能未开放」提示
+                pushShowSwitches: enabled,
+                pushPrefs: {
+                    puzzle: prefs.puzzle !== false,
+                    opening: prefs.opening !== false,
+                    review: prefs.review !== false,
+                    play: prefs.play !== false,
+                },
+                pushTemplates: templates,
+                pushMiniappReady: miniappReady,
+                pushOfficialReady: officialReady,
+                pushHint: this._buildPushHint(enabled, miniappReady, officialReady),
+            });
+        })
+            .catch(() => {
+            // 拉取失败不阻塞设置页其它功能，四类开关保持隐藏
+            this.setData({ pushLoaded: false });
+        });
+    },
+    /** 根据总开关与两条通道的可用状态给出引导文案 */
+    _buildPushHint(enabled, miniappReady, officialReady) {
+        if (!enabled) {
+            return '每日服务通知推送暂未开放，可在「我的 → 管理后台」开启';
+        }
+        if (miniappReady && officialReady) {
+            return '开启时会请求微信授权，每次同意可下发 1 条；额度用完后自动改走服务号通知。';
+        }
+        if (miniappReady) {
+            return '开启时会请求微信授权，每次同意可下发 1 条。';
+        }
+        if (officialReady) {
+            return '开启后将在微信「服务通知」中推送，需先关注 mychess 服务号。';
+        }
+        return '服务通知暂未开放，可先在「消息信箱」查看训练提醒。';
+    },
+    /**
+     * 点击某类服务通知开关。
+     *
+     * 打开与关闭的路径不同：
+     *  - 打开：必须先弹 wx.requestSubscribeMessage（微信要求授权只能在用户点击的
+     *    同步回调里请求），用户勾了同意才真正落库；拒绝则开关保持关闭。
+     *  - 关闭：不需要授权，直接更新偏好。
+     */
+    onTogglePush(e) {
+        const cat = e.currentTarget.dataset.cat;
+        if (!cat || !(cat in PUSH_LABELS))
+            return;
+        if (this.data.pushLoading)
+            return;
+        const currentlyOn = !!this.data.pushPrefs[cat];
+        if (currentlyOn) {
+            this._savePushPref(cat, false);
+            return;
+        }
+        // 打开：先取授权
+        this.setData({ pushLoading: true });
+        // 必须在点击的同步调用栈里请求授权，不能在 .then 里（微信会静默失败）。
+        // 因此这里直接同步调用，结果通过 Promise 拿。
+        const results = subscribeMessage.requestPushSubscribeOne(cat, this.data.pushTemplates);
+        Promise.resolve(results)
+            .then(async (list) => {
+            const first = Array.isArray(list) ? list[0] : null;
+            if (!first) {
+                // 非小程序环境或该类别未配置模板
+                wx.showToast({ title: '当前环境不支持授权', icon: 'none' });
+                return;
+            }
+            if (!first.granted) {
+                wx.showToast({ title: `未授权，${PUSH_LABELS[cat]}保持关闭`, icon: 'none' });
+                return;
+            }
+            // 上报授权累加额度，再落库开关
+            const tmplId = this.data.pushTemplates[cat];
+            try {
+                await api.reportSubscribeGrant({ category: cat, tmplId, granted: true });
+            }
+            catch (err) { /* 上报失败不阻断开关，额度下次补记 */ }
+            await this._savePushPref(cat, true);
+            wx.showToast({ title: `${PUSH_LABELS[cat]}已开启`, icon: 'success' });
+        })
+            .catch(() => {
+            wx.showToast({ title: '授权失败，请重试', icon: 'none' });
+        })
+            .finally(() => {
+            this.setData({ pushLoading: false });
+        });
+    },
+    /** 更新某类开关（失败时回滚本地状态，避免界面与后端不一致） */
+    _savePushPref(cat, value) {
+        const prev = { ...this.data.pushPrefs };
+        const next = { ...prev, [cat]: value };
+        this.setData({ pushPrefs: next });
+        const body = {};
+        body[cat] = value;
+        return api.updatePushPreferences(body)
+            .then((res) => {
+            const d = res?.data || res || {};
+            if (d.preferences) {
+                this.setData({ pushPrefs: { ...next, ...d.preferences } });
+            }
+        })
+            .catch((err) => {
+            // 回滚，让开关回到服务端的真实状态
+            this.setData({ pushPrefs: prev });
+            wx.showToast({ title: err?.message || '保存失败', icon: 'none' });
         });
     },
     // ===== 主题设置 =====

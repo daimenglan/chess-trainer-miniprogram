@@ -12,7 +12,7 @@ global.wx = {
   getSystemInfoSync: function() { return { windowWidth: 375, windowHeight: 667, platform: 'devtools' }; },
   createSelectorQuery: function() { return { select: function() { return { boundingClientRect: function(cb) { cb({ width: 600, height: 600 }); return { exec: function() {} }; }, fields: function() { return { exec: function() {} }; } }; } }; },
   request: function() { return Promise.resolve({ data: {}, statusCode: 200 }); },
-  navigateTo: function() {}, switchTab: function() {},
+  navigateTo: function() {}, switchTab: function() {}, redirectTo: function() {},
 };
 global.getApp = function() { return { globalData: { baseUrl: 'http://localhost:3001', user: { userId: 1, username: 'test' }, token: 'test-token', settings: { theme: 'blueWhite', boardColorPreset: 'blueWhite', pieceStyle3d: false, boardFlipped: false, soundEnabled: true, showHints: false, analysisDepth: 10, analysisMultiPv: 3, aiDifficulty: 5 }, analysis: [], analysisError: null, boardUpdateKey: 0 }, saveSettings: function() {}, getDefaultSettings: function() { return {}; }, setToken: function() {} }; };
 

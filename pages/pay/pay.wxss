@@ -1,0 +1,71 @@
+.pay {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f0f23;
+  padding: 40rpx;
+}
+
+.card {
+  background: #1a1a2e;
+  border-radius: 24rpx;
+  padding: 60rpx 40rpx;
+  width: 100%;
+  max-width: 600rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.icon {
+  font-size: 80rpx;
+  margin-bottom: 24rpx;
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 16rpx;
+}
+
+.desc {
+  font-size: 28rpx;
+  color: #94a3b8;
+  margin-bottom: 40rpx;
+}
+
+.spinner {
+  width: 80rpx;
+  height: 80rpx;
+  border: 6rpx solid #2d2d4a;
+  border-top: 6rpx solid #6c63ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 32rpx;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.btn {
+  width: 100%;
+  padding: 24rpx;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #ffffff;
+  background: #6c63ff;
+  margin-top: 20rpx;
+  border: none;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 2rpx solid #2d2d4a;
+  color: #94a3b8;
+}

@@ -212,6 +212,6 @@ export function persistBinding(lichessUsername: string | null): void {
  * 小程序没有原生输入弹窗（wx.showModal 的 editable 仅在 2.17.1+ 且单行），
  * 故统一走 /pages/lichess-bind 页面，OAuth 主路径与令牌备用路径都在那里。
  */
-export function openBindPage(from: string = 'online'): void {
+export function openBindPage(from: string = 'index'): void {
   wx.navigateTo({ url: `/pages/lichess-bind/lichess-bind?from=${from}` });
 }

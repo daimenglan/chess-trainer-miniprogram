@@ -61,8 +61,13 @@ Page({
 
   /** 打开《用户服务协议》/《隐私政策》 */
   onOpenAgreement(e: any) {
-    const doc = e?.currentTarget?.dataset?.doc === 'privacy' ? 'privacy' : 'service';
-    wx.navigateTo({ url: `/pages/agreement/agreement?doc=${doc}` });
+    // 原生协议页已移除，由 H5 侧处理
+    wx.showModal({
+      title: '服务协议及隐私保护',
+      content: '请前往网页版阅读完整的《用户服务协议》与《隐私政策》',
+      confirmText: '知道了',
+      cancelText: '取消',
+    });
   },
 
   /** 协议未勾选时统一弹窗引导（返回 true 表示已同意可继续） */
@@ -91,30 +96,13 @@ Page({
    * 只有确实是首屏入口时才回首页 tab。
    */
   _afterLoginNavigate() {
-    const pending = app.globalData.pendingFriendInvite;
-    if (pending && pending.token) {
-      // 邀请页可能就在返回栈里（它是 navigateTo 过来的）：
-      // 直接退回可触发其 onShow 续跑兑换，避免栈里叠出两层邀请页
-      const pages = getCurrentPages();
-      const prev = pages.length >= 2 ? pages[pages.length - 2] : null;
-      const prevRoute = prev ? (prev as any).route : '';
-      if (prevRoute === 'pages/friend-invite/index') {
-        wx.navigateBack({ delta: 1 });
-      } else {
-        wx.redirectTo({ url: '/pages/friend-invite/index' });
-      }
-      return;
-    }
-
-    // 本页是被 navigateTo 压在业务页之上的：退回即可回到用户原本所在的位置，
-    // 用 switchTab 会把用户从对弈/棋谱/我的 一律弹回首页，丢失上下文。
+    // 好友邀请落地页已移除，登录后直接回首页
     const pages = getCurrentPages();
     if (pages.length >= 2) {
       wx.navigateBack({ delta: 1 });
       return;
     }
-
-    wx.switchTab({ url: '/pages/choice/choice' });
+    wx.redirectTo({ url: '/pages/choice/choice' });
   },
 
   onLoad(options: any) {

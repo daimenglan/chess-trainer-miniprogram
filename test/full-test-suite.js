@@ -30,7 +30,7 @@ global.wx = {
   createCanvasContext: () => ({ beginPath: () => {}, moveTo: () => {}, lineTo: () => {}, stroke: () => {}, draw: () => {} }),
   createSelectorQuery: () => ({ select: () => ({ boundingClientRect: (cb) => { cb({ width: 600, height: 600 }); return { exec: () => {} }; } }) }),
   request: () => Promise.resolve({ data: {}, statusCode: 200 }),
-  navigateTo: () => {}, navigateBack: () => {}, switchTab: () => {},
+  navigateTo: () => {}, navigateBack: () => {}, switchTab: () => {}, redirectTo: () => {},
   uploadFile: () => Promise.resolve({ data: JSON.stringify({ success: true }) }),
 };
 

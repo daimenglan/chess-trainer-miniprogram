@@ -166,6 +166,36 @@
   margin-top: -8rpx;
 }
 
+/* 微信服务通知子分组标题（区分「本机提醒」与「微信服务通知」两类设置） */
+.push-subhead {
+  padding: 16rpx 0 4rpx;
+}
+
+.push-subhead-title {
+  display: block;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.push-subhead-desc {
+  display: block;
+  margin-top: 2rpx;
+  font-size: 16rpx;
+  color: var(--text-muted);
+}
+
+/* 通道说明：模板未申请 / 需关注服务号等引导文案 */
+.push-hint {
+  margin-top: 10rpx;
+  padding: 12rpx 14rpx;
+  border-radius: 8rpx;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 16rpx;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
 .password-form {
   display: flex;
   flex-direction: column;

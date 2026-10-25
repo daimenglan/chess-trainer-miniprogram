@@ -111,6 +111,38 @@
           <switch checked="{{settings.gameNotification || false}}" data-key="gameNotification"
                   bindchange="onNotificationToggle" color="#6c63ff" />
         </view>
+
+        <!-- 微信服务通知（每日习题/开局/复盘/对弈）。catchtap 而非 bindchange：
+             打开时必须先弹 wx.requestSubscribeMessage 授权窗（只能在点击同步回调里调用），
+             所以整行走势都由点击处理器接管，switch 只作状态展示。 -->
+        <view class="push-subhead">
+          <text class="push-subhead-title">微信服务通知</text>
+          <text class="push-subhead-desc">每天在微信「服务通知」里提醒你训练</text>
+        </view>
+        <!-- 总开关关闭时只展示提示，不显示四类开关 -->
+        <view class="push-hint" wx:if="{{pushLoaded && !pushShowSwitches}}">
+          <text>{{pushHint}}</text>
+        </view>
+        <view class="setting-row" wx:if="{{pushShowSwitches}}" catchtap="onTogglePush" data-cat="puzzle">
+          <text class="setting-label">每日习题提醒</text>
+          <switch checked="{{pushPrefs.puzzle}}" disabled="{{pushLoading}}" color="#6c63ff" />
+        </view>
+        <view class="setting-row" wx:if="{{pushShowSwitches}}" catchtap="onTogglePush" data-cat="opening">
+          <text class="setting-label">每日开局提醒</text>
+          <switch checked="{{pushPrefs.opening}}" disabled="{{pushLoading}}" color="#6c63ff" />
+        </view>
+        <view class="setting-row" wx:if="{{pushShowSwitches}}" catchtap="onTogglePush" data-cat="review">
+          <text class="setting-label">每日复盘提醒</text>
+          <switch checked="{{pushPrefs.review}}" disabled="{{pushLoading}}" color="#6c63ff" />
+        </view>
+        <view class="setting-row" wx:if="{{pushShowSwitches}}" catchtap="onTogglePush" data-cat="play">
+          <text class="setting-label">每日对弈提醒</text>
+          <switch checked="{{pushPrefs.play}}" disabled="{{pushLoading}}" color="#6c63ff" />
+        </view>
+        <!-- 通道说明：两条微信通道的可用状态由后端配置决定，据实展示引导方式 -->
+        <view class="push-hint" wx:if="{{pushShowSwitches && pushHint}}">
+          <text>{{pushHint}}</text>
+        </view>
       </view>
     </view>
 

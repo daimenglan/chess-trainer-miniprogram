@@ -1,0 +1,37 @@
+<view class="pay">
+  <view class="card">
+    <block wx:if="{{status === 'loading'}}">
+      <view class="spinner"></view>
+      <text class="title">正在准备支付</text>
+      <text class="desc">请稍候...</text>
+    </block>
+
+    <block wx:elif="{{status === 'paying'}}">
+      <view class="spinner"></view>
+      <text class="title">请在微信中完成支付</text>
+      <text class="desc">金额 ¥{{amount}}</text>
+    </block>
+
+    <block wx:elif="{{status === 'success'}}">
+      <text class="icon">✅</text>
+      <text class="title">支付成功</text>
+      <text class="desc">{{message}}</text>
+    </block>
+
+    <block wx:elif="{{status === 'cancelled'}}">
+      <text class="icon">↩️</text>
+      <text class="title">已取消支付</text>
+      <text class="desc">{{message}}</text>
+      <button class="btn" bindtap="onRetry">重新支付</button>
+      <button class="btn btn-ghost" bindtap="back">返回</button>
+    </block>
+
+    <block wx:else>
+      <text class="icon">⚠️</text>
+      <text class="title">支付失败</text>
+      <text class="desc">{{message}}</text>
+      <button class="btn" bindtap="onRetry">重试</button>
+      <button class="btn btn-ghost" bindtap="back">返回</button>
+    </block>
+  </view>
+</view>

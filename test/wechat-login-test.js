@@ -16,7 +16,7 @@ const API_JS = path.join(ROOT, 'utils/api.js');
 // ─── mock 环境 ───
 let storage = {};
 let toasts = [];
-let switchTabCalls = [];
+let redirectToCalls = [];
 let apiCalls = [];
 let loginBehavior = 'ok'; // ok | nocode | fail
 let apiBehavior = 'ok';   // ok | httpfail | notoken
@@ -35,7 +35,7 @@ global.wx = {
     opts.success({ code: 'MOCK_CODE_123' });
   },
   showToast(o) { toasts.push(o); },
-  switchTab(o) { switchTabCalls.push(o); },
+  redirectTo(o) { redirectToCalls.push(o); },
   setStorageSync(k, v) { storage[k] = v; },
   getStorageSync(k) { return storage[k]; },
   removeStorageSync(k) { delete storage[k]; },
@@ -73,7 +73,7 @@ function section(title) {
   console.log('\n=== ' + title + ' ===');
 }
 function reset() {
-  toasts = []; switchTabCalls = []; apiCalls = [];
+  toasts = []; redirectToCalls = []; apiCalls = [];
   storage = {}; apiBehavior = 'ok'; loginBehavior = 'ok';
   appStub.globalData = { token: null, user: null, settings: { uiTheme: 'dark' } };
 }
@@ -95,7 +95,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
   assert('未携带 ticket', apiCalls[0] && apiCalls[0].ticket === undefined, JSON.stringify(apiCalls[0]));
   assert('token 已写入 app', appStub.globalData.token === 'JWT_TOKEN', String(appStub.globalData.token));
   assert('用户信息已保存', appStub.globalData.user && appStub.globalData.user.userId === 42);
-  assert('跳转首页', switchTabCalls.length === 1 && switchTabCalls[0].url === '/pages/choice/choice', JSON.stringify(switchTabCalls));
+  assert('跳转首页', redirectToCalls.length === 1 && redirectToCalls[0].url === '/pages/choice/choice', JSON.stringify(redirectToCalls));
   assert('无错误提示', p.data.error === '', p.data.error);
   assert('loading 已复位', p.data.loading === false);
 
@@ -106,7 +106,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
   await wait(10);
   assert('未调用后端接口', apiCalls.length === 0, JSON.stringify(apiCalls));
   assert('行内展示错误', p.data.error.includes('微信登录失败'), p.data.error);
-  assert('未跳转', switchTabCalls.length === 0);
+  assert('未跳转', redirectToCalls.length === 0);
   assert('loading 已复位', p.data.loading === false);
 
   section('场景3：wx.login 返回空 code');
@@ -115,7 +115,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
   p.onWeChatLogin();
   await wait(10);
   assert('提示凭证获取失败', p.data.error.includes('获取微信登录凭证失败'), p.data.error);
-  assert('未跳转', switchTabCalls.length === 0);
+  assert('未跳转', redirectToCalls.length === 0);
 
   section('场景4：后端返回业务错误（code 无效）');
   reset(); apiBehavior = 'notoken';
@@ -123,7 +123,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
   p.onWeChatLogin();
   await wait(10);
   assert('透出后端错误信息', p.data.error === '微信授权验证失败，请重试', p.data.error);
-  assert('未跳转', switchTabCalls.length === 0);
+  assert('未跳转', redirectToCalls.length === 0);
   assert('loading 已复位', p.data.loading === false);
 
   section('场景5：网络异常');
@@ -144,7 +144,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
   assert('状态为 success', p.data.wxStatus === 'success', p.data.wxStatus);
   assert('token 已写入 app', appStub.globalData.token === 'JWT_TOKEN');
   await wait(1400);
-  assert('约 1.2 秒后跳转首页', switchTabCalls.length === 1 && switchTabCalls[0].url === '/pages/choice/choice', JSON.stringify(switchTabCalls));
+  assert('约 1.2 秒后跳转首页', redirectToCalls.length === 1 && redirectToCalls[0].url === '/pages/choice/choice', JSON.stringify(redirectToCalls));
 
   section('场景7：scheme 落地 ticket 需 URL 解码');
   reset();
@@ -161,13 +161,13 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
   await wait(10);
   assert('落地状态为 error', p.data.wxStatus === 'error', p.data.wxStatus);
   assert('落地展示错误信息', !!p.data.wxMessage, p.data.wxMessage);
-  assert('未跳转', switchTabCalls.length === 0);
+  assert('未跳转', redirectToCalls.length === 0);
   apiBehavior = 'ok';
   p.onWeChatRetry();
   await wait(10);
   assert('重试后成功', p.data.wxStatus === 'success', p.data.wxStatus);
   await wait(1400);
-  assert('重试后跳转', switchTabCalls.length === 1, JSON.stringify(switchTabCalls));
+  assert('重试后跳转', redirectToCalls.length === 1, JSON.stringify(redirectToCalls));
   assert('重试携带原 ticket', apiCalls[1].ticket === 't999', JSON.stringify(apiCalls));
 
   section('场景9：无 ticket 进入登录页不触发自动登录');

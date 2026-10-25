@@ -98,25 +98,9 @@ Page({
         }
     },
     onReplay(e) {
-        const idx = e.currentTarget.dataset.idx;
-        const record = this.data.records[idx];
-        if (record) {
-            const app = getApp();
-            app.globalData._analysisGame = record;
-            wx.navigateTo({
-                url: `/pages/record-detail/record-detail`,
-            });
-        }
+        // 原生棋谱详情页已移除，回退到 H5 壳由网页版处理
     },
     onStudyAnalysis(e) {
-        const idx = e.currentTarget.dataset.idx;
-        const record = this.data.records[idx];
-        if (record) {
-            const app = getApp();
-            app.globalData._analysisGame = record;
-            wx.navigateTo({
-                url: `/pages/analysis/analysis`,
-            });
-        }
+        // 原生分析页已移除，回退到 H5 壳由网页版处理
     },
 });

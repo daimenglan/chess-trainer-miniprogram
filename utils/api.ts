@@ -672,6 +672,36 @@ function getDailyChallengeCurve(): Promise<any> {
   return request('GET', '/api/daily-challenge/curve');
 }
 
+// ---- 每日服务通知推送（微信「服务通知」卡片）----
+
+/**
+ * 获取推送偏好与通道状态。
+ *
+ * 返回 { preferences, miniappReady, officialReady, miniappTemplates, miniappGrants }：
+ *  - preferences 四类开关
+ *  - miniappTemplates 各类别已配置的小程序模板 ID（未配置的类别不弹授权窗）
+ *  - miniappGrants 各类别剩余可下发条数
+ */
+function getPushPreferences(): Promise<any> {
+  return request('GET', '/api/push/preferences');
+}
+
+/**
+ * 更新推送偏好。
+ * body 只传要改的类别，未传的保持原值。
+ */
+function updatePushPreferences(data: any): Promise<any> {
+  return request('PUT', '/api/push/preferences', data);
+}
+
+/**
+ * 上报 wx.requestSubscribeMessage 的授权结果。
+ * granted=true 时后端累加一条下发额度。
+ */
+function reportSubscribeGrant(data: { category: string; tmplId: string; granted: boolean }): Promise<any> {
+  return request('POST', '/api/push/subscribe-grant', data);
+}
+
 // ---- 微信支付 ----
 
 /**
@@ -2433,6 +2463,11 @@ export {
   settleDailyChallenge,
   abandonDailyChallenge,
   getDailyChallengeCurve,
+
+  // ---- 每日服务通知推送 ----
+  getPushPreferences,
+  updatePushPreferences,
+  reportSubscribeGrant,
 
   // ---- 微信支付 ----
   getWechatPayOrderStatus,
