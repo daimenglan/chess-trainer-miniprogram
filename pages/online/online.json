@@ -5,6 +5,8 @@
     "promotion-dialog": "../../components/promotion-dialog/promotion-dialog",
     "captured-pieces": "../../components/captured-pieces/captured-pieces",
     "move-history": "../../components/move-history/move-history",
-    "friend-lobby": "../../components/friend-lobby/friend-lobby"
+    "friend-lobby": "../../components/friend-lobby/friend-lobby",
+    "coach-chatter": "../../components/coach-chatter/coach-chatter",
+    "page-guide": "../../components/page-guide/page-guide"
   }
 }

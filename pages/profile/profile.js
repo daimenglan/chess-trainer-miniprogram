@@ -1,8 +1,14 @@
 "use strict";
-/** 我的 Tab：小程序壳，内容由 H5 个人中心渲染。 */
+/**
+ * 我的 Tab：小程序壳。
+ *
+ * 已登录：web-view 加载 H5 个人中心。
+ * 未登录：渲染原生访客页，提供「微信登录」与「暂不登录」两个出口，
+ *        不直接跳 H5 登录页，避免出现"强制登录、无返回按钮"的审核问题。
+ */
 const profileApp = getApp();
 Page({
-    data: { WebViewUrl: '', token: '', loading: true, error: '', __theme__: (typeof getApp === 'function' ? (getApp().globalData?.settings?.uiTheme || 'dark') : 'dark') },
+    data: { WebViewUrl: '', token: '', loading: true, error: '', needLogin: false, __theme__: (typeof getApp === 'function' ? (getApp().globalData?.settings?.uiTheme || 'dark') : 'dark') },
     _buildUrl() { return ((profileApp?.globalData?.baseUrl || 'https://mychess.com.cn').replace(/\/$/, '') + '/profile'); },
     _urlWithToken(token) { const base = this._buildUrl(); return token ? `${base}#webview_token=${encodeURIComponent(token)}&ai=disabled` : base; },
     _readToken(options) { let token = profileApp?.globalData?.token || ''; if (!token) {
@@ -18,12 +24,33 @@ Page({
             token = options.token;
         }
     } return token; },
-    onLoad(options) { const token = this._readToken(options); this.setData({ token, WebViewUrl: this._urlWithToken(token), loading: true, error: '' }); },
+    onLoad(options) {
+        const token = this._readToken(options);
+        if (token) {
+            this.setData({ token, WebViewUrl: this._urlWithToken(token), needLogin: false, loading: true, error: '' });
+        }
+        else {
+            this.setData({ token: '', WebViewUrl: '', needLogin: true, loading: false, error: '' });
+        }
+    },
     onShow() { const theme = profileApp?.globalData?.settings?.uiTheme || 'dark'; if (this.data.__theme__ !== theme)
         this.setData({ __theme__: theme }); this._syncTokenFromApp(); },
-    /** 原生登录页登录成功后 switchTab 回本页：onShow 触发但 onLoad 不会，故检测全局 token 变化重建 web-view 地址 */
-    _syncTokenFromApp() { const token = (profileApp && profileApp.globalData && profileApp.globalData.token) || ''; if (!token || token === this.data.token)
-        return; this.setData({ token, WebViewUrl: this._urlWithToken(token) }); },
+    /** 登录成功后回到本页：onShow 触发但 onLoad 不会，故检测全局 token 变化重建 web-view 地址 */
+    _syncTokenFromApp() { const token = (profileApp && profileApp.globalData && profileApp.globalData.token) || '';
+        if (!token)
+            return;
+        if (token === this.data.token && !this.data.needLogin)
+            return;
+        this.setData({ token, WebViewUrl: this._urlWithToken(token), needLogin: false, loading: true, error: '' }); },
+    /** 访客页：去登录（登录页本身带返回/取消按钮） */
+    onGoLogin() { wx.navigateTo({ url: '/pages/login/login' }); },
+    /** 访客页：暂不登录，返回上一页；无上一页则去首页 */
+    onBrowse() { const pages = getCurrentPages(); if (pages.length >= 2) {
+        wx.navigateBack({ delta: 1 });
+    }
+    else {
+        wx.reLaunch({ url: '/pages/choice/choice' });
+    } },
     _postTokenToWeb() { if (!this.data.token)
         return; wx.createSelectorQuery().select('.shell-web-view').context((res) => { if (res?.postMessage)
         res.postMessage({ type: 'setToken', token: this.data.token }); }).exec(); },

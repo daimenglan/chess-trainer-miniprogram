@@ -58,6 +58,11 @@
         <view class="wechat-icon"><text class="wechat-icon-text">微</text></view>
         <text>{{loading ? '登录中...' : '微信一键登录'}}</text>
       </view>
+
+      <!-- 取消/拒绝登录：不登录也可继续浏览 -->
+      <view class="cancel-login-btn" catchtap="onCancelLogin">
+        <text>暂不登录，先逛逛</text>
+      </view>
     </view>
 
     <!-- ===== 用户协议与隐私政策授权 ===== -->

@@ -77,24 +77,14 @@ Page({
             cancelText: '取消',
         });
     },
-    /** 协议未勾选时统一弹窗引导（返回 true 表示已同意可继续） */
+    /** 协议未勾选时就地提示（不用弹窗，避免反复弹窗打扰用户） */
     ensureAgreed() {
-        // 由 web-view 内 H5 唤起时，协议同意已在 H5 登录页完成，不再二次弹窗
+        // 由 web-view 内 H5 唤起时，协议同意已在 H5 登录页完成，不再二次提示
         if (this.data.wxFromWebView)
             return true;
         if (this.data.agreed)
             return true;
-        wx.showModal({
-            title: '服务协议及隐私保护',
-            content: '为了更好地保障您的合法权益，请阅读并同意以下协议《用户服务协议》《隐私政策》',
-            confirmText: '同意',
-            cancelText: '不同意',
-            success: (res) => {
-                if (res.confirm) {
-                    this.setData({ agreed: true, error: '' });
-                }
-            },
-        });
+        this.setData({ error: '请先勾选并同意《用户服务协议》和《隐私政策》' });
         return false;
     },
     /**

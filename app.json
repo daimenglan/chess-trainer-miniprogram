@@ -18,12 +18,6 @@
     "backgroundTextStyle": "light"
   },
   "requiredBackgroundModes": [],
-  "requiredPrivateInfos": [
-    {
-      "name": "深度合成-AI问答",
-      "desc": "用于提供AI国际象棋陪练、复盘分析、习题推荐等文本深度合成服务"
-    }
-  ],
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"
 }

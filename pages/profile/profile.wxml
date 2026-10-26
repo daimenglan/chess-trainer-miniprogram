@@ -1,5 +1,38 @@
 <view class="shell-page {{__theme__ ? 'theme-' + __theme__ : ''}}">
-  <web-view class="shell-web-view" src="{{WebViewUrl}}" bindmessage="onMessage" binderror="onError"></web-view>
-  <view wx:if="{{loading}}" class="shell-loading"><view class="loading-spinner"></view><text>正在加载 Mychess 网页版…</text></view>
-  <view wx:if="{{error}}" class="shell-error"><text class="error-icon">⚠️</text><text class="error-text">{{error}}</text><view class="error-btn" catchtap="onRetry">重试</view></view>
+  <!-- 已登录：加载 H5 个人中心 -->
+  <block wx:if="{{!needLogin}}">
+    <web-view class="shell-web-view" src="{{WebViewUrl}}" bindmessage="onMessage" binderror="onError"></web-view>
+    <view wx:if="{{loading}}" class="shell-loading"><view class="loading-spinner"></view><text>正在加载 Mychess 网页版…</text></view>
+    <view wx:if="{{error}}" class="shell-error"><text class="error-icon">⚠️</text><text class="error-text">{{error}}</text><view class="error-btn" catchtap="onRetry">重试</view></view>
+  </block>
+
+  <!-- 未登录：原生访客页，用户可自由选择登录或继续浏览 -->
+  <block wx:else>
+    <view class="guest-page">
+      <view class="guest-header">
+        <text class="guest-logo">♟ Mychess</text>
+        <text class="guest-title">登录后解锁更多功能</text>
+        <text class="guest-desc">登录可同步对弈记录、棋谱分析、训练计划与会员权益</text>
+      </view>
+
+      <view class="guest-benefits">
+        <view class="guest-benefit"><text class="guest-benefit-icon">📊</text><text>个人棋力分析报告</text></view>
+        <view class="guest-benefit"><text class="guest-benefit-icon">📁</text><text>云端棋谱与对局记录</text></view>
+        <view class="guest-benefit"><text class="guest-benefit-icon">🎯</text><text>专属训练计划</text></view>
+        <view class="guest-benefit"><text class="guest-benefit-icon">🏆</text><text>每日挑战与龙币奖励</text></view>
+      </view>
+
+      <view class="guest-actions">
+        <view class="guest-login-btn" catchtap="onGoLogin">
+          <text class="guest-wechat-icon">微</text>
+          <text>微信一键登录</text>
+        </view>
+        <view class="guest-browse-btn" catchtap="onBrowse">
+          <text>暂不登录，先逛逛</text>
+        </view>
+      </view>
+
+      <text class="guest-hint">未登录也可浏览首页、体验 AI 陪练与习题</text>
+    </view>
+  </block>
 </view>

@@ -3,6 +3,8 @@
     "chess-board": "../../components/chess-board/chess-board",
     "move-history": "../../components/move-history/move-history",
     "analysis-panel": "../../components/analysis-panel/analysis-panel",
-    "coach-chat": "../../components/coach-chat/coach-chat"
+    "coach-chat": "../../components/coach-chat/coach-chat",
+    "coach-chatter": "../../components/coach-chatter/coach-chatter",
+    "page-guide": "../../components/page-guide/page-guide"
   }
 }
