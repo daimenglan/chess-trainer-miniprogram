@@ -1,4 +1,10 @@
-/** 我的 Tab：小程序壳，内容由 H5 个人中心渲染。 */
+/**
+ * 我的 Tab：小程序壳。
+ *
+ * 已登录：web-view 加载 H5 个人中心。
+ * 未登录：渲染原生访客页，提供「微信登录」与「暂不登录」两个出口，
+ *        不直接跳 H5 登录页，避免出现"强制登录、无返回按钮"的审核问题。
+ */
 const profileApp = getApp();
 Page({
   data: { WebViewUrl: '', token: '', loading: true, error: '', needLogin: false, __theme__: (typeof getApp === 'function' ? (getApp().globalData?.settings?.uiTheme || 'dark') : 'dark') },

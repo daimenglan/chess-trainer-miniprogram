@@ -30,18 +30,21 @@ Page({
             this.setData({ token, WebViewUrl: this._urlWithToken(token), needLogin: false, loading: true, error: '' });
         }
         else {
+            // 未登录：显示原生访客页，提供「微信登录」与「暂不登录」两个出口
             this.setData({ token: '', WebViewUrl: '', needLogin: true, loading: false, error: '' });
         }
     },
     onShow() { const theme = profileApp?.globalData?.settings?.uiTheme || 'dark'; if (this.data.__theme__ !== theme)
         this.setData({ __theme__: theme }); this._syncTokenFromApp(); },
     /** 登录成功后回到本页：onShow 触发但 onLoad 不会，故检测全局 token 变化重建 web-view 地址 */
-    _syncTokenFromApp() { const token = (profileApp && profileApp.globalData && profileApp.globalData.token) || '';
+    _syncTokenFromApp() {
+        const token = (profileApp && profileApp.globalData && profileApp.globalData.token) || '';
         if (!token)
             return;
         if (token === this.data.token && !this.data.needLogin)
             return;
-        this.setData({ token, WebViewUrl: this._urlWithToken(token), needLogin: false, loading: true, error: '' }); },
+        this.setData({ token, WebViewUrl: this._urlWithToken(token), needLogin: false, loading: true, error: '' });
+    },
     /** 访客页：去登录（登录页本身带返回/取消按钮） */
     onGoLogin() { wx.navigateTo({ url: '/pages/login/login' }); },
     /** 访客页：暂不登录，返回上一页；无上一页则去首页 */

@@ -62,7 +62,8 @@ Page({
         const pages = getCurrentPages();
         if (pages.length >= 2) {
             wx.navigateBack({ delta: 1 });
-        } else {
+        }
+        else {
             // 直接从分享/scheme 进入且无上一页：回首页
             wx.redirectTo({ url: '/pages/choice/choice' });
         }
