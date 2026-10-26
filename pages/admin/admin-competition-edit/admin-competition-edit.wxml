@@ -14,6 +14,6 @@
       <view class="btn primary" catchtap="onSubmit"><text class="btn-text">{{loading ? '提交中...' : '更新竞赛'}}</text></view>
     </view>
   <!-- AI生成内容免责声明 -->
-  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
+  <view class="ai-disclaimer"><text>本服务为AI生成、人工智能生成内容，结果仅供参考</text></view>
   </scroll-view>
 </view>

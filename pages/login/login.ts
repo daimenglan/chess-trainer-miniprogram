@@ -59,6 +59,17 @@ Page({
     this.setData({ agreed: !this.data.agreed, error: '' });
   },
 
+  /** 取消/拒绝登录：返回上一页，不强制用户登录 */
+  onCancelLogin() {
+    const pages = getCurrentPages();
+    if (pages.length >= 2) {
+      wx.navigateBack({ delta: 1 });
+    } else {
+      // 直接从分享/scheme 进入且无上一页：回首页
+      wx.redirectTo({ url: '/pages/choice/choice' });
+    }
+  },
+
   /** 打开《用户服务协议》/《隐私政策》 */
   onOpenAgreement(e: any) {
     // 原生协议页已移除，由 H5 侧处理

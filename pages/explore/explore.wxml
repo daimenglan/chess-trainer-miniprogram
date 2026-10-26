@@ -103,7 +103,7 @@
     </view>
   </scroll-view>
 
-  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
+  <view class="ai-disclaimer"><text>本服务为AI生成、人工智能生成内容，结果仅供参考</text></view>
 
   <!-- 升变选择 -->
   <promotion-dialog show="{{showPromotion}}" color="{{promotionColor}}"

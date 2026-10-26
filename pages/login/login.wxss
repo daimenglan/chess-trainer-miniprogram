@@ -215,6 +215,48 @@
   margin-top: 28rpx;
 }
 
+/* ===== 顶部返回栏：允许用户取消登录 ===== */
+.login-back-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  padding: 28rpx 24rpx 0;
+  display: flex;
+  align-items: flex-start;
+}
+
+.login-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 14rpx 24rpx;
+  background: rgba(26, 26, 46, 0.85);
+  border: 1px solid var(--border-color-strong);
+  border-radius: 30rpx;
+  backdrop-filter: blur(12rpx);
+  -webkit-backdrop-filter: blur(12rpx);
+  transition: all 0.2s;
+}
+
+.login-back-btn:active {
+  background: rgba(26, 26, 46, 0.95);
+  transform: scale(0.96);
+}
+
+.login-back-icon {
+  font-size: 28rpx;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.login-back-btn text {
+  font-size: 24rpx;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
 /* ===== 用户协议与隐私政策授权 ===== */
 .agreement-row {
   display: flex;

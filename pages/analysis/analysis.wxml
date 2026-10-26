@@ -63,7 +63,7 @@
       <text wx:if="{{!chartLineExpanded && reviewNeedLogin}}" class="collapse-hint">登录后可查看</text>
       <text wx:if="{{!reviewNeedLogin}}" class="collapse-icon">{{chartLineExpanded ? '收起 ▲' : '展开 ▼'}}</text>
     </view>
-    <view class="ai-disclaimer-inline"><text>本服务为AI生成内容，结果仅供参考</text></view>
+    <view class="ai-disclaimer-inline"><text>本服务为AI生成、人工智能生成内容，结果仅供参考</text></view>
     <view wx:if="{{chartLineExpanded}}">
       <canvas wx:if="{{reviewDone && chartData.length >= 2}}" type="2d" id="evalChart" class="eval-chart-top" catchtap="onChartTap"></canvas>
       <view wx:elif="{{reviewNeedLogin}}" class="chart-placeholder-top">
@@ -269,7 +269,7 @@
     <!-- 棋谱历史：复盘时与棋盘上方的逐步导航重复，按需求不展示 -->
 
     <!-- AI生成内容免责声明 -->
-    <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
+    <view class="ai-disclaimer"><text>本服务为AI生成、人工智能生成内容，结果仅供参考</text></view>
   </scroll-view>
 
   <!-- 深度复盘抽屉（引擎分析 + LLM 战略战术解析，对齐网页版 DeepReviewPanel） -->
@@ -285,7 +285,7 @@
       <!-- AI生成内容免责声明 -->
       <view class="ai-disclaimer-inline deep-disclaimer">
         <text class="ai-gen-flag">AI生成</text>
-        <text>本服务为AI生成内容，结果仅供参考</text>
+        <text>本服务为AI生成、人工智能生成内容，结果仅供参考</text>
       </view>
       <!-- 未分析：启动入口 -->
       <view wx:if="{{deepResults.length === 0 && !deepLoading}}" class="deep-empty">
@@ -460,7 +460,7 @@
         <text wx:if="{{aiAnalysisLoading}}" class="modal-loading">⏳ AI 正在分析当前局面...</text>
         <text wx:if="{{aiAnalysisText}}" class="modal-text">{{aiAnalysisText}}</text>
   <!-- AI生成内容免责声明 -->
-  <view class="ai-disclaimer"><text>本服务为AI生成内容，结果仅供参考</text></view>
+  <view class="ai-disclaimer"><text>本服务为AI生成、人工智能生成内容，结果仅供参考</text></view>
       </scroll-view>
     </view>
   </view>
